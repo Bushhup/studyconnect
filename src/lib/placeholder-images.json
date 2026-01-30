@@ -90,6 +90,34 @@
       "imageUrl": "https://images.unsplash.com/photo-1558617320-e695f0d420de?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzd2ltbWluZyUyMHBvb2x8ZW58MHx8fHwxNzY5NzYxNjk1fDA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "swimming pool",
       "category": "Sports"
+    },
+    {
+      "id": "about-us-image",
+      "description": "A group of diverse students collaborating on a project in a bright, modern classroom.",
+      "imageUrl": "https://images.unsplash.com/photo-1571260898933-9b6264d11277?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzdHVkZW50cyUyMGNvbGxhYm9yYXRpbmd8ZW58MHx8fHwxNzcwMjQwNjM4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "students collaborating",
+      "category": "Campus"
+    },
+    {
+      "id": "testimonial-1",
+      "description": "A smiling female student with glasses in a library.",
+      "imageUrl": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxzbWlsaW5nJTIwc3R1ZGVudCUyMHBvcnRyYWl0fGVufDB8fHx8MTcwMjQwNjY4MHww&ixlib=rb-4.1.0&q=80&w=100",
+      "imageHint": "student portrait",
+      "category": "Testimonial"
+    },
+    {
+      "id": "testimonial-2",
+      "description": "A smiling male student outdoors on campus.",
+      "imageUrl": "https://images.unsplash.com/photo-1618641986557-1ecd230959aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzbWlsaW5nJTIwc3R1ZGVudCUyMHBvcnRyYWl0fGVufDB8fHx8MTcwMjQwNjY4MHww&ixlib=rb-4.1.0&q=80&w=100",
+      "imageHint": "student portrait",
+      "category": "Testimonial"
+    },
+    {
+      "id": "testimonial-3",
+      "description": "A smiling female student in a classroom.",
+      "imageUrl": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxzbWlsaW5nJTIwc3R1ZGVudCUyMHBvcnRyYWl0fGVufDB8fHx8MTcwMjQwNjY4MHww&ixlib=rb-4.1.0&q=80&w=100",
+      "imageHint": "student portrait",
+      "category": "Testimonial"
     }
   ]
 }

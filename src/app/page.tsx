@@ -1,8 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, FlaskConical, Library, Medal, Users, Dumbbell } from 'lucide-react';
+import { ArrowRight, BookOpen, FlaskConical, Library, Medal, Users, Dumbbell, Quote } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { placeholderImages } from '@/lib/placeholder-images';
 
 const stats = [
@@ -33,8 +34,30 @@ const facilities = [
   },
 ];
 
+const testimonials = [
+    {
+        name: 'Jessica Miller',
+        program: 'Computer Science',
+        quote: 'The hands-on projects and supportive faculty at StudyConnect prepared me for a successful career in tech. I felt challenged and inspired every day.',
+        imageId: 'testimonial-1',
+    },
+    {
+        name: 'David Chen',
+        program: 'Biotechnology',
+        quote: 'The research opportunities here are incredible. I was able to work in a state-of-the-art lab and contribute to meaningful scientific discoveries.',
+        imageId: 'testimonial-2',
+    },
+    {
+        name: 'Sophia Rodriguez',
+        program: 'Business Administration',
+        quote: 'StudyConnect’s focus on entrepreneurship helped me launch my own startup. The mentorship and resources available to students are top-notch.',
+        imageId: 'testimonial-3',
+    },
+];
+
 export default function Home() {
   const heroImage = placeholderImages.find(p => p.id === 'home-hero');
+  const aboutImage = placeholderImages.find(p => p.id === 'about-us-image');
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)]">
@@ -106,6 +129,72 @@ export default function Home() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </div>
+        </section>
+
+        <section id="about" className="py-12 md:py-20 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+              <div className="relative aspect-video rounded-lg overflow-hidden shadow-lg">
+                {aboutImage && (
+                  <Image
+                    src={aboutImage.imageUrl}
+                    alt={aboutImage.description}
+                    fill
+                    className="object-cover"
+                    data-ai-hint={aboutImage.imageHint}
+                    sizes="(max-width: 768px) 100vw, 50vw"
+                  />
+                )}
+              </div>
+              <div>
+                <h2 className="text-3xl md:text-4xl font-headline font-bold mb-4">
+                  About StudyConnect
+                </h2>
+                <p className="text-lg text-muted-foreground font-body mb-4">
+                  Founded on the principles of excellence, innovation, and community, StudyConnect has been a beacon of higher learning for over a century. We are dedicated to nurturing the next generation of leaders, thinkers, and innovators.
+                </p>
+                <p className="text-muted-foreground font-body">
+                  Our diverse range of programs, world-class faculty, and vibrant campus life create an environment where students can thrive academically, personally, and professionally. We believe in learning by doing, and we provide our students with ample opportunities for hands-on experience, research, and real-world problem-solving.
+                </p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="testimonials" className="py-12 md:py-20 bg-secondary/50">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-headline font-bold">
+                What Our Students Say
+              </h2>
+              <p className="mt-2 text-lg text-muted-foreground max-w-3xl mx-auto font-body">
+                Hear from the bright minds who call StudyConnect home.
+              </p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              {testimonials.map((testimonial) => {
+                const image = placeholderImages.find(p => p.id === testimonial.imageId);
+                return (
+                  <Card key={testimonial.name} className="flex flex-col bg-card hover:shadow-xl transition-shadow duration-300">
+                    <CardContent className="pt-6 flex-grow flex flex-col items-center text-center">
+                      <Quote className="w-8 h-8 text-primary mb-4" />
+                      <p className="text-muted-foreground font-body italic">"{testimonial.quote}"</p>
+                    </CardContent>
+                    <CardFooter className="flex-col items-center pt-0 pb-6">
+                      {image && (
+                          <Avatar className="mx-auto h-20 w-20 mb-4 border-2 border-primary">
+                              <AvatarImage src={image.imageUrl} alt={testimonial.name} data-ai-hint={image.imageHint} />
+                              <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                      )}
+                      <p className="font-bold font-headline text-lg">{testimonial.name}</p>
+                      <p className="text-sm text-muted-foreground">{testimonial.program}</p>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
             </div>
           </div>
         </section>
