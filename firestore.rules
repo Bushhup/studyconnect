@@ -1,0 +1,180 @@
+/**
+ * Core Philosophy: This ruleset implements a college-centric security model.
+ * Public information about a college, such as its achievements, events, and
+ * campus photos, is publicly readable by anyone. However, write access to
+ * this information is restricted to authorized college staff (users with
+ * 'faculty' or 'admin' roles). User profile data is strictly private and
+ * can only be accessed or modified by the user who owns it.
+ *
+ * Data Structure: The database is organized around a top-level 'colleges'
+ * collection. All associated data for a specific college, including its
+ * achievements, images, events, and users, is nested in subcollections
+ * under the corresponding `/colleges/{collegeId}` document. This hierarchical
+ * structure provides clear data ownership boundaries.
+ *
+ * Key Security Decisions:
+ * - Public Read, Staff Write: Core college content (achievements, events, etc.)
+ *   is publicly visible, but creating, updating, or deleting this content
+ *   requires the user to have a 'faculty' or 'admin' role within that college.
+ * - Private User Data: User profiles are strictly private. A user can only
+ *   read and write their own data. Listing users is explicitly disallowed to
+ *   prevent data scraping and protect user privacy.
+ * - No Client-Side College Management: The top-level `/colleges` collection is
+ *   treated as read-only from the client. It is assumed that colleges are
+ *   provisioned by a trusted backend process, not created by end-users.
+ * - Role Immutability: Users cannot change their own roles to prevent
+ *   self-privilege-escalation. Role changes must be handled by an admin.
+ *
+ * Denormalization for Authorization: To ensure performant and secure rules,
+ * critical authorization data is denormalized. The `collegeId` is stored on
+ * every document within a college's subcollections. This avoids costly `get()`
+ * calls to parent documents. User roles are stored directly on the user's
+ * document and are checked with a `get()` call to authorize staff-level actions.
+ *
+ * Structural Segregation: The separation of public college data (e.g.,
+ * `/events`) from private user data (`/users`) into distinct subcollections
+ * ensures that list operations can be secured efficiently without risk of
+ * leaking private information.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    //-------------------------------------------------------------------------
+    // Helper Functions
+    //-------------------------------------------------------------------------
+
+    /**
+     * Returns true if the user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * Returns true if the authenticated user's UID matches the provided userId.
+     * This is the foundation of the user ownership model.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+    
+    /**
+     * Verifies that a document already exists. Essential for safe updates/deletes.
+     */
+    function isExistingDoc() {
+      return resource != null;
+    }
+
+    /**
+     * Combines ownership check with an existence check for update/delete operations.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && isExistingDoc();
+    }
+    
+    /**
+     * Checks if the requesting user has a 'faculty' or 'admin' role for a given college.
+     * This requires a single document read to the user's own profile.
+     */
+    function isCollegeStaff(collegeId) {
+      return isSignedIn() && get(/databases/$(database)/documents/colleges/$(collegeId)/users/$(request.auth.uid)).data.role in ['faculty', 'admin'];
+    }
+
+    /**
+     * Provides shorthand access to the incoming document data on a write request.
+     */
+    function incomingData() {
+      return request.resource.data;
+    }
+
+    /**
+     * Provides shorthand access to the existing document data on an update/delete request.
+     */
+    function existingData() {
+      return resource.data;
+    }
+
+    //-------------------------------------------------------------------------
+    // Collection Rules
+    //-------------------------------------------------------------------------
+
+    /**
+     * @description Controls access to the top-level college documents.
+     *   This data is considered public and is managed by a backend process,
+     *   not directly by client applications.
+     * @path /colleges/{collegeId}
+     * @allow (get) by an anonymous or authenticated user.
+     * @deny (create) by any user, to prevent unauthorized college creation.
+     * @principle Establishes public, read-only data that is managed externally.
+     */
+    match /colleges/{collegeId} {
+      allow get, list: if true;
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+
+      /**
+       * @description Controls access to a college's achievements.
+       *   Achievements are public to view but can only be managed by staff of that college.
+       * @path /colleges/{collegeId}/achievements/{achievementId}
+       * @allow (create) by an authenticated user with a 'faculty' or 'admin' role for this college.
+       * @deny (update) by a user who is a 'student' in this college.
+       * @principle Enforces public read access with role-based write permissions.
+       */
+      match /achievements/{achievementId} {
+        allow get, list: if true;
+        allow create: if isCollegeStaff(collegeId) && incomingData().collegeId == collegeId;
+        allow update: if isCollegeStaff(collegeId) && isExistingDoc() && incomingData().collegeId == existingData().collegeId;
+        allow delete: if isCollegeStaff(collegeId) && isExistingDoc();
+      }
+
+      /**
+       * @description Controls access to a college's campus images.
+       *   Images are public to view but can only be managed by staff of that college.
+       * @path /colleges/{collegeId}/campus_images/{imageId}
+       * @allow (create) by an authenticated user with a 'faculty' or 'admin' role for this college.
+       * @deny (delete) by an anonymous user or a student.
+       * @principle Enforces public read access with role-based write permissions.
+       */
+      match /campus_images/{imageId} {
+        allow get, list: if true;
+        allow create: if isCollegeStaff(collegeId) && incomingData().collegeId == collegeId;
+        allow update: if isCollegeStaff(collegeId) && isExistingDoc() && incomingData().collegeId == existingData().collegeId;
+        allow delete: if isCollegeStaff(collegeId) && isExistingDoc();
+      }
+      
+      /**
+       * @description Controls access to a college's events.
+       *   Events are public to view but can only be managed by staff of that college.
+       * @path /colleges/{collegeId}/events/{eventId}
+       * @allow (create) by an authenticated user with a 'faculty' or 'admin' role for this college.
+       * @deny (create) by a user who is not part of this college's staff.
+       * @principle Enforces public read access with role-based write permissions.
+       */
+      match /events/{eventId} {
+        allow get, list: if true;
+        allow create: if isCollegeStaff(collegeId) && incomingData().collegeId == collegeId;
+        allow update: if isCollegeStaff(collegeId) && isExistingDoc() && incomingData().collegeId == existingData().collegeId;
+        allow delete: if isCollegeStaff(collegeId) && isExistingDoc();
+      }
+      
+      /**
+       * @description Controls access to user profiles, which are private.
+       *   A user can only read or modify their own document. Listing users is disabled.
+       * @path /colleges/{collegeId}/users/{userId}
+       * @allow (get) by the user where `request.auth.uid == userId`.
+       * @deny (get) by any other authenticated user.
+       * @deny (list) by anyone, to prevent user data scraping.
+       * @principle Enforces strict document ownership for sensitive user data.
+       */
+      match /users/{userId} {
+        allow get: if isOwner(userId);
+        allow list: if false;
+        allow create: if isOwner(userId) && incomingData().id == userId && incomingData().collegeId == collegeId;
+        allow update: if isExistingOwner(userId) && incomingData().id == existingData().id && incomingData().collegeId == existingData().collegeId && incomingData().role == existingData().role;
+        allow delete: if isExistingOwner(userId);
+      }
+    }
+  }
+}

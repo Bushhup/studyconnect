@@ -1,0 +1,296 @@
+{
+  "entities": {
+    "College": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "College",
+      "type": "object",
+      "description": "Represents a college or university.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the College entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the college."
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "URL to the college logo.",
+          "format": "uri"
+        },
+        "tagline": {
+          "type": "string",
+          "description": "The college's tagline or motto."
+        },
+        "facilityOverview": {
+          "type": "string",
+          "description": "A brief overview of the college's facilities."
+        }
+      },
+      "required": [
+        "id",
+        "name"
+      ]
+    },
+    "Achievement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Achievement",
+      "type": "object",
+      "description": "Represents an academic, research, or extracurricular achievement.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Achievement entity."
+        },
+        "collegeId": {
+          "type": "string",
+          "description": "Reference to College. (Relationship: College 1:N Achievement)"
+        },
+        "year": {
+          "type": "number",
+          "description": "The year the achievement was earned."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the achievement."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the achievement (e.g., academic, research, extracurricular)."
+        }
+      },
+      "required": [
+        "id",
+        "collegeId",
+        "year",
+        "description",
+        "category"
+      ]
+    },
+    "CampusImage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CampusImage",
+      "type": "object",
+      "description": "Represents an image of the campus.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the CampusImage entity."
+        },
+        "collegeId": {
+          "type": "string",
+          "description": "Reference to College. (Relationship: College 1:N CampusImage)"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL of the campus image.",
+          "format": "uri"
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the campus image (e.g., campus areas, labs, library, sports)."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the image."
+        }
+      },
+      "required": [
+        "id",
+        "collegeId",
+        "imageUrl",
+        "category"
+      ]
+    },
+    "Event": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Event",
+      "type": "object",
+      "description": "Represents a college event.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Event entity."
+        },
+        "collegeId": {
+          "type": "string",
+          "description": "Reference to College. (Relationship: College 1:N Event)"
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the event."
+        },
+        "description": {
+          "type": "string",
+          "description": "A description of the event."
+        },
+        "dateTime": {
+          "type": "string",
+          "description": "The date and time of the event.",
+          "format": "date-time"
+        },
+        "location": {
+          "type": "string",
+          "description": "The location of the event."
+        }
+      },
+      "required": [
+        "id",
+        "collegeId",
+        "title",
+        "description",
+        "dateTime",
+        "location"
+      ]
+    },
+    "User": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "User",
+      "type": "object",
+      "description": "Represents a user (student or faculty) of the portal.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the User entity."
+        },
+        "collegeId": {
+          "type": "string",
+          "description": "Reference to College. (Relationship: College 1:N User)"
+        },
+        "email": {
+          "type": "string",
+          "description": "The user's email address.",
+          "format": "email"
+        },
+        "firstName": {
+          "type": "string",
+          "description": "The user's first name."
+        },
+        "lastName": {
+          "type": "string",
+          "description": "The user's last name."
+        },
+        "role": {
+          "type": "string",
+          "description": "The user's role (e.g., student, faculty, admin)."
+        }
+      },
+      "required": [
+        "id",
+        "collegeId",
+        "email",
+        "firstName",
+        "lastName",
+        "role"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/colleges/{collegeId}",
+        "definition": {
+          "entityName": "College",
+          "schema": {
+            "$ref": "#/backend/entities/College"
+          },
+          "description": "Stores college information.  Root level collection.",
+          "params": [
+            {
+              "name": "collegeId",
+              "description": "Unique identifier for the college."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/colleges/{collegeId}/achievements/{achievementId}",
+        "definition": {
+          "entityName": "Achievement",
+          "schema": {
+            "$ref": "#/backend/entities/Achievement"
+          },
+          "description": "Stores achievements for a specific college. Includes denormalized 'collegeId' for authorization independence.",
+          "params": [
+            {
+              "name": "collegeId",
+              "description": "Unique identifier for the college."
+            },
+            {
+              "name": "achievementId",
+              "description": "Unique identifier for the achievement."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/colleges/{collegeId}/campus_images/{imageId}",
+        "definition": {
+          "entityName": "CampusImage",
+          "schema": {
+            "$ref": "#/backend/entities/CampusImage"
+          },
+          "description": "Stores campus images for a specific college. Includes denormalized 'collegeId' for authorization independence.",
+          "params": [
+            {
+              "name": "collegeId",
+              "description": "Unique identifier for the college."
+            },
+            {
+              "name": "imageId",
+              "description": "Unique identifier for the campus image."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/colleges/{collegeId}/events/{eventId}",
+        "definition": {
+          "entityName": "Event",
+          "schema": {
+            "$ref": "#/backend/entities/Event"
+          },
+          "description": "Stores events for a specific college. Includes denormalized 'collegeId' for authorization independence.",
+          "params": [
+            {
+              "name": "collegeId",
+              "description": "Unique identifier for the college."
+            },
+            {
+              "name": "eventId",
+              "description": "Unique identifier for the event."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/colleges/{collegeId}/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores user (student and faculty) information for a specific college. Includes denormalized 'collegeId' for authorization independence.",
+          "params": [
+            {
+              "name": "collegeId",
+              "description": "Unique identifier for the college."
+            },
+            {
+              "name": "userId",
+              "description": "Unique identifier for the user."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the StudyConnect application, focusing on colleges, their achievements, campus images, events, and associated users (students and faculty). The structure emphasizes Authorization Independence through denormalization and supports secure list operations (QAPs) using structural segregation. A key requirement is supporting a student and faculty login portal.\n\nColleges are stored in a top-level `colleges` collection. All data associated with a college (achievements, campus images, events, and users) are stored in subcollections under the respective college document. This enforces clear ownership and simplifies security rules.\n\nTo achieve Authorization Independence (CRITICAL), the `collegeId` is denormalized into the `achievements`, `campus_images`, `events` and `users` documents. This eliminates the need for `get()` calls to the parent `college` document to authorize operations on these subcollections.  Security rules can directly check if `request.resource.data.collegeId == resource.data.collegeId` which enforces that only users or processes acting on behalf of a college can create/modify resources within that college's subcollections. User roles (`student`, `faculty`, `admin`) are stored within the `users` documents for role-based access control.\n\nFor QAPs (Rules are Not Filters), each subcollection is homogenous in terms of its security posture. This ensures that listing resources within a subcollection does not require complex filtering logic in the security rules, thus upholding security."
+  }
+}
