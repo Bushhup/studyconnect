@@ -1,0 +1,85 @@
+
+"use client";
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Menu, School } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
+import { Logo } from './logo';
+
+const navLinks = [
+  { href: '/', label: 'Home' },
+  { href: '/achievements', label: 'Achievements' },
+  { href: '/gallery', label: 'Gallery' },
+  { href: '/events', label: 'Events' },
+];
+
+export function Header() {
+  const pathname = usePathname();
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container h-16 flex items-center justify-between">
+        <Link href="/" className="flex items-center gap-2">
+          <Logo className="h-8 w-8 text-primary" />
+          <span className="font-bold font-headline text-lg">StudyConnect</span>
+        </Link>
+
+        <nav className="hidden md:flex items-center gap-6 text-sm font-medium">
+          {navLinks.map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              className={cn(
+                'transition-colors hover:text-primary',
+                pathname === link.href ? 'text-primary' : 'text-muted-foreground'
+              )}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
+
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="icon" className="md:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle navigation menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left">
+            <div className="flex flex-col h-full">
+              <div className="border-b pb-4">
+                <Link href="/" className="flex items-center gap-2">
+                  <Logo className="h-8 w-8 text-primary" />
+                  <span className="font-bold font-headline text-lg">StudyConnect</span>
+                </Link>
+              </div>
+              <nav className="flex flex-col gap-4 mt-6">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.href}
+                    href={link.href}
+                    className={cn(
+                      'text-lg font-medium transition-colors hover:text-primary',
+                      pathname === link.href ? 'text-primary' : 'text-muted-foreground'
+                    )}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+    </header>
+  );
+}
