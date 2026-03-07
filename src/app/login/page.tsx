@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth, useUser, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -47,20 +46,35 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Missing fields',
-        description: 'Please enter both email and password.',
+        description: 'Please select a portal and enter credentials.',
       });
       return;
     }
 
     setIsLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const loggedInUser = userCredential.user;
+      let userCredential;
+      try {
+        // Attempt normal sign in
+        userCredential = await signInWithEmailAndPassword(auth, email, password);
+      } catch (authError: any) {
+        // Bootstrap logic: If the specific requested admin credentials are used and sign-in fails, try creating the user
+        if (email === 'admin01@college.edu' && password === 'minister123' && selectedRole === 'admin') {
+          userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          toast({
+            title: 'Admin Created',
+            description: 'The initial administrator account has been provisioned.',
+          });
+        } else {
+          throw authError; // Re-throw if not the bootstrap user
+        }
+      }
 
+      const loggedInUser = userCredential.user;
       const userDocRef = doc(firestore, 'colleges', collegeId, 'users', loggedInUser.uid);
       const userDoc = await getDoc(userDocRef);
 
-      // Bootstrap logic: If the specific requested admin logs in and doc is missing, create it.
+      // Ensure the Firestore profile exists for the bootstrapped admin
       if (!userDoc.exists() && email === 'admin01@college.edu' && selectedRole === 'admin') {
         await setDoc(userDocRef, {
           id: loggedInUser.uid,
@@ -70,19 +84,18 @@ export default function LoginPage() {
           lastName: 'Admin',
           role: 'admin',
         });
-        toast({
-          title: 'Admin Initialized',
-          description: 'Initial administrator profile created.',
-        });
       } else if (!userDoc.exists() || userDoc.data()?.role !== selectedRole) {
-        await signOut(auth);
-        toast({
-          variant: 'destructive',
-          title: 'Access Denied',
-          description: `This account does not have ${selectedRole} permissions.`,
-        });
-        setIsLoading(false);
-        return;
+        // Check role mismatch (except for the bootstrap case handled above)
+        if (!(email === 'admin01@college.edu' && selectedRole === 'admin')) {
+            await signOut(auth);
+            toast({
+              variant: 'destructive',
+              title: 'Access Denied',
+              description: `This account does not have ${selectedRole} permissions.`,
+            });
+            setIsLoading(false);
+            return;
+        }
       }
 
       toast({
@@ -91,8 +104,11 @@ export default function LoginPage() {
       });
     } catch (error: any) {
       let errorMessage = 'An error occurred during login.';
-      if (error.code === 'auth/invalid-credential') {
+      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
         errorMessage = 'Invalid email or password.';
+      } else if (error.code === 'auth/email-already-in-use') {
+          // This might happen if user exists but password was wrong in the first attempt
+          errorMessage = 'Invalid password for this account.';
       }
       toast({
         variant: 'destructive',
