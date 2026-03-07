@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { FirebaseError } from 'firebase/app';
 import { doc } from 'firebase/firestore';
 import { useAuth, useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -17,6 +16,13 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import Link from 'next/link';
@@ -32,19 +38,20 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [role, setRole] = useState<string>('student');
   const [isLoading, setIsLoading] = useState(false);
 
   const collegeId = 'study-connect-college';
 
   useEffect(() => {
-    if (user) {
+    if (user && !isLoading) {
       router.push('/profile');
     }
-  }, [user, router]);
+  }, [user, router, isLoading]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !firstName || !lastName) {
+    if (!email || !password || !firstName || !lastName || !role) {
       toast({
         variant: 'destructive',
         title: 'Missing fields',
@@ -64,44 +71,36 @@ export default function SignupPage() {
         email: firebaseUser.email,
         firstName: firstName,
         lastName: lastName,
-        role: 'student',
+        role: role,
       }, { merge: true });
 
       toast({
         title: 'Signup Successful',
-        description: 'Your account has been created.',
+        description: `Welcome to StudyConnect! Your ${role} account has been created.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       let errorMessage = 'An unexpected error occurred during signup.';
-      if (error instanceof FirebaseError) {
-        switch (error.code) {
-          case 'auth/email-already-in-use':
-            errorMessage = 'This email is already registered.';
-            break;
-          case 'auth/weak-password':
-            errorMessage = 'Password should be at least 6 characters.';
-            break;
-          default:
-            errorMessage = 'An error occurred. Please try again later.';
-        }
+      if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already registered.';
+      } else if (error.code === 'auth/weak-password') {
+        errorMessage = 'Password should be at least 6 characters.';
       }
       toast({
         variant: 'destructive',
         title: 'Signup Failed',
         description: errorMessage,
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
   return (
     <div className="container mx-auto flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-headline">Create an Account</CardTitle>
           <CardDescription>
-            Join StudyConnect today.
+            Join the StudyConnect community.
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSignup}>
@@ -117,11 +116,24 @@ export default function SignupPage() {
               </div>
             </div>
             <div className="grid gap-2">
+              <Label htmlFor="role">I am a...</Label>
+              <Select onValueChange={setRole} defaultValue={role} disabled={isLoading}>
+                <SelectTrigger id="role">
+                  <SelectValue placeholder="Select your role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="faculty">Faculty Member</SelectItem>
+                  <SelectItem value="admin">Administrator</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="name@college.edu"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
