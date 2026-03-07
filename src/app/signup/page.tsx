@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { FirebaseError } from 'firebase/app';
-import { doc, setDoc } from 'firebase/firestore';
-import { useAuth, useFirestore } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { useAuth, useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -24,6 +24,7 @@ import Link from 'next/link';
 export default function SignupPage() {
   const auth = useAuth();
   const firestore = useFirestore();
+  const { user } = useUser();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -33,9 +34,13 @@ export default function SignupPage() {
   const [lastName, setLastName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Hardcoding collegeId for now as there is only one college in the system.
-  // In a multi-college setup, this would be dynamic.
   const collegeId = 'study-connect-college';
+
+  useEffect(() => {
+    if (user) {
+      router.push('/profile');
+    }
+  }, [user, router]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,26 +55,23 @@ export default function SignupPage() {
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      const firebaseUser = userCredential.user;
 
-      // Create user profile in Firestore
-      const userRef = doc(firestore, 'colleges', collegeId, 'users', user.uid);
-      await setDoc(userRef, {
-        id: user.uid,
+      const userRef = doc(firestore, 'colleges', collegeId, 'users', firebaseUser.uid);
+      setDocumentNonBlocking(userRef, {
+        id: firebaseUser.uid,
         collegeId: collegeId,
-        email: user.email,
+        email: firebaseUser.email,
         firstName: firstName,
         lastName: lastName,
-        role: 'student', // Default role
-      });
+        role: 'student',
+      }, { merge: true });
 
       toast({
         title: 'Signup Successful',
         description: 'Your account has been created.',
       });
-      router.push('/profile');
     } catch (error) {
-      console.error('Signup Error:', error);
       let errorMessage = 'An unexpected error occurred during signup.';
       if (error instanceof FirebaseError) {
         switch (error.code) {
