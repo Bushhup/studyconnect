@@ -72,7 +72,6 @@ export default function UserManagementPage() {
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState<'student' | 'faculty' | 'admin'>('student');
   const [status, setStatus] = useState<'active' | 'inactive'>('active');
-  const [tempId, setTempId] = useState('');
   
   // View/Edit User State
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -114,16 +113,17 @@ export default function UserManagementPage() {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !firstName || !lastName || !tempId || !password) {
+    if (!email || !firstName || !lastName || !password) {
       toast({ variant: 'destructive', title: 'Missing fields', description: 'All fields are required.' });
       return;
     }
 
     setIsSubmitting(true);
-    const userRef = doc(firestore, 'colleges', collegeId, 'users', tempId);
+    const newId = crypto.randomUUID();
+    const userRef = doc(firestore, 'colleges', collegeId, 'users', newId);
     
     setDocumentNonBlocking(userRef, {
-      id: tempId,
+      id: newId,
       collegeId: collegeId,
       email,
       password, 
@@ -171,7 +171,7 @@ export default function UserManagementPage() {
   };
 
   const resetCreateForm = () => {
-    setEmail(''); setFirstName(''); setLastName(''); setTempId(''); setRole('student'); setPassword(''); setStatus('active');
+    setEmail(''); setFirstName(''); setLastName(''); setRole('student'); setPassword(''); setStatus('active');
   };
 
   const openView = (user: any) => {
@@ -215,14 +215,10 @@ export default function UserManagementPage() {
                   <UserPlus className="h-5 w-5 text-primary" /> Provision User
                 </DialogTitle>
                 <DialogDescription>
-                  Create a new institutional record. Link this profile to a Firebase Auth UID.
+                  Create a new institutional record. A unique ID will be generated automatically.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="id" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Authentication UID</Label>
-                  <Input id="id" placeholder="Firebase Auth UID" value={tempId} onChange={(e) => setTempId(e.target.value)} required className="bg-slate-50 border-none focus-visible:ring-primary/20" />
-                </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="firstName" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">First Name</Label>

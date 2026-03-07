@@ -75,7 +75,6 @@ export default function StudentManagementPage() {
     lastName: '',
     email: '',
     password: '',
-    uid: '',
     departmentId: ''
   });
 
@@ -102,13 +101,14 @@ export default function StudentManagementPage() {
 
   const handleAddStudent = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newStudent.uid || !newStudent.email || !newStudent.firstName) return;
+    if (!newStudent.email || !newStudent.firstName) return;
 
     setIsSubmitting(true);
-    const userRef = doc(firestore, 'colleges', collegeId, 'users', newStudent.uid);
+    const generatedId = crypto.randomUUID();
+    const userRef = doc(firestore, 'colleges', collegeId, 'users', generatedId);
     
     setDocumentNonBlocking(userRef, {
-      id: newStudent.uid,
+      id: generatedId,
       collegeId: collegeId,
       email: newStudent.email,
       firstName: newStudent.firstName,
@@ -122,7 +122,7 @@ export default function StudentManagementPage() {
     toast({ title: 'Student Registered', description: `${newStudent.firstName} has been added to the system.` });
     setIsAddOpen(false);
     setIsSubmitting(false);
-    setNewStudent({ firstName: '', lastName: '', email: '', password: '', uid: '', departmentId: '' });
+    setNewStudent({ firstName: '', lastName: '', email: '', password: '', departmentId: '' });
   };
 
   const handleDeactivate = (id: string, name: string) => {
@@ -180,17 +180,11 @@ export default function StudentManagementPage() {
                   <Label className="text-xs font-bold uppercase">Institutional Email</Label>
                   <Input type="email" value={newStudent.email} onChange={e => setNewStudent({...newStudent, email: e.target.value})} required />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase">Firebase UID</Label>
-                    <Input value={newStudent.uid} onChange={e => setNewStudent({...newStudent, uid: e.target.value})} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase">Password</Label>
-                    <div className="relative">
-                       <Input type="text" value={newStudent.password} onChange={e => setNewStudent({...newStudent, password: e.target.value})} required className="pl-8" />
-                       <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                    </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Password</Label>
+                  <div className="relative">
+                     <Input type="text" value={newStudent.password} onChange={e => setNewStudent({...newStudent, password: e.target.value})} required className="pl-8" />
+                     <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                   </div>
                 </div>
                 <div className="space-y-2">
