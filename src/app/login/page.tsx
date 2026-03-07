@@ -1,9 +1,10 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useAuth, useUser, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, GraduationCap, BookOpen, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { Loader2, GraduationCap, BookOpen, ShieldCheck, ArrowLeft, Info } from 'lucide-react';
 
 type UserRole = 'student' | 'faculty' | 'admin';
 
@@ -59,7 +60,21 @@ export default function LoginPage() {
       const userDocRef = doc(firestore, 'colleges', collegeId, 'users', loggedInUser.uid);
       const userDoc = await getDoc(userDocRef);
 
-      if (!userDoc.exists() || userDoc.data().role !== selectedRole) {
+      // Bootstrap logic: If the specific requested admin logs in and doc is missing, create it.
+      if (!userDoc.exists() && email === 'admin01@college.edu' && selectedRole === 'admin') {
+        await setDoc(userDocRef, {
+          id: loggedInUser.uid,
+          collegeId: collegeId,
+          email: email,
+          firstName: 'System',
+          lastName: 'Admin',
+          role: 'admin',
+        });
+        toast({
+          title: 'Admin Initialized',
+          description: 'Initial administrator profile created.',
+        });
+      } else if (!userDoc.exists() || userDoc.data()?.role !== selectedRole) {
         await signOut(auth);
         toast({
           variant: 'destructive',
@@ -88,6 +103,12 @@ export default function LoginPage() {
     }
   };
 
+  const useDemoAdmin = () => {
+    setEmail('admin01@college.edu');
+    setPassword('minister123');
+    setSelectedRole('admin');
+  };
+
   if (!selectedRole) {
     return (
       <div className="container mx-auto py-12 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
@@ -103,25 +124,35 @@ export default function LoginPage() {
             <RoleCard 
               role="student" 
               title="Student" 
-              description="Access your courses, grades, and campus events."
+              description="Courses, grades, and campus events."
               icon={GraduationCap}
               onClick={() => setSelectedRole('student')}
             />
             <RoleCard 
               role="faculty" 
               title="Faculty" 
-              description="Manage classes, materials, and research."
+              description="Classes, research, and materials."
               icon={BookOpen}
               onClick={() => setSelectedRole('faculty')}
             />
             <RoleCard 
               role="admin" 
               title="Administrator" 
-              description="System management and user provisioning."
+              description="System management and provisioning."
               icon={ShieldCheck}
               onClick={() => setSelectedRole('admin')}
             />
           </div>
+        </div>
+
+        <div className="mt-12 flex flex-col items-center gap-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-accent/50 px-4 py-2 rounded-full border">
+            <Info className="h-4 w-4" />
+            <span>Development Mode: Use <strong>admin01@college.edu</strong> / <strong>minister123</strong> for Admin access.</span>
+          </div>
+          <Button variant="outline" size="sm" onClick={useDemoAdmin} className="rounded-full">
+            Auto-fill Admin Credentials
+          </Button>
         </div>
       </div>
     );
@@ -129,7 +160,8 @@ export default function LoginPage() {
 
   return (
     <div className="container mx-auto flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
-      <Card className="w-full max-w-sm shadow-2xl border-primary/10">
+      <Card className="w-full max-w-sm shadow-2xl border-primary/10 overflow-hidden">
+        <div className="h-2 bg-primary w-full" />
         <CardHeader>
           <Button 
             variant="ghost" 
@@ -143,7 +175,7 @@ export default function LoginPage() {
             {selectedRole} Sign In
           </CardTitle>
           <CardDescription className="text-center font-body">
-            Enter your credentials for secure access
+            Access your secure dashboard
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
@@ -200,17 +232,15 @@ function RoleCard({ title, description, icon: Icon, onClick }: {
     >
       <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-accent/50 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500 group-active:duration-200"></div>
       <Card 
-        className="relative h-full transition-all duration-300 border-primary/5 bg-card hover:bg-accent/5 hover:-translate-y-2 overflow-hidden"
+        className="relative h-full transition-all duration-300 border-primary/5 bg-card hover:bg-accent/5 hover:-translate-y-2 overflow-hidden flex flex-col items-center text-center p-8"
       >
-        <CardHeader className="text-center pt-10">
-          <div className="mx-auto w-20 h-20 rounded-2xl bg-primary/5 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 transform group-hover:rotate-3 shadow-sm group-hover:shadow-lg">
-            <Icon className="w-10 h-10" />
-          </div>
-          <CardTitle className="font-headline text-2xl mb-2">{title}</CardTitle>
-          <CardDescription className="font-body text-balance leading-relaxed">
-            {description}
-          </CardDescription>
-        </CardHeader>
+        <div className="w-20 h-20 rounded-2xl bg-primary/5 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 transform group-hover:rotate-3 shadow-sm group-hover:shadow-lg">
+          <Icon className="w-10 h-10" />
+        </div>
+        <CardTitle className="font-headline text-2xl mb-2">{title}</CardTitle>
+        <CardDescription className="font-body text-balance leading-relaxed">
+          {description}
+        </CardDescription>
         <div className="h-1 w-full bg-primary/0 group-hover:bg-primary/100 transition-all duration-500 absolute bottom-0" />
       </Card>
     </div>
