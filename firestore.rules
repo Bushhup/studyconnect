@@ -50,6 +50,21 @@ service cloud.firestore {
       allow get, list: if true;
       allow create, update, delete: if false;
 
+      match /departments/{deptId} {
+        allow get, list: if true;
+        allow create, update, delete: if isCollegeStaff(collegeId);
+      }
+
+      match /courses/{courseId} {
+        allow get, list: if true;
+        allow create, update, delete: if isCollegeStaff(collegeId);
+      }
+
+      match /classes/{classId} {
+        allow get, list: if true;
+        allow create, update, delete: if isCollegeStaff(collegeId);
+      }
+
       match /achievements/{achievementId} {
         allow get, list: if true;
         allow create, update, delete: if isCollegeStaff(collegeId);
