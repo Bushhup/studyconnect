@@ -5,7 +5,7 @@ import {
   Users, GraduationCap, Building2, BookOpen, 
   TrendingUp, TrendingDown, Clock, CheckCircle2,
   Calendar, Award, ArrowUpRight, ArrowDownRight,
-  MoreVertical, Search
+  MoreVertical, Search, FileText
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
