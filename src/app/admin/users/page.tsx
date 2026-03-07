@@ -33,6 +33,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Tabs,
@@ -49,7 +50,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Users, Search, Filter, Download, MoreHorizontal, Plus, GraduationCap, ShieldCheck, UserCog, Edit, Trash, Eye } from 'lucide-react';
+import { Loader2, UserPlus, Users, Search, MoreHorizontal, Plus, GraduationCap, ShieldCheck, UserCog, Edit, Trash, Eye, Mail, Fingerprint } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -62,12 +63,23 @@ export default function UserManagementPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // Create User State
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState<'student' | 'faculty' | 'admin'>('student');
   const [tempId, setTempId] = useState('');
+  
+  // View/Edit User State
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editEmail, setEditEmail] = useState('');
+  const [editRole, setEditRole] = useState<'student' | 'faculty' | 'admin'>('student');
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
@@ -95,11 +107,7 @@ export default function UserManagementPage() {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !firstName || !lastName || !tempId) {
-      toast({
-        variant: 'destructive',
-        title: 'Missing fields',
-        description: 'All fields are required.',
-      });
+      toast({ variant: 'destructive', title: 'Missing fields', description: 'All fields are required.' });
       return;
     }
 
@@ -109,50 +117,61 @@ export default function UserManagementPage() {
     setDocumentNonBlocking(userRef, {
       id: tempId,
       collegeId: collegeId,
-      email: email,
-      firstName: firstName,
-      lastName: lastName,
-      role: role,
+      email,
+      firstName,
+      lastName,
+      role,
     }, { merge: true });
 
-    toast({
-      title: 'User Record Created',
-      description: `${firstName} ${lastName} has been added as a ${role}.`,
-    });
-
-    setEmail('');
-    setFirstName('');
-    setLastName('');
-    setTempId('');
+    toast({ title: 'User Record Created', description: `${firstName} ${lastName} has been added.` });
+    resetCreateForm();
     setIsSubmitting(false);
-    setIsDialogOpen(false);
+    setIsCreateOpen(false);
+  };
+
+  const handleUpdateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+
+    setIsSubmitting(true);
+    const userRef = doc(firestore, 'colleges', collegeId, 'users', selectedUser.id);
+    
+    setDocumentNonBlocking(userRef, {
+      firstName: editFirstName,
+      lastName: editLastName,
+      email: editEmail,
+      role: editRole,
+    }, { merge: true });
+
+    toast({ title: 'Record Updated', description: `${editFirstName} ${editLastName}'s profile has been updated.` });
+    setIsSubmitting(false);
+    setIsEditOpen(false);
   };
 
   const handleDeleteUser = (userId: string, name: string) => {
-    if (confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+    if (confirm(`Are you sure you want to delete ${name}?`)) {
       const userRef = doc(firestore, 'colleges', collegeId, 'users', userId);
       deleteDocumentNonBlocking(userRef);
-      toast({
-        title: 'User Deleted',
-        description: `${name} has been removed from the directory.`,
-      });
+      toast({ title: 'User Deleted', description: `${name} has been removed.` });
     }
   };
 
-  const handleViewProfile = (userId: string) => {
-    toast({
-      title: 'View Profile',
-      description: `Opening profile details for user ID: ${userId}`,
-    });
-    // In a real app, this would route to /admin/users/[id]
+  const resetCreateForm = () => {
+    setEmail(''); setFirstName(''); setLastName(''); setTempId(''); setRole('student');
   };
 
-  const handleEditUser = (userId: string) => {
-    toast({
-      title: 'Edit Record',
-      description: `Opening edit mode for user ID: ${userId}`,
-    });
-    // In a real app, this would open an edit modal
+  const openView = (user: any) => {
+    setSelectedUser(user);
+    setIsViewOpen(true);
+  };
+
+  const openEdit = (user: any) => {
+    setSelectedUser(user);
+    setEditFirstName(user.firstName);
+    setEditLastName(user.lastName);
+    setEditEmail(user.email);
+    setEditRole(user.role);
+    setIsEditOpen(true);
   };
 
   return (
@@ -163,7 +182,7 @@ export default function UserManagementPage() {
           <p className="text-muted-foreground mt-1">Manage access control for students, faculty, and administrative staff.</p>
         </div>
         <div className="flex gap-2">
-          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+          <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2 shadow-lg shadow-primary/20">
                 <Plus className="h-4 w-4" /> Register New User
@@ -175,7 +194,7 @@ export default function UserManagementPage() {
                   <UserPlus className="h-5 w-5 text-primary" /> Provision User
                 </DialogTitle>
                 <DialogDescription>
-                  Create a new institutional record. Use the Firebase Auth UID to link this profile to an account.
+                  Create a new institutional record. Use the Firebase Auth UID to link this profile.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
@@ -229,19 +248,14 @@ export default function UserManagementPage() {
             <TabsTrigger value="admin" className="gap-2 px-4"><ShieldCheck className="h-4 w-4" /> Admins</TabsTrigger>
           </TabsList>
 
-          <div className="flex gap-2 w-full sm:w-auto">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search records..." 
-                className="pl-10 bg-white border-none shadow-sm focus-visible:ring-primary/20"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <Button variant="outline" className="gap-2 bg-white hidden sm:flex">
-                <Download className="h-4 w-4" />
-            </Button>
+          <div className="relative w-full sm:w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search records..." 
+              className="pl-10 bg-white border-none shadow-sm focus-visible:ring-primary/20"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
         </div>
 
@@ -290,7 +304,7 @@ export default function UserManagementPage() {
                       </TableCell>
                       <TableCell>
                          <div className="flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
                             <span className="text-xs font-semibold text-slate-600">Active</span>
                          </div>
                       </TableCell>
@@ -304,10 +318,10 @@ export default function UserManagementPage() {
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuLabel>User Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => handleViewProfile(u.id)}>
+                            <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => openView(u)}>
                               <Eye className="h-4 w-4" /> View Profile
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => handleEditUser(u.id)}>
+                            <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => openEdit(u)}>
                               <Edit className="h-4 w-4" /> Edit Record
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
@@ -322,25 +336,102 @@ export default function UserManagementPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filteredUsers?.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="h-64 text-center">
-                        <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                          <Users className="h-12 w-12 opacity-10" />
-                          <div>
-                              <p className="font-bold">No records found</p>
-                              <p className="text-xs">No users matching the "{activeTab}" filter.</p>
-                          </div>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  )}
                 </TableBody>
               </Table>
             )}
           </CardContent>
         </Card>
       </Tabs>
+
+      {/* View User Dialog */}
+      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" /> Profile Details
+            </DialogTitle>
+          </DialogHeader>
+          {selectedUser && (
+            <div className="space-y-6 pt-4">
+              <div className="flex flex-col items-center gap-4 text-center">
+                <Avatar className="h-20 w-20 border-4 border-slate-50 shadow-sm">
+                  <AvatarFallback className="bg-primary/5 text-primary text-xl font-bold">
+                    {selectedUser.firstName[0]}{selectedUser.lastName[0]}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="text-xl font-bold">{selectedUser.firstName} {selectedUser.lastName}</h3>
+                  <Badge className="mt-1 uppercase text-[10px] font-bold tracking-widest">{selectedUser.role}</Badge>
+                </div>
+              </div>
+              <div className="grid gap-4 bg-slate-50 p-4 rounded-xl">
+                <div className="flex items-center gap-3">
+                  <Mail className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Email Address</span>
+                    <span className="text-sm font-medium">{selectedUser.email}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Fingerprint className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Internal UID</span>
+                    <span className="text-sm font-mono truncate">{selectedUser.id}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewOpen(false)} className="w-full">Close Profile</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5 text-primary" /> Modify Record
+            </DialogTitle>
+            <DialogDescription>Update institutional data for this account.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateUser} className="space-y-4 pt-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="editFirstName" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">First Name</Label>
+                <Input id="editFirstName" value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} required className="bg-slate-50 border-none" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editLastName" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Last Name</Label>
+                <Input id="editLastName" value={editLastName} onChange={(e) => setEditLastName(e.target.value)} required className="bg-slate-50 border-none" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editEmail" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Email Address</Label>
+              <Input id="editEmail" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required className="bg-slate-50 border-none" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="editRole" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Access Role</Label>
+              <Select onValueChange={(v: any) => setEditRole(v)} defaultValue={editRole}>
+                <SelectTrigger id="editRole" className="bg-slate-50 border-none">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="faculty">Faculty</SelectItem>
+                  <SelectItem value="admin">Administrator</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button className="w-full shadow-md shadow-primary/20 font-bold mt-2" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
+              Save Changes
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
