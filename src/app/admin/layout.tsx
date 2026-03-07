@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
@@ -8,7 +9,7 @@ import {
   LayoutDashboard, Users, GraduationCap, Building2, 
   BookOpen, Calendar, FileSpreadsheet, ClipboardCheck, 
   BarChart3, FileText, Settings, Bell, Activity, UserCog,
-  Search, Mail, Plus, ChevronLeft, ChevronRight, Menu
+  Search, Mail, Plus, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -67,11 +68,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, [authUser, isUserLoading, profile, isProfileLoading, router]);
 
-  if (isUserLoading || isProfileLoading) {
+  // Faster initial check: if we are loading but have cached authUser, we can start showing the shell
+  if (isUserLoading && !authUser) {
+    return <div className="flex h-screen items-center justify-center bg-background">
+      <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+    </div>;
+  }
+
+  // If no auth user yet, or profile mismatch, keep showing loading until redirect
+  if (!authUser || (isProfileLoading && !profile)) {
     return <div className="flex h-screen items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-muted-foreground font-medium">Entering Admin Portal...</p>
+        <p className="text-muted-foreground font-medium">Authorizing Admin Session...</p>
       </div>
     </div>;
   }

@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { useAuth, useUser, useFirestore } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -34,9 +35,10 @@ export default function LoginPage() {
 
   const collegeId = 'study-connect-college';
 
+  // Instant redirect if already authenticated
   useEffect(() => {
     if (user && !isLoading) {
-      router.push('/profile');
+      router.replace('/profile');
     }
   }, [user, router, isLoading]);
 
@@ -55,65 +57,50 @@ export default function LoginPage() {
     try {
       let userCredential;
       try {
-        // Attempt normal sign in
         userCredential = await signInWithEmailAndPassword(auth, email, password);
       } catch (authError: any) {
-        // Bootstrap logic: If the specific requested admin credentials are used and sign-in fails, try creating the user
+        // Bootstrap admin logic: only for development
         if (email === 'admin01@college.edu' && password === 'minister123' && selectedRole === 'admin') {
           userCredential = await createUserWithEmailAndPassword(auth, email, password);
-          toast({
-            title: 'Admin Created',
-            description: 'The initial administrator account has been provisioned.',
-          });
         } else {
-          throw authError; // Re-throw if not the bootstrap user
+          throw authError;
         }
       }
 
       const loggedInUser = userCredential.user;
       const userDocRef = doc(firestore, 'colleges', collegeId, 'users', loggedInUser.uid);
+      
+      // Perform role verification
       const userDoc = await getDoc(userDocRef);
 
-      // Ensure the Firestore profile exists for the bootstrapped admin
-      if (!userDoc.exists() && email === 'admin01@college.edu' && selectedRole === 'admin') {
-        await setDoc(userDocRef, {
-          id: loggedInUser.uid,
-          collegeId: collegeId,
-          email: email,
-          firstName: 'System',
-          lastName: 'Admin',
-          role: 'admin',
-        });
-      } else if (!userDoc.exists() || userDoc.data()?.role !== selectedRole) {
-        // Check role mismatch (except for the bootstrap case handled above)
-        if (!(email === 'admin01@college.edu' && selectedRole === 'admin')) {
-            await signOut(auth);
-            toast({
-              variant: 'destructive',
-              title: 'Access Denied',
-              description: `This account does not have ${selectedRole} permissions.`,
-            });
-            setIsLoading(false);
-            return;
+      if (!userDoc.exists()) {
+        if (email === 'admin01@college.edu' && selectedRole === 'admin') {
+          // Non-blocking initialization for bootstrap admin
+          setDocumentNonBlocking(userDocRef, {
+            id: loggedInUser.uid,
+            collegeId: collegeId,
+            email: email,
+            firstName: 'System',
+            lastName: 'Admin',
+            role: 'admin',
+          }, { merge: true });
+        } else {
+          await signOut(auth);
+          throw new Error(`Profile not found for this account.`);
         }
+      } else if (userDoc.data()?.role !== selectedRole) {
+        await signOut(auth);
+        throw new Error(`This account does not have ${selectedRole} permissions.`);
       }
 
-      toast({
-        title: 'Login Successful',
-        description: `Welcome to the ${selectedRole} portal!`,
-      });
+      toast({ title: 'Login Successful', description: `Welcome to the ${selectedRole} portal!` });
+      // Immediate routing after successful verification
+      router.push('/profile');
     } catch (error: any) {
-      let errorMessage = 'An error occurred during login.';
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
-        errorMessage = 'Invalid email or password.';
-      } else if (error.code === 'auth/email-already-in-use') {
-          // This might happen if user exists but password was wrong in the first attempt
-          errorMessage = 'Invalid password for this account.';
-      }
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: errorMessage,
+        description: error.message || 'Invalid email or password.',
       });
       setIsLoading(false);
     }
@@ -164,7 +151,7 @@ export default function LoginPage() {
         <div className="mt-12 flex flex-col items-center gap-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground bg-accent/50 px-4 py-2 rounded-full border">
             <Info className="h-4 w-4" />
-            <span>Development Mode: Use <strong>admin01@college.edu</strong> / <strong>minister123</strong> for Admin access.</span>
+            <span>Dev Mode: <strong>admin01@college.edu</strong> / <strong>minister123</strong></span>
           </div>
           <Button variant="outline" size="sm" onClick={useDemoAdmin} className="rounded-full">
             Auto-fill Admin Credentials
