@@ -16,7 +16,9 @@ import {
   GraduationCap, 
   PlusCircle, 
   Image as ImageIcon,
-  Award
+  Award,
+  FileText,
+  Activity
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -28,7 +30,6 @@ export default function ProfilePage() {
   const auth = useAuth();
   const router = useRouter();
 
-  // Memoize the document reference for the user's profile
   const userProfileRef = useMemoFirebase(() => {
     if (!authUser || !firestore) return null;
     return doc(firestore, 'colleges', collegeId, 'users', authUser.uid);
@@ -75,7 +76,7 @@ export default function ProfilePage() {
 
   return (
     <div className="container mx-auto py-12 px-4">
-      <div className="max-w-5xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-8">
           <div>
             <h1 className="text-4xl font-headline font-bold">Welcome, {profile?.firstName || 'User'}</h1>
@@ -100,7 +101,7 @@ export default function ProfilePage() {
               <Settings className="w-5 h-5" /> Account Information
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid sm:grid-cols-2 gap-4 text-sm font-body">
+          <CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 text-sm font-body">
             <div>
               <p className="font-bold text-muted-foreground uppercase text-xs tracking-wider">Full Name</p>
               <p className="text-lg">{profile?.firstName} {profile?.lastName}</p>
@@ -114,8 +115,8 @@ export default function ProfilePage() {
               <p className="font-mono text-xs truncate">{profile?.id}</p>
             </div>
             <div>
-              <p className="font-bold text-muted-foreground uppercase text-xs tracking-wider">Member Since</p>
-              <p className="text-lg">March 2024</p>
+              <p className="font-bold text-muted-foreground uppercase text-xs tracking-wider">Role</p>
+              <p className="text-lg capitalize">{profile?.role}</p>
             </div>
           </CardContent>
         </Card>
@@ -176,23 +177,29 @@ function FacultyPortal() {
 
 function AdminPortal() {
   return (
-    <div className="grid gap-6 md:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
       <PortalCard 
         title="User Directory" 
-        description="Manage student and faculty accounts."
+        description="Provision and manage student/faculty accounts."
         icon={UserIcon}
         link="/admin/users"
       />
       <PortalCard 
-        title="Campus Content" 
-        description="Update gallery and announcements."
+        title="Content Manager" 
+        description="Publish events and campus achievements."
+        icon={FileText}
+        link="/admin/content"
+      />
+      <PortalCard 
+        title="Campus Gallery" 
+        description="Update gallery photos and descriptions."
         icon={ImageIcon}
         link="/gallery"
       />
       <PortalCard 
-        title="Security & Logs" 
-        description="Monitor system access and permissions."
-        icon={ShieldCheck}
+        title="System Logs" 
+        description="Monitor system access and audit trails."
+        icon={Activity}
         link="/admin/logs"
       />
     </div>
@@ -207,10 +214,10 @@ function PortalCard({ title, description, icon: Icon, link }: { title: string, d
           <Icon className="w-6 h-6" />
         </div>
         <CardTitle className="font-headline text-xl">{title}</CardTitle>
-        <CardDescription className="font-body">{description}</CardDescription>
+        <CardDescription className="font-body line-clamp-2">{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <Button asChild variant="link" className="p-0 font-headline">
+        <Button asChild variant="link" className="p-0 font-headline group-hover:translate-x-1 transition-transform">
           <Link href={link}>Access Portal →</Link>
         </Button>
       </CardContent>
