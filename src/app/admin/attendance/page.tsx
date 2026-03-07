@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -45,7 +44,7 @@ export default function AttendancePage() {
         </Card>
         <Card className="border-none shadow-sm overflow-hidden">
           <CardHeader className="bg-blue-500 text-white pb-6">
-            <CardDescription className="text-white/80 font-bold uppercase text-[10px]">Active Classes</CardTitle>
+            <CardDescription className="text-white/80 font-bold uppercase text-[10px]">Active Classes</CardDescription>
             <CardTitle className="text-3xl font-bold">34</CardTitle>
           </CardHeader>
           <CardContent className="pt-4 flex items-center justify-between">
