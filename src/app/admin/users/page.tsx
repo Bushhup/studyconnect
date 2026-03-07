@@ -50,10 +50,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Users, Search, MoreHorizontal, Plus, GraduationCap, ShieldCheck, UserCog, Edit, Trash, Eye, Mail, Fingerprint } from 'lucide-react';
+import { Loader2, UserPlus, Users, Search, MoreHorizontal, Plus, GraduationCap, ShieldCheck, UserCog, Edit, Trash, Eye, Mail, Fingerprint, Lock, Activity } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Switch } from '@/components/ui/switch';
 
 const collegeId = 'study-connect-college';
 
@@ -66,9 +67,11 @@ export default function UserManagementPage() {
   // Create User State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [role, setRole] = useState<'student' | 'faculty' | 'admin'>('student');
+  const [status, setStatus] = useState<'active' | 'inactive'>('active');
   const [tempId, setTempId] = useState('');
   
   // View/Edit User State
@@ -78,7 +81,9 @@ export default function UserManagementPage() {
   const [editFirstName, setEditFirstName] = useState('');
   const [editLastName, setEditLastName] = useState('');
   const [editEmail, setEditEmail] = useState('');
+  const [editPassword, setEditPassword] = useState('');
   const [editRole, setEditRole] = useState<'student' | 'faculty' | 'admin'>('student');
+  const [editStatus, setEditStatus] = useState<'active' | 'inactive'>('active');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,8 +97,11 @@ export default function UserManagementPage() {
   const { data: users, isLoading: isUsersLoading } = useCollection(usersQuery);
 
   const filteredUsers = users?.filter(u => {
-    const matchesSearch = `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      u.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
+    const email = (u.email || '').toLowerCase();
+    const query = searchQuery.toLowerCase();
+    
+    const matchesSearch = fullName.includes(query) || email.includes(query);
     const matchesRole = activeTab === 'all' || u.role === activeTab;
     return matchesSearch && matchesRole;
   });
@@ -106,7 +114,7 @@ export default function UserManagementPage() {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !firstName || !lastName || !tempId) {
+    if (!email || !firstName || !lastName || !tempId || !password) {
       toast({ variant: 'destructive', title: 'Missing fields', description: 'All fields are required.' });
       return;
     }
@@ -118,9 +126,11 @@ export default function UserManagementPage() {
       id: tempId,
       collegeId: collegeId,
       email,
+      password, // Stored in document for prototype reference
       firstName,
       lastName,
       role,
+      status,
     }, { merge: true });
 
     toast({ title: 'User Record Created', description: `${firstName} ${lastName} has been added.` });
@@ -136,12 +146,19 @@ export default function UserManagementPage() {
     setIsSubmitting(true);
     const userRef = doc(firestore, 'colleges', collegeId, 'users', selectedUser.id);
     
-    setDocumentNonBlocking(userRef, {
+    const updateData: any = {
       firstName: editFirstName,
       lastName: editLastName,
       email: editEmail,
       role: editRole,
-    }, { merge: true });
+      status: editStatus,
+    };
+
+    if (editPassword) {
+      updateData.password = editPassword;
+    }
+
+    setDocumentNonBlocking(userRef, updateData, { merge: true });
 
     toast({ title: 'Record Updated', description: `${editFirstName} ${editLastName}'s profile has been updated.` });
     setIsSubmitting(false);
@@ -157,7 +174,7 @@ export default function UserManagementPage() {
   };
 
   const resetCreateForm = () => {
-    setEmail(''); setFirstName(''); setLastName(''); setTempId(''); setRole('student');
+    setEmail(''); setFirstName(''); setLastName(''); setTempId(''); setRole('student'); setPassword(''); setStatus('active');
   };
 
   const openView = (user: any) => {
@@ -167,10 +184,12 @@ export default function UserManagementPage() {
 
   const openEdit = (user: any) => {
     setSelectedUser(user);
-    setEditFirstName(user.firstName);
-    setEditLastName(user.lastName);
-    setEditEmail(user.email);
-    setEditRole(user.role);
+    setEditFirstName(user.firstName || '');
+    setEditLastName(user.lastName || '');
+    setEditEmail(user.email || '');
+    setEditPassword(user.password || '');
+    setEditRole(user.role || 'student');
+    setEditStatus(user.status || 'active');
     setIsEditOpen(true);
   };
 
@@ -194,7 +213,7 @@ export default function UserManagementPage() {
                   <UserPlus className="h-5 w-5 text-primary" /> Provision User
                 </DialogTitle>
                 <DialogDescription>
-                  Create a new institutional record. Use the Firebase Auth UID to link this profile.
+                  Create a new institutional record. Link this profile to a Firebase Auth UID.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
@@ -217,17 +236,36 @@ export default function UserManagementPage() {
                   <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="bg-slate-50 border-none focus-visible:ring-primary/20" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="role" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Access Role</Label>
-                  <Select onValueChange={(v: any) => setRole(v)} defaultValue={role}>
-                    <SelectTrigger id="role" className="bg-slate-50 border-none focus-visible:ring-primary/20">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="student">Student</SelectItem>
-                      <SelectItem value="faculty">Faculty</SelectItem>
-                      <SelectItem value="admin">Administrator</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Label htmlFor="pass" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Security Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input id="pass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="pl-10 bg-slate-50 border-none focus-visible:ring-primary/20" />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="role" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Access Role</Label>
+                    <Select onValueChange={(v: any) => setRole(v)} defaultValue={role}>
+                      <SelectTrigger id="role" className="bg-slate-50 border-none focus-visible:ring-primary/20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="student">Student</SelectItem>
+                        <SelectItem value="faculty">Faculty</SelectItem>
+                        <SelectItem value="admin">Administrator</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Account Status</Label>
+                    <div className="flex items-center gap-2 pt-2">
+                      <Switch 
+                        checked={status === 'active'} 
+                        onCheckedChange={(checked) => setStatus(checked ? 'active' : 'inactive')} 
+                      />
+                      <span className="text-xs font-medium capitalize">{status}</span>
+                    </div>
+                  </div>
                 </div>
                 <Button className="w-full shadow-md shadow-primary/20 font-bold mt-2" type="submit" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
@@ -280,7 +318,7 @@ export default function UserManagementPage() {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
                             <AvatarFallback className="bg-primary/5 text-primary font-bold">
-                              {u.firstName[0]}{u.lastName[0]}
+                              {u.firstName?.[0]}{u.lastName?.[0]}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col">
@@ -304,8 +342,8 @@ export default function UserManagementPage() {
                       </TableCell>
                       <TableCell>
                          <div className="flex items-center gap-1.5">
-                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                            <span className="text-xs font-semibold text-slate-600">Active</span>
+                            <div className={cn("w-1.5 h-1.5 rounded-full", u.status === 'inactive' ? 'bg-slate-400' : 'bg-emerald-500')} />
+                            <span className="text-xs font-semibold text-slate-600 capitalize">{u.status || 'active'}</span>
                          </div>
                       </TableCell>
                       <TableCell className="text-right pr-6">
@@ -336,6 +374,13 @@ export default function UserManagementPage() {
                       </TableCell>
                     </TableRow>
                   ))}
+                  {filteredUsers?.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-32 text-center text-muted-foreground">
+                        No user records found matching your criteria.
+                      </TableCell>
+                    </TableRow>
+                  )}
                 </TableBody>
               </Table>
             )}
@@ -356,12 +401,17 @@ export default function UserManagementPage() {
               <div className="flex flex-col items-center gap-4 text-center">
                 <Avatar className="h-20 w-20 border-4 border-slate-50 shadow-sm">
                   <AvatarFallback className="bg-primary/5 text-primary text-xl font-bold">
-                    {selectedUser.firstName[0]}{selectedUser.lastName[0]}
+                    {selectedUser.firstName?.[0]}{selectedUser.lastName?.[0]}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="text-xl font-bold">{selectedUser.firstName} {selectedUser.lastName}</h3>
-                  <Badge className="mt-1 uppercase text-[10px] font-bold tracking-widest">{selectedUser.role}</Badge>
+                  <div className="flex items-center justify-center gap-2 mt-1">
+                    <Badge className="uppercase text-[10px] font-bold tracking-widest">{selectedUser.role}</Badge>
+                    <Badge variant="outline" className={cn("uppercase text-[10px] font-bold tracking-widest", selectedUser.status === 'inactive' ? 'text-slate-400' : 'text-emerald-500 border-emerald-100')}>
+                      {selectedUser.status || 'active'}
+                    </Badge>
+                  </div>
                 </div>
               </div>
               <div className="grid gap-4 bg-slate-50 p-4 rounded-xl">
@@ -377,6 +427,13 @@ export default function UserManagementPage() {
                   <div className="flex flex-col">
                     <span className="text-[10px] font-bold uppercase text-muted-foreground">Internal UID</span>
                     <span className="text-sm font-mono truncate">{selectedUser.id}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Lock className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex flex-col">
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Password (Reference)</span>
+                    <span className="text-sm font-mono truncate">{selectedUser.password || '********'}</span>
                   </div>
                 </div>
               </div>
@@ -413,17 +470,36 @@ export default function UserManagementPage() {
               <Input id="editEmail" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required className="bg-slate-50 border-none" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editRole" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Access Role</Label>
-              <Select onValueChange={(v: any) => setEditRole(v)} defaultValue={editRole}>
-                <SelectTrigger id="editRole" className="bg-slate-50 border-none">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="student">Student</SelectItem>
-                  <SelectItem value="faculty">Faculty</SelectItem>
-                  <SelectItem value="admin">Administrator</SelectItem>
-                </SelectContent>
-              </Select>
+              <Label htmlFor="editPass" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Update Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input id="editPass" type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="Enter new password" className="pl-10 bg-slate-50 border-none" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label htmlFor="editRole" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Access Role</Label>
+                <Select onValueChange={(v: any) => setEditRole(v)} defaultValue={editRole}>
+                  <SelectTrigger id="editRole" className="bg-slate-50 border-none">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="student">Student</SelectItem>
+                    <SelectItem value="faculty">Faculty</SelectItem>
+                    <SelectItem value="admin">Administrator</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Account Status</Label>
+                <div className="flex items-center gap-2 pt-2">
+                  <Switch 
+                    checked={editStatus === 'active'} 
+                    onCheckedChange={(checked) => setEditStatus(checked ? 'active' : 'inactive')} 
+                  />
+                  <span className="text-xs font-medium capitalize">{editStatus}</span>
+                </div>
+              </div>
             </div>
             <Button className="w-full shadow-md shadow-primary/20 font-bold mt-2" type="submit" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <ShieldCheck className="mr-2 h-4 w-4" />}
