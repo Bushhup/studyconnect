@@ -50,8 +50,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Users, Search, MoreHorizontal, Plus, GraduationCap, ShieldCheck, UserCog, Edit, Trash, Eye, Mail, Fingerprint, Lock, Activity } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Loader2, UserPlus, Users, Search, MoreHorizontal, Plus, GraduationCap, ShieldCheck, UserCog, Edit, Trash, Eye, Mail, Fingerprint, Lock, Activity, ShieldAlert, Copy } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -126,7 +126,7 @@ export default function UserManagementPage() {
       id: tempId,
       collegeId: collegeId,
       email,
-      password, // Stored in document for prototype reference
+      password, 
       firstName,
       lastName,
       role,
@@ -152,11 +152,8 @@ export default function UserManagementPage() {
       email: editEmail,
       role: editRole,
       status: editStatus,
+      password: editPassword,
     };
-
-    if (editPassword) {
-      updateData.password = editPassword;
-    }
 
     setDocumentNonBlocking(userRef, updateData, { merge: true });
 
@@ -191,6 +188,11 @@ export default function UserManagementPage() {
     setEditRole(user.role || 'student');
     setEditStatus(user.status || 'active');
     setIsEditOpen(true);
+  };
+
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: 'Copied', description: `${label} copied to clipboard.` });
   };
 
   return (
@@ -239,7 +241,7 @@ export default function UserManagementPage() {
                   <Label htmlFor="pass" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Security Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input id="pass" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="pl-10 bg-slate-50 border-none focus-visible:ring-primary/20" />
+                    <Input id="pass" type="text" value={password} onChange={(e) => setPassword(e.target.value)} required className="pl-10 bg-slate-50 border-none focus-visible:ring-primary/20" placeholder="Set initial password" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -414,27 +416,50 @@ export default function UserManagementPage() {
                   </div>
                 </div>
               </div>
-              <div className="grid gap-4 bg-slate-50 p-4 rounded-xl">
-                <div className="flex items-center gap-3">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Email Address</span>
-                    <span className="text-sm font-medium">{selectedUser.email}</span>
+              <div className="grid gap-4 bg-slate-50 p-4 rounded-xl border">
+                <div className="flex items-center justify-between group">
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold uppercase text-muted-foreground">Email Address</span>
+                      <span className="text-sm font-medium">{selectedUser.email}</span>
+                    </div>
                   </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => copyToClipboard(selectedUser.email, 'Email')}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Fingerprint className="h-4 w-4 text-muted-foreground" />
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Internal UID</span>
-                    <span className="text-sm font-mono truncate">{selectedUser.id}</span>
+                <div className="flex items-center justify-between group">
+                  <div className="flex items-center gap-3">
+                    <Fingerprint className="h-4 w-4 text-muted-foreground" />
+                    <div className="flex flex-col">
+                      <span className="text-[10px] font-bold uppercase text-muted-foreground">Internal UID</span>
+                      <span className="text-sm font-mono truncate">{selectedUser.id}</span>
+                    </div>
                   </div>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => copyToClipboard(selectedUser.id, 'UID')}>
+                    <Copy className="h-3 w-3" />
+                  </Button>
                 </div>
-                <div className="flex items-center gap-3">
-                  <Lock className="h-4 w-4 text-muted-foreground" />
-                  <div className="flex flex-col">
-                    <span className="text-[10px] font-bold uppercase text-muted-foreground">Password (Reference)</span>
-                    <span className="text-sm font-mono truncate">{selectedUser.password || '********'}</span>
+                
+                <div className="pt-2 border-t border-slate-200 mt-2">
+                  <div className="flex items-center justify-between p-3 rounded-lg bg-primary/5 border border-primary/10 group">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-full bg-primary/10">
+                        <Lock className="h-4 w-4 text-primary" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-[10px] font-bold uppercase text-primary/70 tracking-tighter">Current Password (Admin Only)</span>
+                        <span className="text-sm font-mono font-bold text-primary">{selectedUser.password || 'Not Set'}</span>
+                      </div>
+                    </div>
+                    <Button variant="outline" size="icon" className="h-8 w-8 border-primary/20 hover:bg-primary/10" onClick={() => copyToClipboard(selectedUser.password, 'Password')}>
+                      <Copy className="h-3 w-3 text-primary" />
+                    </Button>
                   </div>
+                  <p className="text-[10px] text-muted-foreground mt-2 italic flex items-center gap-1">
+                    <ShieldAlert className="h-3 w-3" /> Provide this password to the user if they have forgotten it.
+                  </p>
                 </div>
               </div>
             </div>
@@ -452,7 +477,7 @@ export default function UserManagementPage() {
             <DialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5 text-primary" /> Modify Record
             </DialogTitle>
-            <DialogDescription>Update institutional data for this account.</DialogDescription>
+            <DialogDescription>Update institutional data and security settings for this account.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateUser} className="space-y-4 pt-4">
             <div className="grid grid-cols-2 gap-3">
@@ -470,11 +495,12 @@ export default function UserManagementPage() {
               <Input id="editEmail" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required className="bg-slate-50 border-none" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editPass" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Update Password</Label>
+              <Label htmlFor="editPass" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Current/New Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input id="editPass" type="password" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="Enter new password" className="pl-10 bg-slate-50 border-none" />
+                <Input id="editPass" type="text" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="Enter password" className="pl-10 bg-slate-50 border-none font-mono" />
               </div>
+              <p className="text-[10px] text-muted-foreground italic">Plaintext password for administrative reference.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
