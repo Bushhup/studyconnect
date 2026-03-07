@@ -1,75 +1,219 @@
 'use client';
 
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { doc } from 'firebase/firestore';
+import { 
+  User as UserIcon, 
+  Settings, 
+  BookOpen, 
+  Calendar, 
+  ShieldCheck, 
+  GraduationCap, 
+  PlusCircle, 
+  Image as ImageIcon,
+  Award
+} from 'lucide-react';
+import Link from 'next/link';
+
+const collegeId = 'study-connect-college';
 
 export default function ProfilePage() {
-  const { user, isUserLoading, userError } = useUser();
+  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+  const firestore = useFirestore();
   const auth = useAuth();
   const router = useRouter();
 
+  // Memoize the document reference for the user's profile
+  const userProfileRef = useMemoFirebase(() => {
+    if (!authUser || !firestore) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', authUser.uid);
+  }, [authUser, firestore]);
+
+  const { data: profile, isLoading: isProfileLoading, error: profileError } = useDoc(userProfileRef);
+
   useEffect(() => {
-    // If not loading and no user is found, redirect to login
-    if (!isUserLoading && !user) {
+    if (!isAuthLoading && !authUser) {
       router.replace('/login');
     }
-  }, [user, isUserLoading, router]);
+  }, [authUser, isAuthLoading, router]);
 
   const handleLogout = () => {
     auth.signOut();
     router.push('/');
   };
 
-  if (isUserLoading || !user) {
+  if (isAuthLoading || isProfileLoading) {
     return (
-        <div className="container mx-auto py-12">
-            <Card className="max-w-2xl mx-auto">
-                <CardHeader>
-                    <Skeleton className="h-8 w-48" />
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="flex items-center space-x-4">
-                        <Skeleton className="h-16 w-16 rounded-full" />
-                        <div className="space-y-2">
-                            <Skeleton className="h-4 w-64" />
-                            <Skeleton className="h-4 w-48" />
-                        </div>
-                    </div>
-                    <Skeleton className="h-10 w-24" />
-                </CardContent>
-            </Card>
+      <div className="container mx-auto py-12 px-4">
+        <div className="max-w-4xl mx-auto space-y-8">
+          <Skeleton className="h-12 w-64" />
+          <div className="grid md:grid-cols-3 gap-6">
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-40 w-full" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        </div>
       </div>
     );
   }
 
-  if (userError) {
-    return <p>Error: {userError.message}</p>;
+  if (profileError) {
+    return (
+      <div className="container mx-auto py-12 px-4 text-center">
+        <p className="text-destructive font-bold">Error loading profile: {profileError.message}</p>
+        <Button onClick={() => window.location.reload()} variant="outline" className="mt-4">Retry</Button>
+      </div>
+    );
   }
 
+  const role = profile?.role || 'student';
+
   return (
-    <div className="container mx-auto py-12">
-      <Card className="max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle className="font-headline text-2xl">User Profile</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+    <div className="container mx-auto py-12 px-4">
+      <div className="max-w-5xl mx-auto space-y-8">
+        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-8">
           <div>
-            <p className="font-bold">Email:</p>
-            <p>{user.email}</p>
+            <h1 className="text-4xl font-headline font-bold">Welcome, {profile?.firstName || 'User'}</h1>
+            <p className="text-muted-foreground font-body">
+              {role.charAt(0).toUpperCase() + role.slice(1)} Portal • {profile?.email}
+            </p>
           </div>
-          <div>
-            <p className="font-bold">UID:</p>
-            <p className="text-sm text-muted-foreground">{user.uid}</p>
+          <div className="flex gap-2">
+            <Button onClick={handleLogout} variant="outline" size="sm" className="font-headline">
+              Logout
+            </Button>
           </div>
-          <Button onClick={handleLogout} variant="destructive" className="font-headline">
-            Logout
-          </Button>
-        </CardContent>
-      </Card>
+        </header>
+
+        {role === 'admin' && <AdminPortal />}
+        {role === 'faculty' && <FacultyPortal />}
+        {role === 'student' && <StudentPortal />}
+
+        <Card className="mt-12 bg-muted/30">
+          <CardHeader>
+            <CardTitle className="font-headline text-xl flex items-center gap-2">
+              <Settings className="w-5 h-5" /> Account Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid sm:grid-cols-2 gap-4 text-sm font-body">
+            <div>
+              <p className="font-bold text-muted-foreground uppercase text-xs tracking-wider">Full Name</p>
+              <p className="text-lg">{profile?.firstName} {profile?.lastName}</p>
+            </div>
+            <div>
+              <p className="font-bold text-muted-foreground uppercase text-xs tracking-wider">Email Address</p>
+              <p className="text-lg">{profile?.email}</p>
+            </div>
+            <div>
+              <p className="font-bold text-muted-foreground uppercase text-xs tracking-wider">User ID</p>
+              <p className="font-mono text-xs truncate">{profile?.id}</p>
+            </div>
+            <div>
+              <p className="font-bold text-muted-foreground uppercase text-xs tracking-wider">Member Since</p>
+              <p className="text-lg">March 2024</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
+  );
+}
+
+function StudentPortal() {
+  return (
+    <div className="grid gap-6 md:grid-cols-3">
+      <PortalCard 
+        title="My Courses" 
+        description="View your active courses and grades."
+        icon={BookOpen}
+        link="/courses"
+      />
+      <PortalCard 
+        title="Campus Life" 
+        description="Check out upcoming events and clubs."
+        icon={Calendar}
+        link="/events"
+      />
+      <PortalCard 
+        title="Achievements" 
+        description="View your academic awards and honors."
+        icon={Award}
+        link="/achievements"
+      />
+    </div>
+  );
+}
+
+function FacultyPortal() {
+  return (
+    <div className="grid gap-6 md:grid-cols-3">
+      <PortalCard 
+        title="Class Management" 
+        description="Manage students and course materials."
+        icon={GraduationCap}
+        link="/faculty/classes"
+      />
+      <PortalCard 
+        title="Post Events" 
+        description="Organize new workshops or seminars."
+        icon={PlusCircle}
+        link="/events"
+      />
+      <PortalCard 
+        title="Research" 
+        description="Update your research publications."
+        icon={BookOpen}
+        link="/achievements"
+      />
+    </div>
+  );
+}
+
+function AdminPortal() {
+  return (
+    <div className="grid gap-6 md:grid-cols-3">
+      <PortalCard 
+        title="User Directory" 
+        description="Manage student and faculty accounts."
+        icon={UserIcon}
+        link="/admin/users"
+      />
+      <PortalCard 
+        title="Campus Content" 
+        description="Update gallery and announcements."
+        icon={ImageIcon}
+        link="/gallery"
+      />
+      <PortalCard 
+        title="Security & Logs" 
+        description="Monitor system access and permissions."
+        icon={ShieldCheck}
+        link="/admin/logs"
+      />
+    </div>
+  );
+}
+
+function PortalCard({ title, description, icon: Icon, link }: { title: string, description: string, icon: any, link: string }) {
+  return (
+    <Card className="hover:shadow-lg transition-all duration-300 group border-primary/10">
+      <CardHeader>
+        <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center mb-2 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+          <Icon className="w-6 h-6" />
+        </div>
+        <CardTitle className="font-headline text-xl">{title}</CardTitle>
+        <CardDescription className="font-body">{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button asChild variant="link" className="p-0 font-headline">
+          <Link href={link}>Access Portal →</Link>
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
