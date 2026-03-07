@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, BookOpen, FlaskConical, Library, Medal, Users, Dumbbell, Quote } from 'lucide-react';
+import { ArrowRight, BookOpen, FlaskConical, Library, Medal, Users, Dumbbell, Quote, Cpu, Palette, Briefcase } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -31,6 +31,27 @@ const facilities = [
     description: 'Facilities for a wide range of indoor and outdoor sports and fitness activities.',
     icon: Dumbbell,
     imageHint: 'sports complex',
+  },
+];
+
+const programs = [
+  {
+    name: 'Engineering & Tech',
+    description: 'Cutting-edge curriculum focused on AI, Robotics, and Sustainable Design.',
+    icon: Cpu,
+    imageId: 'gallery-lab-3',
+  },
+  {
+    name: 'Arts & Humanities',
+    description: 'Exploring human expression through history, literature, and visual arts.',
+    icon: Palette,
+    imageId: 'gallery-library-1',
+  },
+  {
+    name: 'Business & Law',
+    description: 'Developing ethical leaders prepared for the global market and policy challenges.',
+    icon: Briefcase,
+    imageId: 'gallery-campus-3',
   },
 ];
 
@@ -81,11 +102,16 @@ export default function Home() {
             <p className="mt-4 max-w-2xl text-lg md:text-xl font-body">
               Connecting Minds, Building Futures. Discover a place where innovation and tradition meet to create the leaders of tomorrow.
             </p>
-            <Button asChild size="lg" className="mt-8 font-headline">
-              <Link href="/gallery">
-                Explore Campus <ArrowRight className="ml-2" />
-              </Link>
-            </Button>
+            <div className="mt-8 flex flex-col sm:flex-row gap-4">
+              <Button asChild size="lg" className="font-headline">
+                <Link href="/gallery">
+                  Explore Campus <ArrowRight className="ml-2" />
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="lg" className="font-headline bg-white/10 hover:bg-white/20 border-white/30 text-white">
+                <Link href="/signup">Apply Now</Link>
+              </Button>
+            </div>
           </div>
         </section>
 
@@ -133,7 +159,55 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="about" className="py-12 md:py-20 bg-background">
+        <section id="programs" className="py-12 md:py-20 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-12">
+              <h2 className="text-3xl md:text-4xl font-headline font-bold">
+                Diverse Academic Programs
+              </h2>
+              <p className="mt-2 text-lg text-muted-foreground max-w-3xl mx-auto font-body">
+                From technical masteries to creative explorations, find your path at StudyConnect.
+              </p>
+            </div>
+            <div className="grid md:grid-cols-3 gap-8">
+              {programs.map((program) => {
+                const image = placeholderImages.find(p => p.id === program.imageId);
+                return (
+                  <Card key={program.name} className="overflow-hidden group hover:shadow-xl transition-all duration-300">
+                    <div className="relative aspect-video">
+                      {image && (
+                        <Image
+                          src={image.imageUrl}
+                          alt={program.name}
+                          fill
+                          className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          data-ai-hint={image.imageHint}
+                        />
+                      )}
+                      <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-colors" />
+                      <div className="absolute top-4 left-4">
+                        <program.icon className="h-8 w-8 text-white" />
+                      </div>
+                    </div>
+                    <CardHeader>
+                      <CardTitle className="font-headline">{program.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-muted-foreground font-body">{program.description}</p>
+                    </CardContent>
+                    <CardFooter>
+                      <Button variant="link" className="p-0 font-headline group-hover:translate-x-1 transition-transform">
+                        Learn More <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section id="about" className="py-12 md:py-20 bg-secondary/50">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-2 gap-12 items-center">
               <div className="relative aspect-video rounded-lg overflow-hidden shadow-lg">
@@ -163,7 +237,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="testimonials" className="py-12 md:py-20 bg-secondary/50">
+        <section id="testimonials" className="py-12 md:py-20 bg-background">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
               <h2 className="text-3xl md:text-4xl font-headline font-bold">
@@ -195,6 +269,25 @@ export default function Home() {
                   </Card>
                 );
               })}
+            </div>
+          </div>
+        </section>
+
+        <section className="py-12 md:py-24 bg-primary text-primary-foreground">
+          <div className="container mx-auto px-4 text-center">
+            <h2 className="text-3xl md:text-5xl font-headline font-bold mb-6">
+              Ready to Start Your Journey?
+            </h2>
+            <p className="text-lg md:text-xl font-body mb-10 max-w-2xl mx-auto opacity-90">
+              Join thousands of students building their future at StudyConnect. Admissions are open for the upcoming semester.
+            </p>
+            <div className="flex flex-col sm:flex-row justify-center gap-4">
+              <Button asChild size="lg" variant="secondary" className="font-headline">
+                <Link href="/signup">Apply Now</Link>
+              </Button>
+              <Button asChild size="lg" variant="outline" className="font-headline bg-transparent border-white text-white hover:bg-white hover:text-primary">
+                <Link href="/events">View Events</Link>
+              </Button>
             </div>
           </div>
         </section>
