@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useAuth, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
@@ -12,13 +13,13 @@ import {
   Settings, 
   BookOpen, 
   Calendar, 
-  ShieldCheck, 
   GraduationCap, 
   PlusCircle, 
   Image as ImageIcon,
   Award,
   FileText,
-  Activity
+  Activity,
+  LayoutDashboard
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -91,9 +92,25 @@ export default function ProfilePage() {
           </div>
         </header>
 
-        {role === 'admin' && <AdminPortal />}
-        {role === 'faculty' && <FacultyPortal />}
-        {role === 'student' && <StudentPortal />}
+        {role === 'admin' ? (
+           <Card className="border-primary bg-primary/5">
+           <CardHeader>
+             <CardTitle className="flex items-center gap-2">
+               <LayoutDashboard className="h-5 w-5" /> Administrator Control Center
+             </CardTitle>
+             <CardDescription>You have full access to system management and configurations.</CardDescription>
+           </CardHeader>
+           <CardContent>
+             <Button asChild size="lg" className="w-full md:w-fit font-headline">
+               <Link href="/admin/dashboard">Launch Admin Portal →</Link>
+             </Button>
+           </CardContent>
+         </Card>
+        ) : role === 'faculty' ? (
+          <FacultyPortal />
+        ) : (
+          <StudentPortal />
+        )}
 
         <Card className="mt-12 bg-muted/30">
           <CardHeader>
@@ -128,24 +145,9 @@ export default function ProfilePage() {
 function StudentPortal() {
   return (
     <div className="grid gap-6 md:grid-cols-3">
-      <PortalCard 
-        title="My Courses" 
-        description="View your active courses and grades."
-        icon={BookOpen}
-        link="/courses"
-      />
-      <PortalCard 
-        title="Campus Life" 
-        description="Check out upcoming events and clubs."
-        icon={Calendar}
-        link="/events"
-      />
-      <PortalCard 
-        title="Achievements" 
-        description="View your academic awards and honors."
-        icon={Award}
-        link="/achievements"
-      />
+      <PortalCard title="My Courses" description="View your active courses and grades." icon={BookOpen} link="/courses" />
+      <PortalCard title="Campus Life" description="Check out upcoming events and clubs." icon={Calendar} link="/events" />
+      <PortalCard title="Achievements" description="View your academic awards and honors." icon={Award} link="/achievements" />
     </div>
   );
 }
@@ -153,55 +155,9 @@ function StudentPortal() {
 function FacultyPortal() {
   return (
     <div className="grid gap-6 md:grid-cols-3">
-      <PortalCard 
-        title="Class Management" 
-        description="Manage students and course materials."
-        icon={GraduationCap}
-        link="/faculty/classes"
-      />
-      <PortalCard 
-        title="Post Events" 
-        description="Organize new workshops or seminars."
-        icon={PlusCircle}
-        link="/events"
-      />
-      <PortalCard 
-        title="Research" 
-        description="Update your research publications."
-        icon={BookOpen}
-        link="/achievements"
-      />
-    </div>
-  );
-}
-
-function AdminPortal() {
-  return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-      <PortalCard 
-        title="User Directory" 
-        description="Provision and manage student/faculty accounts."
-        icon={UserIcon}
-        link="/admin/users"
-      />
-      <PortalCard 
-        title="Content Manager" 
-        description="Publish events and campus achievements."
-        icon={FileText}
-        link="/admin/content"
-      />
-      <PortalCard 
-        title="Campus Gallery" 
-        description="Update gallery photos and descriptions."
-        icon={ImageIcon}
-        link="/gallery"
-      />
-      <PortalCard 
-        title="System Logs" 
-        description="Monitor system access and audit trails."
-        icon={Activity}
-        link="/admin/logs"
-      />
+      <PortalCard title="Class Management" description="Manage students and course materials." icon={GraduationCap} link="/faculty/classes" />
+      <PortalCard title="Post Events" description="Organize new workshops or seminars." icon={PlusCircle} link="/events" />
+      <PortalCard title="Research" description="Update your research publications." icon={BookOpen} link="/achievements" />
     </div>
   );
 }
