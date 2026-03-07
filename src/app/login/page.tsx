@@ -18,7 +18,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, GraduationCap, BookOpen, ShieldCheck, ArrowLeft } from 'lucide-react';
-import Link from 'next/link';
 
 type UserRole = 'student' | 'faculty' | 'admin';
 
@@ -58,7 +57,6 @@ export default function LoginPage() {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const loggedInUser = userCredential.user;
 
-      // Verify role after login
       const userDocRef = doc(firestore, 'colleges', collegeId, 'users', loggedInUser.uid);
       const userDoc = await getDoc(userDocRef);
 
@@ -95,43 +93,36 @@ export default function LoginPage() {
     return (
       <div className="container mx-auto py-12 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-headline font-bold mb-4">Select Your Portal</h1>
-          <p className="text-muted-foreground font-body">Choose a portal to log in with your credentials.</p>
+          <h1 className="text-4xl font-headline font-bold mb-4">Select Portal</h1>
+          <p className="text-muted-foreground font-body max-w-md">Choose your access level to continue to the dashboard.</p>
         </div>
         <div className="grid gap-6 md:grid-cols-3 w-full max-w-4xl">
           <RoleCard 
             role="student" 
-            title="Student Portal" 
-            description="Access your courses, grades, and campus activities."
+            title="Student" 
             icon={GraduationCap}
             onClick={() => setSelectedRole('student')}
           />
           <RoleCard 
             role="faculty" 
-            title="Faculty Portal" 
-            description="Manage your classes, students, and research."
+            title="Faculty" 
             icon={BookOpen}
             onClick={() => setSelectedRole('faculty')}
           />
           <RoleCard 
             role="admin" 
-            title="Admin Portal" 
-            description="System configuration, logs, and user management."
+            title="Administrator" 
             icon={ShieldCheck}
             onClick={() => setSelectedRole('admin')}
           />
         </div>
-        <p className="mt-8 text-sm text-muted-foreground font-body">
-          Don't have an account?{' '}
-          <Link href="/signup" className="underline hover:text-primary">Sign up</Link>
-        </p>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
-      <Card className="w-full max-w-sm">
+      <Card className="w-full max-w-sm shadow-lg">
         <CardHeader>
           <Button 
             variant="ghost" 
@@ -139,13 +130,13 @@ export default function LoginPage() {
             className="w-fit p-0 mb-4 hover:bg-transparent text-muted-foreground"
             onClick={() => setSelectedRole(null)}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to selection
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back
           </Button>
           <CardTitle className="text-2xl font-headline text-center capitalize">
-            {selectedRole} Login
+            {selectedRole} Sign In
           </CardTitle>
           <CardDescription className="text-center">
-            Enter your {selectedRole} credentials to continue.
+            Enter your credentials
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
@@ -175,9 +166,9 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter>
-            <Button className="w-full font-headline" type="submit" disabled={isLoading}>
+            <Button className="w-full font-headline h-11" type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLoading ? 'Verifying...' : 'Sign In'}
+              {isLoading ? 'Verifying...' : 'Login'}
             </Button>
           </CardFooter>
         </form>
@@ -186,28 +177,26 @@ export default function LoginPage() {
   );
 }
 
-function RoleCard({ role, title, description, icon: Icon, onClick }: { 
+function RoleCard({ title, icon: Icon, onClick }: { 
   role: UserRole, 
   title: string, 
-  description: string, 
   icon: any, 
   onClick: () => void 
 }) {
   return (
     <Card 
-      className="cursor-pointer hover:shadow-xl transition-all duration-300 group border-primary/10 hover:border-primary"
+      className="cursor-pointer hover:shadow-2xl transition-all duration-300 group border-primary/10 hover:border-primary/40 bg-card/50"
       onClick={onClick}
     >
-      <CardHeader className="text-center">
-        <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+      <CardHeader className="text-center py-10">
+        <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
           <Icon className="w-8 h-8" />
         </div>
-        <CardTitle className="font-headline text-xl">{title}</CardTitle>
-        <CardDescription className="font-body mt-2">{description}</CardDescription>
+        <CardTitle className="font-headline text-2xl">{title}</CardTitle>
       </CardHeader>
-      <CardFooter className="justify-center">
-        <Button variant="outline" className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors font-headline">
-          Enter Portal
+      <CardFooter className="pb-8 justify-center">
+        <Button variant="outline" className="px-8 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
+          Enter
         </Button>
       </CardFooter>
     </Card>
