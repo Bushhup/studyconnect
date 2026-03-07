@@ -8,9 +8,6 @@ import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,9 +25,23 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "@/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Users, Search, Filter, Download, MoreHorizontal, Plus, X } from 'lucide-react';
+import { Loader2, UserPlus, Users, Search, Filter, Download, MoreHorizontal, Plus, GraduationCap, ShieldCheck, UserCog } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -43,7 +54,7 @@ export default function UserManagementPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const [showRegistration, setShowRegistration] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -51,6 +62,7 @@ export default function UserManagementPage() {
   const [tempId, setTempId] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('all');
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -59,10 +71,12 @@ export default function UserManagementPage() {
 
   const { data: users, isLoading: isUsersLoading } = useCollection(usersQuery);
 
-  const filteredUsers = users?.filter(u => 
-    `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    u.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users?.filter(u => {
+    const matchesSearch = `${u.firstName} ${u.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      u.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = activeTab === 'all' || u.role === activeTab;
+    return matchesSearch && matchesRole;
+  });
 
   useEffect(() => {
     if (!isUserLoading && !authUser) {
@@ -103,67 +117,55 @@ export default function UserManagementPage() {
     setLastName('');
     setTempId('');
     setIsSubmitting(false);
-    setShowRegistration(false);
+    setIsDialogOpen(false);
   };
 
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">User Directory</h1>
-          <p className="text-muted-foreground mt-1">Manage institutional access for students, faculty, and administrators.</p>
+          <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Institutional Directory</h1>
+          <p className="text-muted-foreground mt-1">Manage access control for students, faculty, and administrative staff.</p>
         </div>
         <div className="flex gap-2">
-            <Button variant="outline" className="gap-2 bg-white hidden sm:flex">
-                <Download className="h-4 w-4" /> Export
-            </Button>
-            <Button 
-              onClick={() => setShowRegistration(true)} 
-              className="gap-2 shadow-lg shadow-primary/20"
-            >
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 shadow-lg shadow-primary/20">
                 <Plus className="h-4 w-4" /> Register New User
-            </Button>
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-4 gap-8">
-        {/* Form Card - Animated Sidebar Style */}
-        {showRegistration && (
-          <Card className="lg:col-span-1 border-none shadow-xl h-fit sticky top-24 animate-in slide-in-from-left duration-300">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div className="space-y-1">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <UserPlus className="h-5 w-5 text-primary" /> Provision User
-                </CardTitle>
-              </div>
-              <Button variant="ghost" size="icon" onClick={() => setShowRegistration(false)} className="rounded-full h-8 w-8">
-                <X className="h-4 w-4" />
               </Button>
-            </CardHeader>
-            <form onSubmit={handleCreateUser}>
-              <CardContent className="space-y-4 pt-4">
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <UserPlus className="h-5 w-5 text-primary" /> Provision User
+                </DialogTitle>
+                <DialogDescription>
+                  Create a new institutional record. Use the Firebase Auth UID to link this profile to an account.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
                 <div className="space-y-2">
                   <Label htmlFor="id" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Authentication UID</Label>
-                  <Input id="id" placeholder="Firebase Auth UID" value={tempId} onChange={(e) => setTempId(e.target.value)} required className="bg-slate-50 border-none focus-visible:ring-primary/20 h-9" />
+                  <Input id="id" placeholder="Firebase Auth UID" value={tempId} onChange={(e) => setTempId(e.target.value)} required className="bg-slate-50 border-none focus-visible:ring-primary/20" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
                     <Label htmlFor="firstName" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">First Name</Label>
-                    <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} required className="bg-slate-50 border-none focus-visible:ring-primary/20 h-9" />
+                    <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} required className="bg-slate-50 border-none focus-visible:ring-primary/20" />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="lastName" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Last Name</Label>
-                    <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required className="bg-slate-50 border-none focus-visible:ring-primary/20 h-9" />
+                    <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required className="bg-slate-50 border-none focus-visible:ring-primary/20" />
                   </div>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="email" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Email Address</Label>
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="bg-slate-50 border-none focus-visible:ring-primary/20 h-9" />
+                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="bg-slate-50 border-none focus-visible:ring-primary/20" />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="role" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Access Role</Label>
                   <Select onValueChange={(v: any) => setRole(v)} defaultValue={role}>
-                    <SelectTrigger id="role" className="bg-slate-50 border-none focus-visible:ring-primary/20 h-9">
+                    <SelectTrigger id="role" className="bg-slate-50 border-none focus-visible:ring-primary/20">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -173,112 +175,116 @@ export default function UserManagementPage() {
                     </SelectContent>
                   </Select>
                 </div>
-              </CardContent>
-              <div className="p-6 pt-0">
-                <Button className="w-full shadow-md shadow-primary/20 font-bold" type="submit" disabled={isSubmitting}>
+                <Button className="w-full shadow-md shadow-primary/20 font-bold mt-2" type="submit" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
                   Create Account
                 </Button>
-              </div>
-            </form>
-          </Card>
-        )}
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
 
-        {/* Directory Table */}
-        <div className={cn("space-y-4", showRegistration ? "lg:col-span-3" : "lg:col-span-4 transition-all duration-300")}>
-          <div className="flex flex-col sm:flex-row gap-4 items-center">
-            <div className="relative flex-1 w-full">
+      <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
+        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
+          <TabsList className="bg-white border shadow-sm h-11 p-1">
+            <TabsTrigger value="all" className="gap-2 px-4"><Users className="h-4 w-4" /> All Users</TabsTrigger>
+            <TabsTrigger value="student" className="gap-2 px-4"><GraduationCap className="h-4 w-4" /> Students</TabsTrigger>
+            <TabsTrigger value="faculty" className="gap-2 px-4"><UserCog className="h-4 w-4" /> Faculty</TabsTrigger>
+            <TabsTrigger value="admin" className="gap-2 px-4"><ShieldCheck className="h-4 w-4" /> Admins</TabsTrigger>
+          </TabsList>
+
+          <div className="flex gap-2 w-full sm:w-auto">
+            <div className="relative flex-1 sm:w-64">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search by name, email or UID..." 
-                className="pl-10 bg-white border-none shadow-sm focus-visible:ring-primary/20 w-full"
+                placeholder="Search records..." 
+                className="pl-10 bg-white border-none shadow-sm focus-visible:ring-primary/20"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <div className="flex gap-2 w-full sm:w-auto">
-              <Button variant="outline" className="gap-2 bg-white flex-1 sm:flex-none">
-                  <Filter className="h-4 w-4" /> Filter
-              </Button>
-            </div>
+            <Button variant="outline" className="gap-2 bg-white hidden sm:flex">
+                <Download className="h-4 w-4" />
+            </Button>
           </div>
-
-          <Card className="border-none shadow-sm overflow-hidden bg-white">
-            <CardContent className="p-0">
-              {isUsersLoading ? (
-                <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary h-8 w-8" /></div>
-              ) : (
-                <Table>
-                  <TableHeader className="bg-slate-50/50">
-                    <TableRow className="hover:bg-transparent border-none">
-                      <TableHead className="w-[300px] font-bold text-slate-900 py-4">User Details</TableHead>
-                      <TableHead className="font-bold text-slate-900">Portal Role</TableHead>
-                      <TableHead className="font-bold text-slate-900">Account Status</TableHead>
-                      <TableHead className="text-right font-bold text-slate-900 pr-6">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers?.map((u) => (
-                      <TableRow key={u.id} className="group transition-colors hover:bg-slate-50/50 border-slate-100">
-                        <TableCell className="py-4">
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
-                              <AvatarFallback className="bg-primary/5 text-primary font-bold">
-                                {u.firstName[0]}{u.lastName[0]}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col">
-                              <span className="font-bold text-slate-800 leading-tight">{u.firstName} {u.lastName}</span>
-                              <span className="text-xs text-muted-foreground mt-0.5">{u.email}</span>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge 
-                            variant="secondary" 
-                            className={cn(
-                              "font-bold uppercase tracking-widest text-[9px] px-2 py-0.5",
-                              u.role === 'admin' ? "bg-blue-50 text-blue-600 border-blue-100" :
-                              u.role === 'faculty' ? "bg-purple-50 text-purple-600 border-purple-100" :
-                              "bg-emerald-50 text-emerald-600 border-emerald-100"
-                            )}
-                          >
-                            {u.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                           <div className="flex items-center gap-1.5">
-                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                              <span className="text-xs font-semibold text-slate-600">Active</span>
-                           </div>
-                        </TableCell>
-                        <TableCell className="text-right pr-6">
-                          <Button variant="ghost" size="icon" className="hover:bg-slate-100 rounded-full h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                    {filteredUsers?.length === 0 && (
-                      <TableRow>
-                        <TableCell colSpan={4} className="h-64 text-center">
-                          <div className="flex flex-col items-center gap-3 text-muted-foreground">
-                            <Users className="h-12 w-12 opacity-10" />
-                            <div>
-                                <p className="font-bold">No results found</p>
-                                <p className="text-xs">Try adjusting your search or filters.</p>
-                            </div>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    )}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
         </div>
-      </div>
+
+        <Card className="border-none shadow-sm overflow-hidden bg-white">
+          <CardContent className="p-0">
+            {isUsersLoading ? (
+              <div className="flex justify-center p-20"><Loader2 className="animate-spin text-primary h-8 w-8" /></div>
+            ) : (
+              <Table>
+                <TableHeader className="bg-slate-50/50">
+                  <TableRow className="hover:bg-transparent border-none">
+                    <TableHead className="w-[300px] font-bold text-slate-900 py-4">User Details</TableHead>
+                    <TableHead className="font-bold text-slate-900">Portal Role</TableHead>
+                    <TableHead className="font-bold text-slate-900">Status</TableHead>
+                    <TableHead className="text-right font-bold text-slate-900 pr-6">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredUsers?.map((u) => (
+                    <TableRow key={u.id} className="group transition-colors hover:bg-slate-50/50 border-slate-100">
+                      <TableCell className="py-4">
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10 border-2 border-white shadow-sm">
+                            <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                              {u.firstName[0]}{u.lastName[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-slate-800 leading-tight">{u.firstName} {u.lastName}</span>
+                            <span className="text-xs text-muted-foreground mt-0.5">{u.email}</span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant="secondary" 
+                          className={cn(
+                            "font-bold uppercase tracking-widest text-[9px] px-2 py-0.5",
+                            u.role === 'admin' ? "bg-blue-50 text-blue-600 border-blue-100" :
+                            u.role === 'faculty' ? "bg-purple-50 text-purple-600 border-purple-100" :
+                            "bg-emerald-50 text-emerald-600 border-emerald-100"
+                          )}
+                        >
+                          {u.role}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                         <div className="flex items-center gap-1.5">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                            <span className="text-xs font-semibold text-slate-600">Active</span>
+                         </div>
+                      </TableCell>
+                      <TableCell className="text-right pr-6">
+                        <Button variant="ghost" size="icon" className="hover:bg-slate-100 rounded-full h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                  {filteredUsers?.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="h-64 text-center">
+                        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+                          <Users className="h-12 w-12 opacity-10" />
+                          <div>
+                              <p className="font-bold">No records found</p>
+                              <p className="text-xs">No users matching the "{activeTab}" filter.</p>
+                          </div>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      </Tabs>
     </div>
   );
 }
