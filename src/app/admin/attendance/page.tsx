@@ -5,8 +5,30 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { Calendar, Users, CheckCircle2, AlertCircle, Search, Download } from 'lucide-react';
+import { Calendar, Users, CheckCircle2, AlertCircle, Search, Download, TrendingUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, 
+  ResponsiveContainer, AreaChart, Area
+} from 'recharts';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+
+const attendanceTrendData = [
+  { day: 'Mon', rate: 92 },
+  { day: 'Tue', rate: 95 },
+  { day: 'Wed', rate: 94 },
+  { day: 'Thu', rate: 91 },
+  { day: 'Fri', rate: 89 },
+  { day: 'Sat', rate: 85 },
+  { day: 'Sun', rate: 0 },
+];
+
+const chartConfig = {
+  rate: {
+    label: "Attendance Rate (%)",
+    color: "hsl(var(--primary))",
+  },
+};
 
 export default function AttendancePage() {
   return (
@@ -54,34 +76,84 @@ export default function AttendancePage() {
         </Card>
       </div>
 
-      <Card className="border-none shadow-sm bg-white">
-        <CardHeader className="border-b">
-           <div className="flex justify-between items-center">
-             <CardTitle className="text-lg">Departmental Overview</CardTitle>
-             <div className="relative w-64">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="lg:col-span-2 border-none shadow-sm bg-white">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-headline">Weekly Attendance Trend</CardTitle>
+                <CardDescription>Daily percentage of student presence across campus.</CardDescription>
+              </div>
+              <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-bold">
+                <TrendingUp className="h-3 w-3" /> +2.4%
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="h-[300px] pt-4">
+            <ChartContainer config={chartConfig}>
+              <AreaChart data={attendanceTrendData}>
+                <defs>
+                  <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-rate)" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="var(--color-rate)" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                <XAxis 
+                  dataKey="day" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 12, fill: '#64748B' }} 
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fontSize: 12, fill: '#64748B' }}
+                  domain={[0, 100]}
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Area 
+                  type="monotone" 
+                  dataKey="rate" 
+                  stroke="var(--color-rate)" 
+                  strokeWidth={3} 
+                  fill="url(#attendanceGradient)" 
+                />
+              </AreaChart>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-white">
+          <CardHeader className="border-b">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-lg">By Department</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent className="pt-6 space-y-6">
+            {['Engineering', 'Management', 'Arts & Design', 'Applied Sciences'].map((dept) => (
+              <div key={dept} className="space-y-2">
+                <div className="flex justify-between items-end">
+                  <div>
+                    <h4 className="font-bold text-slate-800 text-sm">{dept}</h4>
+                    <p className="text-[10px] text-muted-foreground">1,200 Total Students</p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-sm font-bold text-primary">92%</span>
+                  </div>
+                </div>
+                <Progress value={92} className="h-2 bg-slate-100" />
+              </div>
+            ))}
+            <div className="pt-4">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Filter department..." className="pl-10 bg-slate-50 border-none text-xs" />
-             </div>
-           </div>
-        </CardHeader>
-        <CardContent className="pt-6 space-y-6">
-          {['Engineering', 'Management', 'Arts & Design', 'Applied Sciences'].map((dept) => (
-            <div key={dept} className="space-y-2">
-              <div className="flex justify-between items-end">
-                <div>
-                  <h4 className="font-bold text-slate-800 text-sm">{dept}</h4>
-                  <p className="text-[10px] text-muted-foreground">1,200 Total Students</p>
-                </div>
-                <div className="text-right">
-                  <span className="text-sm font-bold text-primary">92%</span>
-                  <p className="text-[10px] text-muted-foreground tracking-tighter uppercase font-bold">Institutional Avg</p>
-                </div>
               </div>
-              <Progress value={92} className="h-2 bg-slate-100" />
             </div>
-          ))}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
