@@ -10,7 +10,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -93,28 +92,36 @@ export default function LoginPage() {
     return (
       <div className="container mx-auto py-12 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-headline font-bold mb-4">Select Portal</h1>
-          <p className="text-muted-foreground font-body max-w-md">Choose your access level to continue to the dashboard.</p>
+          <h1 className="text-4xl md:text-5xl font-headline font-bold mb-4">Portal Selection</h1>
+          <p className="text-muted-foreground font-body max-w-md mx-auto">
+            Choose your access level to continue to the StudyConnect dashboard.
+          </p>
         </div>
-        <div className="grid gap-6 md:grid-cols-3 w-full max-w-4xl">
-          <RoleCard 
-            role="student" 
-            title="Student" 
-            icon={GraduationCap}
-            onClick={() => setSelectedRole('student')}
-          />
-          <RoleCard 
-            role="faculty" 
-            title="Faculty" 
-            icon={BookOpen}
-            onClick={() => setSelectedRole('faculty')}
-          />
-          <RoleCard 
-            role="admin" 
-            title="Administrator" 
-            icon={ShieldCheck}
-            onClick={() => setSelectedRole('admin')}
-          />
+        
+        <div className="bg-card border rounded-3xl p-8 md:p-12 shadow-xl max-w-5xl w-full">
+          <div className="grid gap-8 md:grid-cols-3">
+            <RoleCard 
+              role="student" 
+              title="Student" 
+              description="Access your courses, grades, and campus events."
+              icon={GraduationCap}
+              onClick={() => setSelectedRole('student')}
+            />
+            <RoleCard 
+              role="faculty" 
+              title="Faculty" 
+              description="Manage classes, materials, and research."
+              icon={BookOpen}
+              onClick={() => setSelectedRole('faculty')}
+            />
+            <RoleCard 
+              role="admin" 
+              title="Administrator" 
+              description="System management and user provisioning."
+              icon={ShieldCheck}
+              onClick={() => setSelectedRole('admin')}
+            />
+          </div>
         </div>
       </div>
     );
@@ -122,35 +129,36 @@ export default function LoginPage() {
 
   return (
     <div className="container mx-auto flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
-      <Card className="w-full max-w-sm shadow-lg">
+      <Card className="w-full max-w-sm shadow-2xl border-primary/10">
         <CardHeader>
           <Button 
             variant="ghost" 
             size="sm" 
-            className="w-fit p-0 mb-4 hover:bg-transparent text-muted-foreground"
+            className="w-fit p-0 mb-4 hover:bg-transparent text-muted-foreground hover:text-primary transition-colors"
             onClick={() => setSelectedRole(null)}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back
+            <ArrowLeft className="mr-2 h-4 w-4" /> Change Portal
           </Button>
           <CardTitle className="text-2xl font-headline text-center capitalize">
             {selectedRole} Sign In
           </CardTitle>
-          <CardDescription className="text-center">
-            Enter your credentials
+          <CardDescription className="text-center font-body">
+            Enter your credentials for secure access
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">Institutional Email</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="m@example.com"
+                placeholder="name@college.edu"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
+                className="h-11"
               />
             </div>
             <div className="grid gap-2">
@@ -162,43 +170,49 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
+                className="h-11"
               />
             </div>
           </CardContent>
-          <CardFooter>
-            <Button className="w-full font-headline h-11" type="submit" disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isLoading ? 'Verifying...' : 'Login'}
+          <div className="p-6 pt-0">
+            <Button className="w-full font-headline h-12 text-lg shadow-lg hover:shadow-xl transition-all" type="submit" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
+              {isLoading ? 'Verifying...' : 'Sign In'}
             </Button>
-          </CardFooter>
+          </div>
         </form>
       </Card>
     </div>
   );
 }
 
-function RoleCard({ title, icon: Icon, onClick }: { 
+function RoleCard({ title, description, icon: Icon, onClick }: { 
   role: UserRole, 
   title: string, 
+  description: string,
   icon: any, 
   onClick: () => void 
 }) {
   return (
-    <Card 
-      className="cursor-pointer hover:shadow-2xl transition-all duration-300 group border-primary/10 hover:border-primary/40 bg-card/50"
+    <div 
+      className="group cursor-pointer relative"
       onClick={onClick}
     >
-      <CardHeader className="text-center py-10">
-        <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300">
-          <Icon className="w-8 h-8" />
-        </div>
-        <CardTitle className="font-headline text-2xl">{title}</CardTitle>
-      </CardHeader>
-      <CardFooter className="pb-8 justify-center">
-        <Button variant="outline" className="px-8 group-hover:bg-primary group-hover:text-primary-foreground transition-all">
-          Enter
-        </Button>
-      </CardFooter>
-    </Card>
+      <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-accent/50 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500 group-active:duration-200"></div>
+      <Card 
+        className="relative h-full transition-all duration-300 border-primary/5 bg-card hover:bg-accent/5 hover:-translate-y-2 overflow-hidden"
+      >
+        <CardHeader className="text-center pt-10">
+          <div className="mx-auto w-20 h-20 rounded-2xl bg-primary/5 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 transform group-hover:rotate-3 shadow-sm group-hover:shadow-lg">
+            <Icon className="w-10 h-10" />
+          </div>
+          <CardTitle className="font-headline text-2xl mb-2">{title}</CardTitle>
+          <CardDescription className="font-body text-balance leading-relaxed">
+            {description}
+          </CardDescription>
+        </CardHeader>
+        <div className="h-1 w-full bg-primary/0 group-hover:bg-primary/100 transition-all duration-500 absolute bottom-0" />
+      </Card>
+    </div>
   );
 }
