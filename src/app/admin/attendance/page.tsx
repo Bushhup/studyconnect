@@ -8,25 +8,37 @@ import { Badge } from '@/components/ui/badge';
 import { Calendar, Users, CheckCircle2, AlertCircle, Search, Download, TrendingUp } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  ResponsiveContainer, AreaChart, Area
+  XAxis, YAxis, CartesianGrid, 
+  AreaChart, Area
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 
 const attendanceTrendData = [
-  { day: 'Mon', rate: 92 },
-  { day: 'Tue', rate: 95 },
-  { day: 'Wed', rate: 94 },
-  { day: 'Thu', rate: 91 },
-  { day: 'Fri', rate: 89 },
-  { day: 'Sat', rate: 85 },
-  { day: 'Sun', rate: 0 },
+  { day: 'Mon', engineering: 92, management: 88, arts: 85, science: 94 },
+  { day: 'Tue', engineering: 95, management: 90, arts: 87, science: 96 },
+  { day: 'Wed', engineering: 94, management: 89, arts: 84, science: 95 },
+  { day: 'Thu', engineering: 91, management: 86, arts: 82, science: 92 },
+  { day: 'Fri', engineering: 89, management: 85, arts: 80, science: 90 },
+  { day: 'Sat', engineering: 85, management: 80, arts: 75, science: 88 },
+  { day: 'Sun', engineering: 0, management: 0, arts: 0, science: 0 },
 ];
 
 const chartConfig = {
-  rate: {
-    label: "Attendance Rate (%)",
-    color: "hsl(var(--primary))",
+  engineering: {
+    label: "Engineering",
+    color: "hsl(var(--chart-1))",
+  },
+  management: {
+    label: "Management",
+    color: "hsl(var(--chart-2))",
+  },
+  arts: {
+    label: "Arts & Design",
+    color: "hsl(var(--chart-3))",
+  },
+  science: {
+    label: "Applied Sciences",
+    color: "hsl(var(--chart-4))",
   },
 };
 
@@ -81,21 +93,33 @@ export default function AttendancePage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg font-headline">Weekly Attendance Trend</CardTitle>
-                <CardDescription>Daily percentage of student presence across campus.</CardDescription>
+                <CardTitle className="text-lg font-headline text-slate-900">Departmental Comparison</CardTitle>
+                <CardDescription>Comparative daily attendance rates across core departments.</CardDescription>
               </div>
               <div className="flex items-center gap-2 text-emerald-600 bg-emerald-50 px-2 py-1 rounded text-xs font-bold">
-                <TrendingUp className="h-3 w-3" /> +2.4%
+                <TrendingUp className="h-3 w-3" /> +2.4% Overall
               </div>
             </div>
           </CardHeader>
-          <CardContent className="h-[300px] pt-4">
+          <CardContent className="h-[350px] pt-4">
             <ChartContainer config={chartConfig}>
-              <AreaChart data={attendanceTrendData}>
+              <AreaChart data={attendanceTrendData} margin={{ left: -20, right: 10 }}>
                 <defs>
-                  <linearGradient id="attendanceGradient" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-rate)" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="var(--color-rate)" stopOpacity={0}/>
+                  <linearGradient id="fillEng" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-engineering)" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="var(--color-engineering)" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="fillMgmt" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-management)" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="var(--color-management)" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="fillArts" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-arts)" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="var(--color-arts)" stopOpacity={0}/>
+                  </linearGradient>
+                  <linearGradient id="fillSci" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--color-science)" stopOpacity={0.2}/>
+                    <stop offset="95%" stopColor="var(--color-science)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
@@ -114,10 +138,31 @@ export default function AttendancePage() {
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Area 
                   type="monotone" 
-                  dataKey="rate" 
-                  stroke="var(--color-rate)" 
-                  strokeWidth={3} 
-                  fill="url(#attendanceGradient)" 
+                  dataKey="engineering" 
+                  stroke="var(--color-engineering)" 
+                  strokeWidth={2} 
+                  fill="url(#fillEng)" 
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="management" 
+                  stroke="var(--color-management)" 
+                  strokeWidth={2} 
+                  fill="url(#fillMgmt)" 
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="arts" 
+                  stroke="var(--color-arts)" 
+                  strokeWidth={2} 
+                  fill="url(#fillArts)" 
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="science" 
+                  stroke="var(--color-science)" 
+                  strokeWidth={2} 
+                  fill="url(#fillSci)" 
                 />
               </AreaChart>
             </ChartContainer>
@@ -127,16 +172,16 @@ export default function AttendancePage() {
         <Card className="border-none shadow-sm bg-white">
           <CardHeader className="border-b">
             <div className="flex justify-between items-center">
-              <CardTitle className="text-lg">By Department</CardTitle>
+              <CardTitle className="text-lg">Department Details</CardTitle>
             </div>
           </CardHeader>
           <CardContent className="pt-6 space-y-6">
-            {['Engineering', 'Management', 'Arts & Design', 'Applied Sciences'].map((dept) => (
-              <div key={dept} className="space-y-2">
+            {Object.entries(chartConfig).map(([key, config]) => (
+              <div key={key} className="space-y-2">
                 <div className="flex justify-between items-end">
-                  <div>
-                    <h4 className="font-bold text-slate-800 text-sm">{dept}</h4>
-                    <p className="text-[10px] text-muted-foreground">1,200 Total Students</p>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: config.color }} />
+                    <h4 className="font-bold text-slate-800 text-sm">{config.label}</h4>
                   </div>
                   <div className="text-right">
                     <span className="text-sm font-bold text-primary">92%</span>
