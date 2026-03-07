@@ -8,12 +8,12 @@ import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tool
 import { cn } from '@/lib/utils';
 
 const data = [
-  { name: 'Week 1', apps: 400, enroll: 240 },
-  { name: 'Week 2', apps: 300, enroll: 139 },
-  { name: 'Week 3', apps: 200, enroll: 980 },
-  { name: 'Week 4', apps: 278, enroll: 390 },
-  { name: 'Week 5', apps: 189, enroll: 480 },
-  { name: 'Week 6', apps: 239, enroll: 380 },
+  { name: 'Week 1', apps: 400, placements: 240 },
+  { name: 'Week 2', apps: 300, placements: 139 },
+  { name: 'Week 3', apps: 200, placements: 980 },
+  { name: 'Week 4', placements: 278, placements: 390 },
+  { name: 'Week 5', apps: 189, placements: 480 },
+  { name: 'Week 6', apps: 239, placements: 380 },
 ];
 
 export default function AnalyticsPage() {
@@ -22,7 +22,7 @@ export default function AnalyticsPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Institutional Analytics</h1>
-          <p className="text-muted-foreground mt-1">Deep insights into enrollment trends and academic performance.</p>
+          <p className="text-muted-foreground mt-1">Deep insights into placement success and academic performance.</p>
         </div>
         <div className="flex gap-2">
            <Button variant="outline" className="gap-2"><Calendar className="h-4 w-4" /> Last 30 Days</Button>
@@ -35,10 +35,10 @@ export default function AnalyticsPage() {
           <CardHeader>
              <div className="flex justify-between items-center">
                <div>
-                 <CardTitle className="text-lg">Enrollment Growth</CardTitle>
-                 <CardDescription>Application vs Admission Trends</CardDescription>
+                 <CardTitle className="text-lg">Placement Success</CardTitle>
+                 <CardDescription>Application vs Career Placement Trends</CardDescription>
                </div>
-               <Badge className="bg-emerald-50 text-emerald-600 border-none font-bold">+14% Growth</Badge>
+               <Badge className="bg-emerald-50 text-emerald-600 border-none font-bold">+18% Growth</Badge>
              </div>
           </CardHeader>
           <CardContent className="h-[300px] pt-4">
@@ -49,12 +49,17 @@ export default function AnalyticsPage() {
                       <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.1}/>
                       <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
                     </linearGradient>
+                    <linearGradient id="colorPlacements" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10B981" stopOpacity={0.1}/>
+                      <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                    </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
                   <Tooltip />
                   <Area type="monotone" dataKey="apps" stroke="#3B82F6" fillOpacity={1} fill="url(#colorApps)" strokeWidth={2} />
+                  <Area type="monotone" dataKey="placements" stroke="#10B981" fillOpacity={1} fill="url(#colorPlacements)" strokeWidth={2} />
                 </AreaChart>
              </ResponsiveContainer>
           </CardContent>
@@ -73,8 +78,8 @@ export default function AnalyticsPage() {
                     <span className="text-xs font-bold uppercase tracking-wider">Placement Rate</span>
                     <ArrowUpRight className="h-4 w-4" />
                  </div>
-                 <div className="text-2xl font-bold">92.4%</div>
-                 <p className="text-[10px] text-white/60">Highest in the last 5 years, driven by Engineering department.</p>
+                 <div className="text-2xl font-bold">94.8%</div>
+                 <p className="text-[10px] text-white/60">Highest in the last 5 years, driven by the Engineering and Tech departments.</p>
               </div>
               <div className="p-4 rounded-xl bg-white/10 space-y-2">
                  <div className="flex items-center justify-between">
