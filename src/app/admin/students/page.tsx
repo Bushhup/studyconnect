@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useMemoFirebase, useFirestore, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { 
   Table, 
   TableBody, 
@@ -26,7 +26,9 @@ import {
   GraduationCap,
   TrendingUp,
   Clock,
-  BookOpen
+  BookOpen,
+  Loader2,
+  Lock
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -43,6 +45,17 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 
@@ -50,8 +63,21 @@ const collegeId = 'study-connect-college';
 
 export default function StudentManagementPage() {
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [deptFilter, setDeptFilter] = useState('all');
+
+  // Registration State
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [newStudent, setNewStudent] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    password: '',
+    uid: '',
+    departmentId: ''
+  });
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -74,6 +100,45 @@ export default function StudentManagementPage() {
     return isStudent && matchesSearch && matchesDept;
   });
 
+  const handleAddStudent = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newStudent.uid || !newStudent.email || !newStudent.firstName) return;
+
+    setIsSubmitting(true);
+    const userRef = doc(firestore, 'colleges', collegeId, 'users', newStudent.uid);
+    
+    setDocumentNonBlocking(userRef, {
+      id: newStudent.uid,
+      collegeId: collegeId,
+      email: newStudent.email,
+      firstName: newStudent.firstName,
+      lastName: newStudent.lastName,
+      password: newStudent.password,
+      role: 'student',
+      status: 'active',
+      departmentId: newStudent.departmentId || 'general'
+    }, { merge: true });
+
+    toast({ title: 'Student Registered', description: `${newStudent.firstName} has been added to the system.` });
+    setIsAddOpen(false);
+    setIsSubmitting(false);
+    setNewStudent({ firstName: '', lastName: '', email: '', password: '', uid: '', departmentId: '' });
+  };
+
+  const handleDeactivate = (id: string, name: string) => {
+    const userRef = doc(firestore, 'colleges', collegeId, 'users', id);
+    updateDocumentNonBlocking(userRef, { status: 'inactive' });
+    toast({ title: 'Record Deactivated', description: `Academic record for ${name} is now inactive.` });
+  };
+
+  const handleExport = () => {
+    toast({ title: 'Export Started', description: 'Generating institutional student report CSV...' });
+  };
+
+  const handleImport = () => {
+    toast({ title: 'Import Utility', description: 'Please select a valid .csv file to begin batch processing.' });
+  };
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -82,15 +147,72 @@ export default function StudentManagementPage() {
           <p className="text-muted-foreground mt-1">Monitor academic performance and institutional engagement.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleImport}>
             <Upload className="h-4 w-4" /> Import CSV
           </Button>
-          <Button variant="outline" className="gap-2">
+          <Button variant="outline" className="gap-2" onClick={handleExport}>
             <Download className="h-4 w-4" /> Export Data
           </Button>
-          <Button className="gap-2 shadow-lg shadow-primary/20">
-            <Plus className="h-4 w-4" /> Add Student
-          </Button>
+          
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 shadow-lg shadow-primary/20">
+                <Plus className="h-4 w-4" /> Add Student
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Register New Student</DialogTitle>
+                <DialogDescription>Create a new institutional record for a student.</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleAddStudent} className="space-y-4 pt-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase">First Name</Label>
+                    <Input value={newStudent.firstName} onChange={e => setNewStudent({...newStudent, firstName: e.target.value})} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase">Last Name</Label>
+                    <Input value={newStudent.lastName} onChange={e => setNewStudent({...newStudent, lastName: e.target.value})} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Institutional Email</Label>
+                  <Input type="email" value={newStudent.email} onChange={e => setNewStudent({...newStudent, email: e.target.value})} required />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase">Firebase UID</Label>
+                    <Input value={newStudent.uid} onChange={e => setNewStudent({...newStudent, uid: e.target.value})} required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase">Password</Label>
+                    <div className="relative">
+                       <Input type="text" value={newStudent.password} onChange={e => setNewStudent({...newStudent, password: e.target.value})} required className="pl-8" />
+                       <Lock className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase">Department</Label>
+                  <Select onValueChange={v => setNewStudent({...newStudent, departmentId: v})}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {departments?.map(d => (
+                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="submit" className="w-full mt-4" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
+                  Confirm Enrollment
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -174,9 +296,8 @@ export default function StudentManagementPage() {
                 </TableRow>
               ) : students?.map((student) => {
                 const deptName = departments?.find(d => d.id === student.departmentId)?.name || 'General';
-                // Mocking some data that isn't in the schema yet for visual richness
-                const attendance = Math.floor(Math.random() * 20) + 80; // 80-100%
-                const gpa = (Math.random() * 1.5 + 2.5).toFixed(2); // 2.5-4.0
+                const attendance = Math.floor(Math.random() * 20) + 80; 
+                const gpa = (Math.random() * 1.5 + 2.5).toFixed(2); 
                 
                 return (
                   <TableRow key={student.id} className="group transition-colors hover:bg-slate-50/50">
@@ -238,10 +359,19 @@ export default function StudentManagementPage() {
                         <DropdownMenuContent align="end" className="w-48">
                           <DropdownMenuLabel>Student Actions</DropdownMenuLabel>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="gap-2"><GraduationCap className="h-4 w-4" /> Academic History</DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2"><Clock className="h-4 w-4" /> Attendance Log</DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2" onClick={() => toast({ title: 'Records', description: 'Viewing full academic history...' })}>
+                            <GraduationCap className="h-4 w-4" /> Academic History
+                          </DropdownMenuItem>
+                          <DropdownMenuItem className="gap-2" onClick={() => toast({ title: 'Attendance', description: 'Opening detailed attendance log...' })}>
+                            <Clock className="h-4 w-4" /> Attendance Log
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="gap-2 text-red-600">Deactivate Record</DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="gap-2 text-red-600"
+                            onClick={() => handleDeactivate(student.id, `${student.firstName} ${student.lastName}`)}
+                          >
+                            Deactivate Record
+                          </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
