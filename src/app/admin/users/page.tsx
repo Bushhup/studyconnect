@@ -34,6 +34,7 @@ import { Loader2, UserPlus, Users, ShieldCheck, ArrowLeft, Filter, Download, Mor
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const collegeId = 'study-connect-college';
 

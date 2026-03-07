@@ -15,6 +15,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { cn } from '@/lib/utils';
 
 const stats = [
   { label: 'Total Students', value: '4,850', icon: GraduationCap, trend: '+12.5%', trendUp: true, color: 'from-blue-500 to-blue-600', textColor: 'text-blue-600' },
@@ -248,8 +249,4 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
-}
-
-function cn(...classes: any[]) {
-  return classes.filter(Boolean).join(' ');
 }
