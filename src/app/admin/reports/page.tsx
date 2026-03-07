@@ -1,10 +1,11 @@
-
 'use client';
 
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BarChart3, TrendingUp, Download, Calendar, PieChart, ArrowUpRight } from 'lucide-react';
+import { BarChart3, TrendingUp, Download, Calendar, ArrowUpRight } from 'lucide-react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+import { cn } from '@/lib/utils';
 
 const data = [
   { name: 'Week 1', apps: 400, enroll: 240 },
