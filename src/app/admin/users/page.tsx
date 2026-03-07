@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { doc, collection } from 'firebase/firestore';
-import { useUser, useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
+import { useUser, useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -126,6 +126,33 @@ export default function UserManagementPage() {
     setTempId('');
     setIsSubmitting(false);
     setIsDialogOpen(false);
+  };
+
+  const handleDeleteUser = (userId: string, name: string) => {
+    if (confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+      const userRef = doc(firestore, 'colleges', collegeId, 'users', userId);
+      deleteDocumentNonBlocking(userRef);
+      toast({
+        title: 'User Deleted',
+        description: `${name} has been removed from the directory.`,
+      });
+    }
+  };
+
+  const handleViewProfile = (userId: string) => {
+    toast({
+      title: 'View Profile',
+      description: `Opening profile details for user ID: ${userId}`,
+    });
+    // In a real app, this would route to /admin/users/[id]
+  };
+
+  const handleEditUser = (userId: string) => {
+    toast({
+      title: 'Edit Record',
+      description: `Opening edit mode for user ID: ${userId}`,
+    });
+    // In a real app, this would open an edit modal
   };
 
   return (
@@ -277,14 +304,17 @@ export default function UserManagementPage() {
                           <DropdownMenuContent align="end" className="w-48">
                             <DropdownMenuLabel>User Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="cursor-pointer gap-2">
+                            <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => handleViewProfile(u.id)}>
                               <Eye className="h-4 w-4" /> View Profile
                             </DropdownMenuItem>
-                            <DropdownMenuItem className="cursor-pointer gap-2">
+                            <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => handleEditUser(u.id)}>
                               <Edit className="h-4 w-4" /> Edit Record
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="cursor-pointer gap-2 text-red-600 focus:text-red-600 focus:bg-red-50">
+                            <DropdownMenuItem 
+                              className="cursor-pointer gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
+                              onClick={() => handleDeleteUser(u.id, `${u.firstName} ${u.lastName}`)}
+                            >
                               <Trash className="h-4 w-4" /> Delete User
                             </DropdownMenuItem>
                           </DropdownMenuContent>
