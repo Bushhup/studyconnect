@@ -50,7 +50,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Users, Search, MoreHorizontal, Plus, GraduationCap, ShieldCheck, UserCog, Edit, Trash, Eye, Mail, Fingerprint, Lock, Activity, ShieldAlert, Copy } from 'lucide-react';
+import { Loader2, UserPlus, Users, Search, MoreHorizontal, Plus, GraduationCap, ShieldCheck, UserCog, Edit, Trash, Eye, Mail, Fingerprint, Lock, ShieldAlert, Copy } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -391,7 +391,10 @@ export default function UserManagementPage() {
       </Tabs>
 
       {/* View User Dialog */}
-      <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
+      <Dialog open={isViewOpen} onOpenChange={(open) => {
+        setIsViewOpen(open);
+        if (!open) setSelectedUser(null);
+      }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -471,7 +474,10 @@ export default function UserManagementPage() {
       </Dialog>
 
       {/* Edit User Dialog */}
-      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+      <Dialog open={isEditOpen} onOpenChange={(open) => {
+        setIsEditOpen(open);
+        if (!open) setSelectedUser(null);
+      }}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
