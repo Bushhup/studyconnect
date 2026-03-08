@@ -1,18 +1,47 @@
 'use client';
 
 import { useState } from 'react';
-import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
+import { useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Users, Clock, MapPin, Loader2, Calendar, BookOpen, UserCheck } from 'lucide-react';
+import { 
+  Plus, Users, Clock, MapPin, Loader2, 
+  Calendar, BookOpen, UserCheck, X 
+} from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from '@/hooks/use-toast';
 
 const collegeId = 'study-connect-college';
 
 export default function ClassManagementPage() {
   const firestore = useFirestore();
+  const { toast } = useToast();
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form State
+  const [newClassName, setNewClassName] = useState('');
+  const [selectedDept, setSelectedDept] = useState('');
+  const [selectedFaculty, setSelectedFaculty] = useState('');
 
   // Fetch Classes
   const classesQuery = useMemoFirebase(() => {
@@ -36,6 +65,35 @@ export default function ClassManagementPage() {
   const { data: departments } = useCollection(deptsQuery);
   const { data: users } = useCollection(usersQuery);
 
+  const facultyMembers = users?.filter(u => u.role === 'faculty') || [];
+
+  const handleCreateClass = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newClassName || !selectedDept) return;
+
+    setIsSubmitting(true);
+    const classesRef = collection(firestore, 'colleges', collegeId, 'classes');
+
+    addDocumentNonBlocking(classesRef, {
+      id: crypto.randomUUID(),
+      name: newClassName,
+      departmentId: selectedDept,
+      facultyId: selectedFaculty,
+      createdAt: new Date().toISOString(),
+    });
+
+    toast({ 
+      title: 'Class Provisioned', 
+      description: `${newClassName} has been added to the active schedule.` 
+    });
+
+    setIsSubmitting(false);
+    setIsAddOpen(false);
+    setNewClassName('');
+    setSelectedDept('');
+    setSelectedFaculty('');
+  };
+
   const isLoading = classesLoading;
 
   return (
@@ -45,9 +103,69 @@ export default function ClassManagementPage() {
           <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Sections & Classes</h1>
           <p className="text-muted-foreground mt-1">Manage class schedules, instructor assignments, and room allocations.</p>
         </div>
-        <Button className="gap-2 shadow-lg shadow-primary/20">
-          <Plus className="h-4 w-4" /> Create New Class
-        </Button>
+
+        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+          <DialogTrigger asChild>
+            <Button className="gap-2 shadow-lg shadow-primary/20">
+              <Plus className="h-4 w-4" /> Create New Class
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Provision New Academic Section</DialogTitle>
+              <DialogDescription>
+                Define a new class group and assign a primary instructor.
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreateClass} className="space-y-4 pt-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Class / Section Name</Label>
+                <Input 
+                  placeholder="e.g. Computer Science - Section B" 
+                  value={newClassName}
+                  onChange={(e) => setNewClassName(e.target.value)}
+                  required
+                  className="bg-slate-50 border-none"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Department</Label>
+                <Select onValueChange={setSelectedDept} value={selectedDept}>
+                  <SelectTrigger className="bg-slate-50 border-none">
+                    <SelectValue placeholder="Select Academic Department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {departments?.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Assigned Instructor (Optional)</Label>
+                <Select onValueChange={setSelectedFaculty} value={selectedFaculty}>
+                  <SelectTrigger className="bg-slate-50 border-none">
+                    <SelectValue placeholder="Assign a Faculty Member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {facultyMembers.map((member) => (
+                      <SelectItem key={member.id} value={member.id}>
+                        Dr. {member.firstName} {member.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight mt-2" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
+                Confirm Class Creation
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </div>
 
       {isLoading ? (
@@ -137,7 +255,9 @@ export default function ClassManagementPage() {
               <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
                 Begin by creating a new section and assigning it to a faculty member.
               </p>
-              <Button variant="link" className="mt-4 font-bold text-primary">Add your first section</Button>
+              <Button variant="link" className="mt-4 font-bold text-primary" onClick={() => setIsAddOpen(true)}>
+                Add your first section
+              </Button>
             </div>
           )}
         </div>
