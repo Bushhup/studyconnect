@@ -20,7 +20,7 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="space-y-1">
            <Button variant="secondary" className="w-full justify-start gap-3 bg-primary/10 text-primary font-bold">
-              <Shield className="h-4 w-4" /> Security & Privacy
+              < Shield className="h-4 w-4" /> Security & Privacy
            </Button>
            <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground">
               <Bell className="h-4 w-4" /> Notification Rules
@@ -84,7 +84,7 @@ export default function SettingsPage() {
                  </div>
                  <div className="space-y-2">
                     <Label className="text-xs font-bold uppercase text-muted-foreground tracking-widest">Google Analytics ID</Label>
-                    <Input value="G-V7S8X9W2P1" className="bg-slate-50 border-none font-mono" />
+                    <Input defaultValue="G-V7S8X9W2P1" className="bg-slate-50 border-none font-mono" />
                  </div>
               </CardContent>
               <CardContent className="pt-0 flex justify-end">
