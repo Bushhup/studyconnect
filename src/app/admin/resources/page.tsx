@@ -20,7 +20,8 @@ import {
   Clock,
   ShieldCheck,
   Globe,
-  Lock
+  Lock,
+  UploadCloud
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
@@ -96,7 +97,7 @@ export default function ResourcesPage() {
 
     toast({ 
       title: 'Resource Saved', 
-      description: `${newFile.name} has been synchronized at ${format(new Date(), 'HH:mm')}.` 
+      description: `${newFile.name} has been synchronized at ${format(new Date(), 'HH:mm:ss')}.` 
     });
     
     setIsUploadOpen(false);
@@ -180,16 +181,29 @@ export default function ResourcesPage() {
                   </div>
                 </div>
 
-                {newFile.sourceType === 'url' && (
+                {newFile.sourceType === 'local' ? (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Select File</Label>
+                    <div className="border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer border-slate-200">
+                      <UploadCloud className="h-10 w-10 text-slate-300" />
+                      <p className="text-xs font-medium text-slate-500">Click to browse or drag and drop</p>
+                      <p className="text-[10px] text-slate-400">PDF, DOCX, XLSX (Max 10MB)</p>
+                      <Input type="file" className="hidden" />
+                    </div>
+                  </div>
+                ) : (
                   <div className="space-y-2">
                     <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Asset URL</Label>
-                    <Input 
-                      placeholder="https://cloud.storage.com/assets/..." 
-                      value={newFile.url}
-                      onChange={e => setNewFile({...newFile, url: e.target.value})}
-                      required 
-                      className="bg-slate-50 border-none"
-                    />
+                    <div className="relative">
+                      <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        placeholder="https://cloud.storage.com/assets/..." 
+                        value={newFile.url}
+                        onChange={e => setNewFile({...newFile, url: e.target.value})}
+                        required 
+                        className="bg-slate-50 border-none pl-10"
+                      />
+                    </div>
                   </div>
                 )}
 
