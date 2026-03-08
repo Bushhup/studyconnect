@@ -1,6 +1,16 @@
+"use client";
+
+import { usePathname } from 'next/navigation';
 import { Logo } from "./logo";
 
 export function Footer() {
+  const pathname = usePathname();
+
+  // Hide global footer on admin pages to avoid duplication
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
+
   return (
     <footer className="border-t bg-secondary/50">
       <div className="container py-8 flex flex-col md:flex-row items-center justify-between gap-4">

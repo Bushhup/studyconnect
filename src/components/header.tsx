@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -26,6 +25,11 @@ const navLinks = [
 
 export function Header() {
   const pathname = usePathname();
+
+  // Hide global header on admin pages to avoid duplication with the admin portal's internal header/sidebar
+  if (pathname?.startsWith('/admin')) {
+    return null;
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

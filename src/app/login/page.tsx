@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -94,8 +93,13 @@ export default function LoginPage() {
       }
 
       toast({ title: 'Login Successful', description: `Welcome to the ${selectedRole} portal!` });
-      // Immediate routing after successful verification
-      router.push('/profile');
+      
+      // Redirect to the appropriate portal based on role
+      if (selectedRole === 'admin') {
+        router.push('/admin/dashboard');
+      } else {
+        router.push('/profile');
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',
