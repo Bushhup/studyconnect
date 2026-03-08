@@ -79,6 +79,11 @@ service cloud.firestore {
         allow get, list: if true;
         allow create, update, delete: if isCollegeStaff(collegeId);
       }
+
+      match /resources/{resourceId} {
+        allow get, list: if true;
+        allow create, update, delete: if isCollegeStaff(collegeId);
+      }
       
       match /users/{userId} {
         allow get: if isOwner(userId) || isCollegeAdmin(collegeId);
