@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,9 +37,13 @@ export default function LoginPage() {
   // Instant redirect if already authenticated
   useEffect(() => {
     if (user && !isLoading) {
-      router.replace('/profile');
+      if (email === 'admin01@college.edu') {
+         router.replace('/admin/dashboard');
+      } else {
+         router.replace('/profile');
+      }
     }
-  }, [user, router, isLoading]);
+  }, [user, router, isLoading, email]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,25 +60,61 @@ export default function LoginPage() {
     try {
       let userCredential;
       try {
+        // 1. Try standard sign in
         userCredential = await signInWithEmailAndPassword(auth, email, password);
       } catch (authError: any) {
-        // Bootstrap admin logic: only for development
-        if (email === 'admin01@college.edu' && password === 'minister123' && selectedRole === 'admin') {
-          userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // 2. Bootstrap logic: If Auth account doesn't exist, check Firestore for pre-provisioned records
+        const usersRef = collection(firestore, 'colleges', collegeId, 'users');
+        const q = query(usersRef, where('email', '==', email));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const userDoc = querySnapshot.docs[0];
+          const userData = userDoc.data();
+
+          // Prototype security: check password stored by admin
+          if (userData.password === password && userData.role === selectedRole) {
+            // Create the real Auth account
+            userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            
+            // Migrate document to use Auth UID for security rules compatibility
+            const batch = writeBatch(firestore);
+            const newDocRef = doc(firestore, 'colleges', collegeId, 'users', userCredential.user.uid);
+            
+            batch.set(newDocRef, {
+              ...userData,
+              id: userCredential.user.uid,
+              // Optionally remove the plaintext password now that Auth exists
+            });
+
+            // If the old doc ID isn't already the UID, remove it
+            if (userDoc.id !== userCredential.user.uid) {
+              batch.delete(userDoc.ref);
+            }
+            
+            await batch.commit();
+          } else {
+            throw new Error("Invalid credentials or role mismatch for this portal.");
+          }
         } else {
-          throw authError;
+          // Special case for initial dev admin bootstrap
+          if (email === 'admin01@college.edu' && password === 'minister123' && selectedRole === 'admin') {
+            userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          } else {
+            throw authError;
+          }
         }
       }
 
-      const loggedInUser = userCredential.user;
+      const loggedInUser = userCredential!.user;
       const userDocRef = doc(firestore, 'colleges', collegeId, 'users', loggedInUser.uid);
       
-      // Perform role verification
+      // Role verification post-auth
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
         if (email === 'admin01@college.edu' && selectedRole === 'admin') {
-          // Non-blocking initialization for bootstrap admin
+          // One-time provision for hardcoded admin
           setDocumentNonBlocking(userDocRef, {
             id: loggedInUser.uid,
             collegeId: collegeId,
@@ -85,7 +125,7 @@ export default function LoginPage() {
           }, { merge: true });
         } else {
           await signOut(auth);
-          throw new Error(`Profile not found for this account.`);
+          throw new Error(`Profile synchronization failed.`);
         }
       } else if (userDoc.data()?.role !== selectedRole) {
         await signOut(auth);
@@ -94,7 +134,7 @@ export default function LoginPage() {
 
       toast({ title: 'Login Successful', description: `Welcome to the ${selectedRole} portal!` });
       
-      // Redirect to the appropriate portal based on role
+      // Redirect to the appropriate portal
       if (selectedRole === 'admin') {
         router.push('/admin/dashboard');
       } else {

@@ -26,7 +26,7 @@ const navLinks = [
 export function Header() {
   const pathname = usePathname();
 
-  // Hide global header on admin pages to avoid duplication with the admin portal's internal header/sidebar
+  // Hide global header on admin pages AND login page if preferred, but specifically admin portal
   if (pathname?.startsWith('/admin')) {
     return null;
   }
