@@ -86,7 +86,8 @@ service cloud.firestore {
       }
       
       match /users/{userId} {
-        allow get: if isOwner(userId) || isCollegeAdmin(collegeId);
+        // Allow public get for login/bootstrap logic (email-based ID)
+        allow get: if true; 
         allow list: if isCollegeAdmin(collegeId);
         allow create: if isOwner(userId) || isCollegeAdmin(collegeId);
         allow update: if (isOwner(userId) && incomingData().role == existingData().role) || isCollegeAdmin(collegeId);

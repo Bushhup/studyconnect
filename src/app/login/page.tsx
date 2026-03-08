@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc, collection, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, writeBatch } from 'firebase/firestore';
 import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
@@ -37,13 +37,13 @@ export default function LoginPage() {
   // Instant redirect if already authenticated
   useEffect(() => {
     if (user && !isLoading) {
-      if (email === 'admin01@college.edu') {
+      if (user.email === 'admin01@college.edu') {
          router.replace('/admin/dashboard');
       } else {
          router.replace('/profile');
       }
     }
-  }, [user, router, isLoading, email]);
+  }, [user, router, isLoading]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,41 +56,40 @@ export default function LoginPage() {
       return;
     }
 
+    const cleanEmail = email.toLowerCase().trim();
     setIsLoading(true);
+    
     try {
       let userCredential;
       try {
         // 1. Try standard sign in
-        userCredential = await signInWithEmailAndPassword(auth, email, password);
+        userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
       } catch (authError: any) {
-        // 2. Bootstrap logic: If Auth account doesn't exist, check Firestore for pre-provisioned records
-        const usersRef = collection(firestore, 'colleges', collegeId, 'users');
-        const q = query(usersRef, where('email', '==', email));
-        const querySnapshot = await getDocs(q);
+        // 2. Bootstrap logic: Check Firestore for pre-provisioned records using email as ID
+        // (Rules updated to allow unauthenticated 'get' on users)
+        const userDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
+        const userDoc = await getDoc(userDocRef);
 
-        if (!querySnapshot.empty) {
-          const userDoc = querySnapshot.docs[0];
+        if (userDoc.exists()) {
           const userData = userDoc.data();
 
-          // Prototype security: check password stored by admin
+          // Prototype security: verify plain text password stored by admin
           if (userData.password === password && userData.role === selectedRole) {
-            // Create the real Auth account
-            userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            // Success! Create the real secure Auth account
+            userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
             
-            // Migrate document to use Auth UID for security rules compatibility
+            // Migrate document to use Auth UID for standard security rules compliance
             const batch = writeBatch(firestore);
             const newDocRef = doc(firestore, 'colleges', collegeId, 'users', userCredential.user.uid);
             
             batch.set(newDocRef, {
               ...userData,
               id: userCredential.user.uid,
-              // Optionally remove the plaintext password now that Auth exists
+              // Plaintext password remains for admin reference but is not needed for future logins
             });
 
-            // If the old doc ID isn't already the UID, remove it
-            if (userDoc.id !== userCredential.user.uid) {
-              batch.delete(userDoc.ref);
-            }
+            // Remove the temporary email-based record
+            batch.delete(userDocRef);
             
             await batch.commit();
           } else {
@@ -98,8 +97,8 @@ export default function LoginPage() {
           }
         } else {
           // Special case for initial dev admin bootstrap
-          if (email === 'admin01@college.edu' && password === 'minister123' && selectedRole === 'admin') {
-            userCredential = await createUserWithEmailAndPassword(auth, email, password);
+          if (cleanEmail === 'admin01@college.edu' && password === 'minister123' && selectedRole === 'admin') {
+            userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
           } else {
             throw authError;
           }
@@ -109,16 +108,16 @@ export default function LoginPage() {
       const loggedInUser = userCredential!.user;
       const userDocRef = doc(firestore, 'colleges', collegeId, 'users', loggedInUser.uid);
       
-      // Role verification post-auth
+      // Post-auth verification
       const userDoc = await getDoc(userDocRef);
 
       if (!userDoc.exists()) {
-        if (email === 'admin01@college.edu' && selectedRole === 'admin') {
-          // One-time provision for hardcoded admin
+        if (cleanEmail === 'admin01@college.edu' && selectedRole === 'admin') {
+          // One-time provision for system admin
           setDocumentNonBlocking(userDocRef, {
             id: loggedInUser.uid,
             collegeId: collegeId,
-            email: email,
+            email: cleanEmail,
             firstName: 'System',
             lastName: 'Admin',
             role: 'admin',
@@ -134,7 +133,6 @@ export default function LoginPage() {
 
       toast({ title: 'Login Successful', description: `Welcome to the ${selectedRole} portal!` });
       
-      // Redirect to the appropriate portal
       if (selectedRole === 'admin') {
         router.push('/admin/dashboard');
       } else {
@@ -160,7 +158,7 @@ export default function LoginPage() {
     return (
       <div className="container mx-auto py-12 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-headline font-bold mb-4">Portal Selection</h1>
+          <h1 className="text-4xl md:text-5xl font-headline font-bold mb-4 text-slate-900">Portal Selection</h1>
           <p className="text-muted-foreground font-body max-w-md mx-auto">
             Choose your access level to continue to the StudyConnect dashboard.
           </p>
@@ -207,7 +205,7 @@ export default function LoginPage() {
 
   return (
     <div className="container mx-auto flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
-      <Card className="w-full max-w-sm shadow-2xl border-primary/10 overflow-hidden">
+      <Card className="w-full max-w-sm shadow-2xl border-primary/10 overflow-hidden bg-white">
         <div className="h-2 bg-primary w-full" />
         <CardHeader>
           <Button 
@@ -218,7 +216,7 @@ export default function LoginPage() {
           >
             <ArrowLeft className="mr-2 h-4 w-4" /> Change Portal
           </Button>
-          <CardTitle className="text-2xl font-headline text-center capitalize">
+          <CardTitle className="text-2xl font-headline text-center capitalize text-slate-900">
             {selectedRole} Sign In
           </CardTitle>
           <CardDescription className="text-center font-body">
@@ -228,7 +226,7 @@ export default function LoginPage() {
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="email">Institutional Email</Label>
+              <Label htmlFor="email" className="text-slate-700">Institutional Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -237,7 +235,7 @@ export default function LoginPage() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
-                className="h-11"
+                className="h-11 bg-slate-50 border-slate-200"
               />
             </div>
             <div className="grid gap-2">
@@ -249,7 +247,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
-                className="h-11"
+                className="h-11 bg-slate-50 border-slate-200"
               />
             </div>
           </CardContent>

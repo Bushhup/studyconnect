@@ -98,10 +98,10 @@ export default function UserManagementPage() {
 
   const filteredUsers = users?.filter(u => {
     const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
-    const email = (u.email || '').toLowerCase();
+    const emailStr = (u.email || '').toLowerCase();
     const query = searchQuery.toLowerCase();
     
-    const matchesSearch = fullName.includes(query) || email.includes(query);
+    const matchesSearch = fullName.includes(query) || emailStr.includes(query);
     const matchesRole = activeTab === 'all' || u.role === activeTab;
     return matchesSearch && matchesRole;
   });
@@ -120,13 +120,13 @@ export default function UserManagementPage() {
     }
 
     setIsSubmitting(true);
-    const newId = crypto.randomUUID();
-    const userRef = doc(firestore, 'colleges', collegeId, 'users', newId);
+    // CRITICAL: For the bootstrap logic to work, use email as the initial document ID
+    const userRef = doc(firestore, 'colleges', collegeId, 'users', email.toLowerCase());
     
     setDocumentNonBlocking(userRef, {
-      id: newId,
+      id: email.toLowerCase(),
       collegeId: collegeId,
-      email,
+      email: email.toLowerCase(),
       password, 
       firstName,
       lastName,
@@ -150,7 +150,7 @@ export default function UserManagementPage() {
     const updateData: any = {
       firstName: editFirstName,
       lastName: editLastName,
-      email: editEmail,
+      email: editEmail.toLowerCase(),
       role: editRole,
       status: editStatus,
       password: editPassword,

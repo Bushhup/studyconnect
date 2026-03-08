@@ -104,13 +104,14 @@ export default function StudentManagementPage() {
     if (!newStudent.email || !newStudent.firstName) return;
 
     setIsSubmitting(true);
-    const generatedId = crypto.randomUUID();
-    const userRef = doc(firestore, 'colleges', collegeId, 'users', generatedId);
+    // CRITICAL: For the bootstrap logic to work, use email as the initial document ID
+    const studentEmail = newStudent.email.toLowerCase();
+    const userRef = doc(firestore, 'colleges', collegeId, 'users', studentEmail);
     
     setDocumentNonBlocking(userRef, {
-      id: generatedId,
+      id: studentEmail,
       collegeId: collegeId,
-      email: newStudent.email,
+      email: studentEmail,
       firstName: newStudent.firstName,
       lastName: newStudent.lastName,
       password: newStudent.password,
@@ -228,7 +229,7 @@ export default function StudentManagementPage() {
             <CardTitle className="text-2xl">92.4%</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="border-none shadow-sm bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-l-4 border-amber-500">
+        <Card className="border-none shadow-sm bg- gradient-to-br from-amber-500/10 to-orange-500/10 border-l-4 border-amber-500">
           <CardHeader className="pb-2">
             <CardDescription className="text-amber-700 font-bold uppercase text-[10px] tracking-widest flex items-center gap-2">
               <BookOpen className="h-3 w-3" /> Active Credits
@@ -315,7 +316,7 @@ export default function StudentManagementPage() {
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
-                        <span className="text-xs font-mono font-bold text-slate-600">#{student.id.substring(0, 8).toUpperCase()}</span>
+                        <span className="text-xs font-mono font-bold text-slate-600 truncate max-w-[120px]">#{student.id.toUpperCase()}</span>
                         <span className="text-[10px] text-primary font-bold uppercase">{deptName}</span>
                       </div>
                     </TableCell>
