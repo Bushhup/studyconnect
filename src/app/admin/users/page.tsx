@@ -34,6 +34,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Tabs,
@@ -345,7 +346,7 @@ export default function UserManagementPage() {
                          </div>
                       </TableCell>
                       <TableCell className="text-right pr-6">
-                        <DropdownMenu>
+                        <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="hover:bg-slate-100 rounded-full h-8 w-8">
                               <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
@@ -464,7 +465,9 @@ export default function UserManagementPage() {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsViewOpen(false)} className="w-full">Close Profile</Button>
+            <DialogClose asChild>
+              <Button variant="outline" className="w-full">Close Profile</Button>
+            </DialogClose>
           </DialogFooter>
         </DialogContent>
       </Dialog>
