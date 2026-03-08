@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -7,27 +6,44 @@ import { collection } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Users, Clock, MapPin, Loader2, Calendar } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Plus, Users, Clock, MapPin, Loader2, Calendar, BookOpen, UserCheck } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const collegeId = 'study-connect-college';
 
 export default function ClassManagementPage() {
   const firestore = useFirestore();
 
+  // Fetch Classes
   const classesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     return collection(firestore, 'colleges', collegeId, 'classes');
   }, [firestore]);
 
-  const { data: classes, isLoading } = useCollection(classesQuery);
+  // Fetch Departments for mapping
+  const deptsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'colleges', collegeId, 'departments');
+  }, [firestore]);
+
+  // Fetch Users (Faculty) for mapping
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'colleges', collegeId, 'users');
+  }, [firestore]);
+
+  const { data: classes, isLoading: classesLoading } = useCollection(classesQuery);
+  const { data: departments } = useCollection(deptsQuery);
+  const { data: users } = useCollection(usersQuery);
+
+  const isLoading = classesLoading;
 
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Sections & Classes</h1>
-          <p className="text-muted-foreground mt-1">Manage class schedules, student groups, and room allocations.</p>
+          <p className="text-muted-foreground mt-1">Manage class schedules, instructor assignments, and room allocations.</p>
         </div>
         <Button className="gap-2 shadow-lg shadow-primary/20">
           <Plus className="h-4 w-4" /> Create New Class
@@ -35,59 +51,93 @@ export default function ClassManagementPage() {
       </div>
 
       {isLoading ? (
-        <div className="flex justify-center p-20">
-          <Loader2 className="animate-spin h-8 w-8 text-primary" />
+        <div className="flex flex-col items-center justify-center p-20 gap-4">
+          <Loader2 className="animate-spin h-10 w-10 text-primary" />
+          <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Syncing academic schedules...</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {classes?.map((item) => (
-            <Card key={item.id} className="hover:shadow-md transition-all border-none shadow-sm">
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <Badge className="bg-primary/10 text-primary border-none text-[10px] font-bold uppercase tracking-widest">
-                    Section {item.name.split(' ').pop()}
-                  </Badge>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                  </Button>
-                </div>
-                <CardTitle className="text-xl font-headline mt-2">{item.name}</CardTitle>
-                <CardDescription className="text-xs">Computer Science Department</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <Users className="h-4 w-4 text-primary" />
-                    <span className="font-semibold">45</span> Students
+          {classes?.map((item) => {
+            const dept = departments?.find(d => d.id === item.departmentId);
+            const instructor = users?.find(u => u.id === item.facultyId);
+            
+            return (
+              <Card key={item.id} className="hover:shadow-md transition-all border-none shadow-sm group overflow-hidden bg-white">
+                <div className="h-1.5 w-full bg-primary/10 group-hover:bg-primary transition-colors" />
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <Badge variant="secondary" className="bg-primary/5 text-primary border-none text-[10px] font-bold uppercase tracking-widest">
+                      {dept?.name || 'General Academic'}
+                    </Badge>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2 text-slate-300 hover:text-primary">
+                      <Calendar className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <div className="flex items-center gap-2 text-sm text-slate-600">
-                    <MapPin className="h-4 w-4 text-primary" />
-                    <span>Lab 302</span>
+                  <CardTitle className="text-xl font-headline mt-2">{item.name}</CardTitle>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+                    <BookOpen className="h-3 w-3" />
+                    <span>Subject Area: {dept?.name || 'Not Specified'}</span>
                   </div>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-slate-600">
-                  <Clock className="h-4 w-4 text-primary" />
-                  <span>Mon, Wed • 09:00 AM - 11:00 AM</span>
-                </div>
-                <div className="pt-4 border-t">
-                   <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center">
-                        <span className="text-xs font-bold text-slate-600">JW</span>
+                </CardHeader>
+                <CardContent className="space-y-5">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <div className="p-1.5 bg-blue-50 rounded-lg">
+                        <Users className="h-3.5 w-3.5 text-blue-500" />
                       </div>
+                      <span className="font-semibold text-xs">45 Students</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-slate-600">
+                      <div className="p-1.5 bg-emerald-50 rounded-lg">
+                        <MapPin className="h-3.5 w-3.5 text-emerald-500" />
+                      </div>
+                      <span className="text-xs">Lab 302</span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                    <Clock className="h-3.5 w-3.5 text-slate-400" />
+                    <span className="text-xs font-medium">Mon, Wed • 09:00 AM - 11:00 AM</span>
+                  </div>
+
+                  <div className="pt-4 border-t border-dashed">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
+                      <UserCheck className="h-3 w-3" /> Handling Instructor
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                        <AvatarImage src={instructor?.photoURL} />
+                        <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                          {instructor?.firstName?.[0] || 'F'}{instructor?.lastName?.[0] || 'M'}
+                        </AvatarFallback>
+                      </Avatar>
                       <div className="flex flex-col">
-                        <span className="text-xs font-bold">Dr. James Wilson</span>
-                        <span className="text-[10px] text-muted-foreground">Class Instructor</span>
+                        <span className="text-sm font-bold text-slate-800">
+                          {instructor ? `Dr. ${instructor.firstName} ${instructor.lastName}` : 'TBD'}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">
+                          Department Lead
+                        </span>
                       </div>
-                   </div>
-                </div>
-                <Button variant="outline" className="w-full mt-2 font-bold text-xs">View Full Roster</Button>
-              </CardContent>
-            </Card>
-          ))}
-          {classes?.length === 0 && (
-            <div className="col-span-full py-20 text-center border-2 border-dashed rounded-3xl">
-              <p className="text-muted-foreground font-medium">No classes scheduled yet.</p>
-              <Button variant="link" className="text-primary font-bold">Add your first section</Button>
+                    </div>
+                  </div>
+                  
+                  <Button variant="outline" className="w-full mt-2 font-bold text-xs h-10 rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
+                    View Full Roster
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+          
+          {classes?.length === 0 && !isLoading && (
+            <div className="col-span-full py-24 text-center border-2 border-dashed rounded-[2rem] bg-slate-50/50">
+              <BookOpen className="h-12 w-12 mx-auto mb-4 text-slate-200" />
+              <p className="font-bold text-slate-800">No classes scheduled yet</p>
+              <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+                Begin by creating a new section and assigning it to a faculty member.
+              </p>
+              <Button variant="link" className="mt-4 font-bold text-primary">Add your first section</Button>
             </div>
           )}
         </div>
