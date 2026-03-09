@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -76,7 +77,8 @@ export default function StudentManagementPage() {
     lastName: '',
     email: '',
     password: '',
-    departmentId: ''
+    departmentId: '',
+    degreeType: 'UG' as 'UG' | 'PG'
   });
 
   const usersQuery = useMemoFirebase(() => {
@@ -105,7 +107,6 @@ export default function StudentManagementPage() {
     if (!newStudent.email || !newStudent.firstName) return;
 
     setIsSubmitting(true);
-    // CRITICAL: Bootstrap logic uses email as initial document ID
     const studentEmail = newStudent.email.toLowerCase();
     const userRef = doc(firestore, 'colleges', collegeId, 'users', studentEmail);
     
@@ -118,13 +119,14 @@ export default function StudentManagementPage() {
       password: newStudent.password,
       role: 'student',
       status: 'active',
-      departmentId: newStudent.departmentId || 'general'
+      departmentId: newStudent.departmentId || 'general',
+      degreeType: newStudent.degreeType
     }, { merge: true });
 
     toast({ title: 'Student Registered', description: `${newStudent.firstName} has been added to the system.` });
     setIsAddOpen(false);
     setIsSubmitting(false);
-    setNewStudent({ firstName: '', lastName: '', email: '', password: '', departmentId: '' });
+    setNewStudent({ firstName: '', lastName: '', email: '', password: '', departmentId: '', degreeType: 'UG' });
   };
 
   const handleDeactivate = (id: string, name: string) => {
@@ -175,11 +177,25 @@ export default function StudentManagementPage() {
                   <Label className="text-xs font-bold uppercase">Institutional Email</Label>
                   <Input type="email" value={newStudent.email} onChange={e => setNewStudent({...newStudent, email: e.target.value})} required className="bg-slate-50 border-none" />
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Initial Password</Label>
-                  <div className="relative">
-                     <Input type="text" value={newStudent.password} onChange={e => setNewStudent({...newStudent, password: e.target.value})} required className="pl-9 bg-slate-50 border-none" />
-                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase">Program Type</Label>
+                    <Select onValueChange={(v: 'UG' | 'PG') => setNewStudent({...newStudent, degreeType: v})} defaultValue="UG">
+                      <SelectTrigger className="bg-slate-50 border-none">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="UG">UG (6 Semesters)</SelectItem>
+                        <SelectItem value="PG">PG (4 Semesters)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase">Initial Password</Label>
+                    <div className="relative">
+                       <Input type="text" value={newStudent.password} onChange={e => setNewStudent({...newStudent, password: e.target.value})} required className="pl-9 bg-slate-50 border-none" />
+                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                    </div>
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -269,7 +285,7 @@ export default function StudentManagementPage() {
                 <TableHead className="font-bold text-slate-900 py-4 pl-6">Student</TableHead>
                 <TableHead className="font-bold text-slate-900">ID / Dept</TableHead>
                 <TableHead className="font-bold text-slate-900">Attendance</TableHead>
-                <TableHead className="font-bold text-slate-900 text-center">Year</TableHead>
+                <TableHead className="font-bold text-slate-900 text-center">Program</TableHead>
                 <TableHead className="font-bold text-slate-900">Performance</TableHead>
                 <TableHead className="font-bold text-slate-900">Status</TableHead>
                 <TableHead className="text-right font-bold text-slate-900 pr-6">Actions</TableHead>
@@ -329,7 +345,9 @@ export default function StudentManagementPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <span className="text-sm font-bold text-slate-700">Year 3</span>
+                      <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-bold">
+                        {student.degreeType || 'UG'}
+                      </Badge>
                     </TableCell>
                     <TableCell>
                       <Badge variant="secondary" className="bg-blue-50 text-blue-600 border-blue-100 font-bold px-3">

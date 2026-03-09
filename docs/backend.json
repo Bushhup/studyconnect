@@ -24,7 +24,9 @@
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
         "role": { "type": "string", "enum": ["student", "faculty", "admin"] },
-        "departmentId": { "type": "string" }
+        "departmentId": { "type": "string" },
+        "degreeType": { "type": "string", "enum": ["UG", "PG"] },
+        "status": { "type": "string", "enum": ["active", "inactive"] }
       },
       "required": ["id", "collegeId", "email", "role"]
     },
