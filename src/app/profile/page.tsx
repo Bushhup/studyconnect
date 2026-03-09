@@ -1,24 +1,19 @@
 'use client';
 
-import { useUser, useAuth, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
+import { useUser, useDoc, useMemoFirebase, useFirestore, useFirebase } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { signOut } from 'firebase/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { doc } from 'firebase/firestore';
 import { 
-  User as UserIcon, 
-  Settings, 
   BookOpen, 
   Calendar, 
   GraduationCap, 
   PlusCircle, 
-  Image as ImageIcon,
   Award,
-  FileText,
-  Activity,
+  Settings,
   LayoutDashboard
 } from 'lucide-react';
 import Link from 'next/link';
@@ -26,15 +21,16 @@ import Link from 'next/link';
 const collegeId = 'study-connect-college';
 
 export default function ProfilePage() {
-  const { user: authUser, isUserLoading: isAuthLoading } = useUser();
+  const { user: authUser, isUserLoading: isAuthLoading, logout } = useUser();
   const firestore = useFirestore();
-  const auth = useAuth();
   const router = useRouter();
 
   const userProfileRef = useMemoFirebase(() => {
-    if (!authUser || !firestore) return null;
-    return doc(firestore, 'colleges', collegeId, 'users', authUser.uid);
-  }, [authUser, firestore]);
+    // If authUser is missing or uid is missing, we can't create a ref.
+    // In mock mode, authUser.uid is populated from authUser.id.
+    if (!authUser || !authUser.uid) return null;
+    return { path: `colleges/${collegeId}/users/${authUser.uid}` };
+  }, [authUser]);
 
   const { data: profile, isLoading: isProfileLoading, error: profileError } = useDoc(userProfileRef);
 
@@ -44,13 +40,9 @@ export default function ProfilePage() {
     }
   }, [authUser, isAuthLoading, router]);
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      router.replace('/');
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
+  const handleLogout = () => {
+    logout();
+    router.replace('/');
   };
 
   if (isAuthLoading || isProfileLoading) {

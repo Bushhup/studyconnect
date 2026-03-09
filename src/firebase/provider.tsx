@@ -1,7 +1,6 @@
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
-import { MOCK_USERS } from '@/lib/mock-db';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -15,13 +14,15 @@ export interface FirebaseContextState {
   user: any | null;
   isUserLoading: boolean;
   userError: Error | null;
+  login: (userData: any) => void;
+  logout: () => void;
 }
 
 export const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
 
 /**
  * MOCK PROVIDER
- * Overrides cloud Firebase with local state to "disconnect" from errors.
+ * Overrides cloud Firebase with local state to provide a stable, error-free experience.
  */
 export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children }) => {
   const [user, setUser] = useState<any>(null);
@@ -31,7 +32,14 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children }) 
     // Simulate initial auth check from local storage
     const savedUser = localStorage.getItem('mock_session_user');
     if (savedUser) {
-      setUser(JSON.parse(savedUser));
+      try {
+        const parsed = JSON.parse(savedUser);
+        // Ensure UID compatibility
+        if (parsed && parsed.id && !parsed.uid) parsed.uid = parsed.id;
+        setUser(parsed);
+      } catch (e) {
+        console.error('Failed to parse saved user', e);
+      }
     }
     setIsUserLoading(false);
   }, []);
@@ -41,10 +49,11 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children }) 
     user,
     isUserLoading,
     userError: null,
-    // Add setters for mock auth
     login: (userData: any) => {
-      setUser(userData);
-      localStorage.setItem('mock_session_user', JSON.stringify(userData));
+      // Normalizing for Firebase component compatibility (uid)
+      const normalizedUser = { ...userData, uid: userData.id || userData.uid };
+      setUser(normalizedUser);
+      localStorage.setItem('mock_session_user', JSON.stringify(normalizedUser));
     },
     logout: () => {
       setUser(null);
@@ -53,18 +62,19 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children }) 
   }), [user, isUserLoading]);
 
   return (
-    <FirebaseContext.Provider value={contextValue as any}>
+    <FirebaseContext.Provider value={contextValue}>
       {children}
     </FirebaseContext.Provider>
   );
 };
 
-export const useFirebase = (): any => {
+export const useFirebase = (): FirebaseContextState => {
   const context = useContext(FirebaseContext);
   if (!context) throw new Error('useFirebase must be used within Provider');
-  return { ...context, auth: {}, firestore: {}, firebaseApp: {} };
+  return context;
 };
 
+// Dummy exports to prevent crashes in SDK function calls while in mock mode
 export const useAuth = () => ({});
 export const useFirestore = () => ({});
 export const useFirebaseApp = () => ({});
@@ -73,11 +83,12 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   return useMemo(factory, deps);
 }
 
-export const useUser = (): any => {
+export const useUser = (): { user: any, isUserLoading: boolean, userError: any, logout: () => void } => {
   const context = useContext(FirebaseContext);
   return { 
     user: context?.user, 
     isUserLoading: context?.isUserLoading || false, 
-    userError: null 
+    userError: null,
+    logout: context?.logout || (() => {})
   };
 };

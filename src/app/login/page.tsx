@@ -15,12 +15,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, GraduationCap, BookOpen, ShieldCheck, ArrowLeft, Info } from 'lucide-react';
+import { Loader2, GraduationCap, BookOpen, ShieldCheck, ArrowLeft } from 'lucide-react';
 
 type UserRole = 'student' | 'faculty' | 'admin';
 
 export default function LoginPage() {
-  const { login } = useFirebase() as any;
+  const { login } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -29,7 +29,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !selectedRole) {
       toast({ variant: 'destructive', title: 'Selection Required', description: 'Please select a portal.' });
@@ -38,28 +38,27 @@ export default function LoginPage() {
 
     setIsLoading(true);
     
-    // Simulate 500ms network delay
-    setTimeout(() => {
-      const cleanEmail = email.toLowerCase().trim();
-      const users = getLocalData('users');
-      const user = users.find((u: any) => u.email === cleanEmail && u.password === password);
+    // Pure local login simulation
+    const cleanEmail = email.toLowerCase().trim();
+    const users = getLocalData('users');
+    const user = users.find((u: any) => u.email === cleanEmail && u.password === password);
 
-      if (!user) {
-        toast({ variant: 'destructive', title: 'Access Denied', description: 'Invalid email or password.' });
-        setIsLoading(false);
-        return;
-      }
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Access Denied', description: 'Invalid email or password.' });
+      setIsLoading(false);
+      return;
+    }
 
-      if (user.role !== selectedRole) {
-        toast({ variant: 'destructive', title: 'Wrong Portal', description: `This account belongs to the ${user.role} portal.` });
-        setIsLoading(false);
-        return;
-      }
+    if (user.role !== selectedRole) {
+      toast({ variant: 'destructive', title: 'Wrong Portal', description: `This account belongs to the ${user.role} portal.` });
+      setIsLoading(false);
+      return;
+    }
 
-      login(user);
-      toast({ title: 'Welcome Back', description: `Access granted to ${user.firstName}.` });
-      router.push(selectedRole === 'admin' ? '/admin/dashboard' : '/profile');
-    }, 500);
+    // Success
+    login(user);
+    toast({ title: 'Welcome Back', description: `Access granted to ${user.firstName}.` });
+    router.replace(selectedRole === 'admin' ? '/admin/dashboard' : '/profile');
   };
 
   const useDemoAdmin = () => {

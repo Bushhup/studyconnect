@@ -19,6 +19,7 @@ export const MOCK_DEPARTMENTS = [
 export const MOCK_USERS = [
   {
     id: 'admin-uid',
+    uid: 'admin-uid',
     email: 'admin01@college.edu',
     password: 'minister123',
     firstName: 'System',
@@ -28,6 +29,7 @@ export const MOCK_USERS = [
   },
   {
     id: 'faculty-1',
+    uid: 'faculty-1',
     email: 'sarah.smith@college.edu',
     password: 'password123',
     firstName: 'Sarah',
@@ -38,6 +40,7 @@ export const MOCK_USERS = [
   },
   {
     id: 'student-1',
+    uid: 'student-1',
     email: 'alex.j@college.edu',
     password: 'password123',
     firstName: 'Alex',
