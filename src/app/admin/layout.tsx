@@ -1,26 +1,23 @@
 'use client';
 
-import { useUser, useFirebase } from '@/firebase';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { 
   LayoutDashboard, Users, GraduationCap, Building2, 
   BookOpen, Calendar, FileSpreadsheet, ClipboardCheck, 
   BarChart3, FileText, Settings, Bell, Activity, UserCog,
-  Search, Mail, Plus, ChevronLeft, ChevronRight
+  Search, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 
@@ -42,27 +39,13 @@ const adminLinks = [
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
-  const { user, isUserLoading, logout } = useUser() as any;
   const router = useRouter();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
 
-  useEffect(() => {
-    if (!isUserLoading && (!user || user.role !== 'admin')) {
-      router.replace('/login');
-    }
-  }, [user, isUserLoading, router]);
-
   const handleLogout = () => {
-    logout();
     router.replace('/login');
   };
-
-  if (isUserLoading || !user) {
-    return <div className="h-screen flex items-center justify-center bg-slate-50">
-      <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-    </div>;
-  }
 
   return (
     <div className="flex min-h-screen bg-[#F1F5F9]">
@@ -90,9 +73,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="p-4 border-t">
           <div className={cn("flex items-center", isCollapsed ? "justify-center" : "gap-3")}>
              <Avatar className="h-9 w-9">
-                <AvatarFallback>{user.firstName?.[0]}</AvatarFallback>
+                <AvatarFallback>A</AvatarFallback>
              </Avatar>
-             {!isCollapsed && <div className="truncate"><p className="text-sm font-bold">{user.firstName}</p></div>}
+             {!isCollapsed && <div className="truncate"><p className="text-sm font-bold">Admin User</p></div>}
           </div>
         </div>
       </aside>

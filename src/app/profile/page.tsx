@@ -1,12 +1,8 @@
 'use client';
 
-import { useUser, useDoc, useMemoFirebase, useFirestore, useFirebase } from '@/firebase';
-import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { doc } from 'firebase/firestore';
+import { Button } from '@/components/ui/button';
 import { 
   BookOpen, 
   Calendar, 
@@ -18,67 +14,30 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const collegeId = 'study-connect-college';
-
 export default function ProfilePage() {
-  const { user: authUser, isUserLoading: isAuthLoading, logout } = useUser();
-  const firestore = useFirestore();
   const router = useRouter();
 
-  const userProfileRef = useMemoFirebase(() => {
-    // If authUser is missing or uid is missing, we can't create a ref.
-    // In mock mode, authUser.uid is populated from authUser.id.
-    if (!authUser || !authUser.uid) return null;
-    return { path: `colleges/${collegeId}/users/${authUser.uid}` };
-  }, [authUser]);
-
-  const { data: profile, isLoading: isProfileLoading, error: profileError } = useDoc(userProfileRef);
-
-  useEffect(() => {
-    if (!isAuthLoading && !authUser) {
-      router.replace('/login');
-    }
-  }, [authUser, isAuthLoading, router]);
-
   const handleLogout = () => {
-    logout();
-    router.replace('/');
+    router.replace('/login');
   };
 
-  if (isAuthLoading || isProfileLoading) {
-    return (
-      <div className="container mx-auto py-12 px-4">
-        <div className="max-w-4xl mx-auto space-y-8">
-          <Skeleton className="h-12 w-64" />
-          <div className="grid md:grid-cols-3 gap-6">
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-40 w-full" />
-            <Skeleton className="h-40 w-full" />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (profileError) {
-    return (
-      <div className="container mx-auto py-12 px-4 text-center">
-        <p className="text-destructive font-bold">Error loading profile: {profileError.message}</p>
-        <Button onClick={() => window.location.reload()} variant="outline" className="mt-4">Retry</Button>
-      </div>
-    );
-  }
-
-  const role = profile?.role || 'student';
+  // Static Profile
+  const profile = {
+    firstName: 'Demo',
+    lastName: 'User',
+    email: 'demo@college.edu',
+    role: 'student',
+    id: 'DEMO-12345'
+  };
 
   return (
     <div className="container mx-auto py-12 px-4">
       <div className="max-w-6xl mx-auto space-y-8">
         <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-8">
           <div>
-            <h1 className="text-4xl font-headline font-bold">Welcome, {profile?.firstName || 'User'}</h1>
+            <h1 className="text-4xl font-headline font-bold">Welcome, {profile.firstName}</h1>
             <p className="text-muted-foreground font-body">
-              {role.charAt(0).toUpperCase() + role.slice(1)} Portal • {profile?.email}
+              {profile.role.charAt(0).toUpperCase() + profile.role.slice(1)} Portal • {profile.email}
             </p>
           </div>
           <div className="flex gap-2">
@@ -88,13 +47,18 @@ export default function ProfilePage() {
           </div>
         </header>
 
-        {role === 'admin' ? (
-           <Card className="border-primary bg-primary/5">
+        <div className="grid gap-6 md:grid-cols-3">
+          <PortalCard title="My Courses" description="View your active courses and grades." icon={BookOpen} link="/admin/courses" />
+          <PortalCard title="Campus Life" description="Check out upcoming events and clubs." icon={Calendar} link="/events" />
+          <PortalCard title="Achievements" description="View your academic awards and honors." icon={Award} link="/achievements" />
+        </div>
+
+        <Card className="border-primary bg-primary/5">
            <CardHeader>
              <CardTitle className="flex items-center gap-2">
-               <LayoutDashboard className="h-5 w-5" /> Administrator Control Center
+               <LayoutDashboard className="h-5 w-5" /> Quick Access
              </CardTitle>
-             <CardDescription>You have full access to system management and configurations.</CardDescription>
+             <CardDescription>Jump to the administration dashboard for the prototype.</CardDescription>
            </CardHeader>
            <CardContent>
              <Button asChild size="lg" className="w-full md:w-fit font-headline">
@@ -102,11 +66,6 @@ export default function ProfilePage() {
              </Button>
            </CardContent>
          </Card>
-        ) : role === 'faculty' ? (
-          <FacultyPortal />
-        ) : (
-          <StudentPortal />
-        )}
 
         <Card className="mt-12 bg-muted/30">
           <CardHeader>
@@ -117,43 +76,23 @@ export default function ProfilePage() {
           <CardContent className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 text-sm font-body">
             <div>
               <p className="font-bold text-muted-foreground uppercase text-xs tracking-wider">Full Name</p>
-              <p className="text-lg">{profile?.firstName} {profile?.lastName}</p>
+              <p className="text-lg">{profile.firstName} {profile.lastName}</p>
             </div>
             <div>
               <p className="font-bold text-muted-foreground uppercase text-xs tracking-wider">Email Address</p>
-              <p className="text-lg">{profile?.email}</p>
+              <p className="text-lg">{profile.email}</p>
             </div>
             <div>
               <p className="font-bold text-muted-foreground uppercase text-xs tracking-wider">User ID</p>
-              <p className="font-mono text-xs truncate">{profile?.id}</p>
+              <p className="font-mono text-xs truncate">{profile.id}</p>
             </div>
             <div>
               <p className="font-bold text-muted-foreground uppercase text-xs tracking-wider">Role</p>
-              <p className="text-lg capitalize">{profile?.role}</p>
+              <p className="text-lg capitalize">{profile.role}</p>
             </div>
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
-}
-
-function StudentPortal() {
-  return (
-    <div className="grid gap-6 md:grid-cols-3">
-      <PortalCard title="My Courses" description="View your active courses and grades." icon={BookOpen} link="/courses" />
-      <PortalCard title="Campus Life" description="Check out upcoming events and clubs." icon={Calendar} link="/events" />
-      <PortalCard title="Achievements" description="View your academic awards and honors." icon={Award} link="/achievements" />
-    </div>
-  );
-}
-
-function FacultyPortal() {
-  return (
-    <div className="grid gap-6 md:grid-cols-3">
-      <PortalCard title="Class Management" description="Manage students and course materials." icon={GraduationCap} link="/faculty/classes" />
-      <PortalCard title="Post Events" description="Organize new workshops or seminars." icon={PlusCircle} link="/events" />
-      <PortalCard title="Research" description="Update your research publications." icon={BookOpen} link="/achievements" />
     </div>
   );
 }
@@ -170,7 +109,7 @@ function PortalCard({ title, description, icon: Icon, link }: { title: string, d
       </CardHeader>
       <CardContent>
         <Button asChild variant="link" className="p-0 font-headline group-hover:translate-x-1 transition-transform">
-          <Link href={link}>Access Portal →</Link>
+          <Link href={link}>Access Module →</Link>
         </Button>
       </CardContent>
     </Card>

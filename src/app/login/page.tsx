@@ -2,69 +2,46 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useFirebase } from '@/firebase';
-import { getLocalData } from '@/lib/mock-db';
 import { Button } from '@/components/ui/button';
 import {
   Card,
-  CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
+  CardContent
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, GraduationCap, BookOpen, ShieldCheck, ArrowLeft } from 'lucide-react';
+import { GraduationCap, BookOpen, ShieldCheck, ArrowLeft } from 'lucide-react';
 
 type UserRole = 'student' | 'faculty' | 'admin';
 
 export default function LoginPage() {
-  const { login } = useFirebase();
   const router = useRouter();
   const { toast } = useToast();
 
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password || !selectedRole) {
-      toast({ variant: 'destructive', title: 'Selection Required', description: 'Please select a portal.' });
-      return;
-    }
-
-    setIsLoading(true);
     
-    // Pure local login simulation
-    const cleanEmail = email.toLowerCase().trim();
-    const users = getLocalData('users');
-    const user = users.find((u: any) => u.email === cleanEmail && u.password === password);
-
-    if (!user) {
-      toast({ variant: 'destructive', title: 'Access Denied', description: 'Invalid email or password.' });
-      setIsLoading(false);
+    // Static Login Simulation: Any non-empty input works
+    if (!email || !password) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Please enter your credentials.' });
       return;
     }
 
-    if (user.role !== selectedRole) {
-      toast({ variant: 'destructive', title: 'Wrong Portal', description: `This account belongs to the ${user.role} portal.` });
-      setIsLoading(false);
-      return;
+    toast({ title: 'Welcome Back', description: `Access granted to the ${selectedRole} portal.` });
+    
+    // Redirect based on role
+    if (selectedRole === 'admin') {
+      router.push('/admin/dashboard');
+    } else {
+      router.push('/profile');
     }
-
-    // Success
-    login(user);
-    toast({ title: 'Welcome Back', description: `Access granted to ${user.firstName}.` });
-    router.replace(selectedRole === 'admin' ? '/admin/dashboard' : '/profile');
-  };
-
-  const useDemoAdmin = () => {
-    setEmail('admin01@college.edu');
-    setPassword('minister123');
-    setSelectedRole('admin');
   };
 
   if (!selectedRole) {
@@ -82,15 +59,6 @@ export default function LoginPage() {
             <RoleCard role="admin" title="Admin" description="System Config" icon={ShieldCheck} onClick={() => setSelectedRole('admin')} />
           </div>
         </div>
-
-        <div className="mt-12 flex flex-col items-center gap-4">
-          <div className="text-sm text-muted-foreground bg-accent/50 px-4 py-2 rounded-full border">
-            Demo: <strong>admin01@college.edu</strong> / <strong>minister123</strong>
-          </div>
-          <Button variant="outline" size="sm" onClick={useDemoAdmin} className="rounded-full">
-            Instant Demo Sign-In
-          </Button>
-        </div>
       </div>
     );
   }
@@ -104,21 +72,22 @@ export default function LoginPage() {
             <ArrowLeft className="mr-2 h-4 w-4" /> Switch Portal
           </Button>
           <CardTitle className="text-2xl font-headline text-center capitalize">{selectedRole} Portal</CardTitle>
+          <CardDescription className="text-center">Enter any credentials to enter the static prototype.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <Label>Email Address</Label>
-              <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} disabled={isLoading} className="h-11" />
+              <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11" placeholder="admin@college.edu" />
             </div>
             <div className="grid gap-2">
               <Label>Password</Label>
-              <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} disabled={isLoading} className="h-11" />
+              <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="h-11" placeholder="••••••••" />
             </div>
           </CardContent>
           <div className="p-6 pt-0">
-            <Button className="w-full h-12 text-lg" type="submit" disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : 'Sign In'}
+            <Button className="w-full h-12 text-lg" type="submit">
+              Enter Portal
             </Button>
           </div>
         </form>
