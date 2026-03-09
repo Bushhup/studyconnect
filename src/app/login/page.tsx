@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -44,6 +43,7 @@ export default function LoginPage() {
       const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
       if (selectedRole === 'admin') {
+        // Match Admin01 username (case-insensitive) and password from .env
         if (normalizedEmail === adminEmail?.trim().toLowerCase() && password === adminPass) {
           await signInAnonymously(auth);
           toast({ title: 'System Access Granted', description: 'Welcome to the Master Control.' });
@@ -144,8 +144,8 @@ export default function LoginPage() {
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label>Institutional Email</Label>
-              <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-slate-50 border-none" placeholder="user@college.edu" />
+              <Label>{selectedRole === 'admin' ? 'Username' : 'Institutional Email'}</Label>
+              <Input type={selectedRole === 'admin' ? 'text' : 'email'} required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-slate-50 border-none" placeholder={selectedRole === 'admin' ? 'Admin Username' : 'user@college.edu'} />
             </div>
             <div className="grid gap-2">
               <Label>Password</Label>
