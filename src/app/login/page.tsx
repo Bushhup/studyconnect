@@ -79,7 +79,8 @@ export default function LoginPage() {
       try {
         userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
       } catch (authError: any) {
-        // 2. Auth failed? Check for Bootstrap Record (email-based)
+        // 2. Auth failed? Check for Bootstrap Record (email-based ID)
+        // This handles users created by admin who haven't signed in yet.
         const emailDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
         const emailDoc = await getDoc(emailDocRef);
 
@@ -98,7 +99,7 @@ export default function LoginPage() {
             } catch (createError: any) {
               if (createError.code === 'auth/email-already-in-use') {
                 // Account exists in Auth but sign-in failed -> Wrong Password
-                throw new Error("Incorrect password for this institutional account.");
+                throw new Error("Invalid password for this institutional account.");
               }
               throw createError;
             }
@@ -116,6 +117,7 @@ export default function LoginPage() {
           }
           needsMigration = true; // Ensure they get a doc
         } else {
+          // No Auth account and no email document found
           throw new Error("Account not found in directory. Please contact your administrator.");
         }
       }
@@ -167,7 +169,7 @@ export default function LoginPage() {
         } else {
           // If no data to migrate and no UID doc, this is an orphaned Auth account
           await signOut(auth);
-          throw new Error("Account data missing. Please contact your administrator.");
+          throw new Error("Account configuration incomplete. Please contact your administrator.");
         }
       }
 
