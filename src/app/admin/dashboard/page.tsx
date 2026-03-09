@@ -1,15 +1,19 @@
 'use client';
 
+import { useState } from 'react';
+import { useFirestore } from '@/firebase';
+import { seedDatabase } from '@/lib/seed-data';
+import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
   Users, GraduationCap, Building2, BookOpen, 
   TrendingUp, TrendingDown, Clock, CheckCircle2,
   Calendar, Award, ArrowUpRight, ArrowDownRight,
-  MoreVertical, Search, FileText
+  Database, Loader2
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area, PieChart, Pie, Cell
+  Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Badge } from '@/components/ui/badge';
@@ -53,6 +57,30 @@ const chartConfig = {
 };
 
 export default function AdminDashboard() {
+  const db = useFirestore();
+  const { toast } = useToast();
+  const [isSeeding, setIsSeeding] = useState(false);
+
+  const handleSeedData = async () => {
+    if (!db) return;
+    setIsSeeding(true);
+    try {
+      await seedDatabase(db);
+      toast({
+        title: 'Database Initialized',
+        description: 'Institutional sample data has been successfully provisioned.',
+      });
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Initialization Failed',
+        description: error.message || 'Could not populate sample data.',
+      });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -61,7 +89,15 @@ export default function AdminDashboard() {
           <p className="text-muted-foreground mt-1">Detailed performance and demographic analytics for the current semester.</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="bg-white shadow-sm font-medium">Download Report</Button>
+          <Button 
+            variant="outline" 
+            className="gap-2 bg-white shadow-sm font-medium"
+            onClick={handleSeedData}
+            disabled={isSeeding}
+          >
+            {isSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+            Initialize Demo Data
+          </Button>
           <Button className="font-medium shadow-md shadow-primary/20">Generate Insights</Button>
         </div>
       </div>
@@ -229,7 +265,7 @@ export default function AdminDashboard() {
             {[
               { label: 'Grade Approvals', count: 12, icon: Award },
               { label: 'New Faculty Requests', count: 4, icon: Users },
-              { label: 'System Reports', count: 2, icon: FileText },
+              { label: 'System Reports', count: 2, icon: Award },
             ].map((task) => (
               <div key={task.label} className="flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all cursor-pointer">
                 <div className="flex items-center gap-3">
