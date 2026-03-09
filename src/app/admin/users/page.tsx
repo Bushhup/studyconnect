@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { 
   useCollection, 
+  useDoc,
   useMemoFirebase, 
   useFirestore, 
   updateDocumentNonBlocking, 
@@ -58,7 +59,7 @@ const collegeId = 'study-connect-college';
 
 export default function UserManagementPage() {
   const firestore = useFirestore();
-  const { user, isUserLoading: userLoading } = useUser();
+  const { user, isUserLoading: authLoading } = useUser();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
@@ -80,11 +81,21 @@ export default function UserManagementPage() {
     status: 'active'
   });
 
-  // Query only if authenticated and not loading to prevent 'auth: null' errors in security rules
+  // 1. Fetch the current user's profile first to ensure rules have context
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
+  }, [firestore, user?.uid]);
+  
+  const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
+
+  // 2. Only query the collection if the profile is loaded and the user is an admin
   const usersQuery = useMemoFirebase(() => {
-    if (!firestore || !user || userLoading) return null;
+    if (!firestore || !user || authLoading || profileLoading || !profile || profile.role !== 'admin') {
+      return null;
+    }
     return collection(firestore, 'colleges', collegeId, 'users');
-  }, [firestore, user, userLoading]);
+  }, [firestore, user, authLoading, profileLoading, profile]);
 
   const { data: users, isLoading: collectionLoading } = useCollection(usersQuery);
 
@@ -163,7 +174,7 @@ export default function UserManagementPage() {
     setIsDeleteOpen(true);
   };
 
-  const isLoading = userLoading || collectionLoading;
+  const isDataLoading = authLoading || profileLoading || (!!usersQuery && collectionLoading);
 
   return (
     <div className="space-y-8 pb-12">
@@ -277,7 +288,7 @@ export default function UserManagementPage() {
 
         <Card className="border-none shadow-sm overflow-hidden bg-white rounded-[2rem]">
           <CardContent className="p-0">
-            {isLoading ? (
+            {isDataLoading ? (
               <div className="flex flex-col items-center justify-center p-20 gap-4">
                 <Loader2 className="animate-spin h-8 w-8 text-primary" />
                 <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Syncing directory...</p>

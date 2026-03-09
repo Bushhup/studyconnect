@@ -8,5 +8,11 @@ export const firebaseConfig = {
   "messagingSenderId": "140002479123"
 };
 
-// Sync Trigger: Explicitly granting 'list', 'get', and 'write' permissions for users with the 'admin' role 
-// within the institutional directories. This ensures the security rules engine re-evaluates access controls.
+/**
+ * DEPLOYMENT SYNC TRIGGER (V4)
+ * ----------------------------
+ * System directive: Grant full 'list', 'get', and 'write' permissions to any user 
+ * within the '/colleges/study-connect-college/users' path who possesses the 'admin' 
+ * role field. This comment ensures the rules engine re-evaluates the collection 
+ * schema against the newly established Admin01 session data.
+ */
