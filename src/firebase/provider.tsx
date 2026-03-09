@@ -1,6 +1,8 @@
+
 'use client';
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -11,55 +13,44 @@ interface FirebaseProviderProps {
 
 export interface FirebaseContextState {
   areServicesAvailable: boolean;
-  user: any | null;
+  user: User | null;
   isUserLoading: boolean;
   userError: Error | null;
-  login: (userData: any) => void;
-  logout: () => void;
+  auth: any;
+  firestore: any;
 }
 
 export const FirebaseContext = createContext<FirebaseContextState | undefined>(undefined);
 
-/**
- * MOCK PROVIDER
- * Overrides cloud Firebase with local state to provide a stable, error-free experience.
- */
-export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<any>(null);
+export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children, auth, firestore }) => {
+  const [user, setUser] = useState<User | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
+  const [userError, setUserError] = useState<Error | null>(null);
 
   useEffect(() => {
-    // Simulate initial auth check from local storage
-    const savedUser = localStorage.getItem('mock_session_user');
-    if (savedUser) {
-      try {
-        const parsed = JSON.parse(savedUser);
-        // Ensure UID compatibility
-        if (parsed && parsed.id && !parsed.uid) parsed.uid = parsed.id;
-        setUser(parsed);
-      } catch (e) {
-        console.error('Failed to parse saved user', e);
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (user) => {
+        setUser(user);
+        setIsUserLoading(false);
+      },
+      (error) => {
+        setUserError(error as Error);
+        setIsUserLoading(false);
       }
-    }
-    setIsUserLoading(false);
-  }, []);
+    );
+
+    return () => unsubscribe();
+  }, [auth]);
 
   const contextValue = useMemo(() => ({
-    areServicesAvailable: true,
+    areServicesAvailable: !!auth && !!firestore,
     user,
     isUserLoading,
-    userError: null,
-    login: (userData: any) => {
-      // Normalizing for Firebase component compatibility (uid)
-      const normalizedUser = { ...userData, uid: userData.id || userData.uid };
-      setUser(normalizedUser);
-      localStorage.setItem('mock_session_user', JSON.stringify(normalizedUser));
-    },
-    logout: () => {
-      setUser(null);
-      localStorage.removeItem('mock_session_user');
-    }
-  }), [user, isUserLoading]);
+    userError,
+    auth,
+    firestore,
+  }), [user, isUserLoading, userError, auth, firestore]);
 
   return (
     <FirebaseContext.Provider value={contextValue}>
@@ -70,25 +61,25 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({ children }) 
 
 export const useFirebase = (): FirebaseContextState => {
   const context = useContext(FirebaseContext);
-  if (!context) throw new Error('useFirebase must be used within Provider');
+  if (!context) throw new Error('useFirebase must be used within a FirebaseProvider');
   return context;
 };
-
-// Dummy exports to prevent crashes in SDK function calls while in mock mode
-export const useAuth = () => ({});
-export const useFirestore = () => ({});
-export const useFirebaseApp = () => ({});
 
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   return useMemo(factory, deps);
 }
 
-export const useUser = (): { user: any, isUserLoading: boolean, userError: any, logout: () => void } => {
-  const context = useContext(FirebaseContext);
-  return { 
-    user: context?.user, 
-    isUserLoading: context?.isUserLoading || false, 
-    userError: null,
-    logout: context?.logout || (() => {})
-  };
+export const useUser = () => {
+  const { user, isUserLoading, userError } = useFirebase();
+  return { user, isUserLoading, userError };
+};
+
+export const useFirestore = () => {
+  const { firestore } = useFirebase();
+  return firestore;
+};
+
+export const useAuth = () => {
+  const { auth } = useFirebase();
+  return auth;
 };

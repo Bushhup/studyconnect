@@ -1,53 +1,56 @@
+
 'use client';
-    
-import { getLocalData, setLocalData } from '@/lib/mock-db';
+
+import { 
+  setDoc, 
+  addDoc, 
+  updateDoc, 
+  deleteDoc, 
+  DocumentReference, 
+  CollectionReference,
+  SetOptions
+} from 'firebase/firestore';
 
 /**
- * MOCK UPDATES
- * Intercepts cloud writes and redirects them to local state.
+ * Initiates a document set operation (non-blocking).
  */
-
-function getCollectionFromPath(path: string) {
-  return path.split('/').slice(-2, -1)[0] || path.split('/').pop();
-}
-
-export function setDocumentNonBlocking(docRef: any, data: any, options: any) {
-  const path = docRef.path || '';
-  const parts = path.split('/');
-  const collectionName = parts[parts.length - 2];
-  const id = parts[parts.length - 1];
-
-  const current = getLocalData(collectionName);
-  const index = current.findIndex((i: any) => i.id === id);
-  
-  if (index > -1) {
-    current[index] = options?.merge ? { ...current[index], ...data } : data;
+export function setDocumentNonBlocking<T>(
+  docRef: DocumentReference<T>,
+  data: T,
+  options?: SetOptions
+): void {
+  if (options) {
+    setDoc(docRef, data, options);
   } else {
-    current.push({ ...data, id });
+    setDoc(docRef, data);
   }
-  
-  setLocalData(collectionName, current);
 }
 
-export function addDocumentNonBlocking(colRef: any, data: any) {
-  const collectionName = colRef.path?.split('/').pop() || '';
-  const current = getLocalData(collectionName);
-  const newDoc = { ...data, id: crypto.randomUUID() };
-  current.push(newDoc);
-  setLocalData(collectionName, current);
-  return Promise.resolve({ id: newDoc.id });
+/**
+ * Initiates a document addition to a collection (non-blocking).
+ */
+export function addDocumentNonBlocking<T>(
+  colRef: CollectionReference<T>,
+  data: T
+): void {
+  addDoc(colRef, data);
 }
 
-export function updateDocumentNonBlocking(docRef: any, data: any) {
-  setDocumentNonBlocking(docRef, data, { merge: true });
+/**
+ * Initiates a document update operation (non-blocking).
+ */
+export function updateDocumentNonBlocking(
+  docRef: DocumentReference,
+  data: any
+): void {
+  updateDoc(docRef, data);
 }
 
-export function deleteDocumentNonBlocking(docRef: any) {
-  const parts = docRef.path?.split('/') || [];
-  const collectionName = parts[parts.length - 2];
-  const id = parts[parts.length - 1];
-  
-  const current = getLocalData(collectionName);
-  const filtered = current.filter((i: any) => i.id !== id);
-  setLocalData(collectionName, filtered);
+/**
+ * Initiates a document deletion (non-blocking).
+ */
+export function deleteDocumentNonBlocking(
+  docRef: DocumentReference
+): void {
+  deleteDoc(docRef);
 }
