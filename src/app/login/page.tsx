@@ -44,13 +44,11 @@ export default function LoginPage() {
       const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
       if (selectedRole === 'admin') {
-        // Match Admin01 username (case-insensitive) and password from .env
         if (normalizedEmail === adminEmail?.trim().toLowerCase() && password === adminPass) {
           const userCredential = await signInAnonymously(auth);
           const newUser = userCredential.user;
           
-          // Provision a temporary admin record for the anonymous session 
-          // to satisfy security rules that check for the 'admin' role.
+          // Ensure admin record is fully synchronized before proceeding
           const adminDocRef = doc(firestore, 'colleges', collegeId, 'users', newUser.uid);
           await setDoc(adminDocRef, {
             id: newUser.uid,
@@ -63,7 +61,7 @@ export default function LoginPage() {
             updatedAt: new Date().toISOString()
           }, { merge: true });
 
-          toast({ title: 'System Access Granted', description: 'Welcome to the Master Control.' });
+          toast({ title: 'System Access Granted', description: 'Administrative session established.' });
           router.push('/admin/dashboard');
           return;
         } else {
@@ -85,13 +83,10 @@ export default function LoginPage() {
         if (!querySnapshot.empty) {
           const userData = querySnapshot.docs[0].data();
           
-          // Verify password against institutional record
           if (userData.password === password) {
-            // 3. "Bootstrap" this user into Firebase Auth
             const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
             const newUser = userCredential.user;
             
-            // 4. Migrate institutional record to new UID-based document
             const newDocRef = doc(firestore, 'colleges', collegeId, 'users', newUser.uid);
             const oldDocRef = doc(firestore, 'colleges', collegeId, 'users', querySnapshot.docs[0].id);
             
@@ -103,25 +98,24 @@ export default function LoginPage() {
               updatedAt: new Date().toISOString()
             });
 
-            // 5. Cleanup the temporary provisioned record
             if (oldDocRef.id !== newDocRef.id) {
               await deleteDoc(oldDocRef);
             }
 
-            toast({ title: 'Account Activated', description: 'Your institutional profile has been successfully linked.' });
+            toast({ title: 'Account Activated', description: 'Institutional profile linked.' });
             router.push('/profile');
           } else {
             throw new Error('Invalid institutional password.');
           }
         } else {
-          throw authError; // Rethrow original auth error if no institutional record exists
+          throw authError;
         }
       }
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Authentication Failed',
-        description: error.message || 'Please check your institutional credentials.'
+        description: error.message || 'Check your credentials.'
       });
     } finally {
       setIsLoading(false);
@@ -149,24 +143,24 @@ export default function LoginPage() {
 
   return (
     <div className="container mx-auto flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
-      <Card className="w-full max-w-sm shadow-2xl overflow-hidden bg-white border-primary/20 rounded-[2rem]">
+      <Card className="w-full max-sm shadow-2xl overflow-hidden bg-white border-primary/20 rounded-[2rem]">
         <div className="h-2 bg-primary w-full" />
         <CardHeader>
           <Button variant="ghost" size="sm" className="w-fit p-0 mb-4 hover:bg-transparent" onClick={() => setSelectedRole(null)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Switch Portal
           </Button>
           <CardTitle className="text-2xl font-headline text-center capitalize">{selectedRole} Portal</CardTitle>
-          <CardDescription className="text-center">Enter your institutional credentials.</CardDescription>
+          <CardDescription className="text-center">Enter credentials.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label>{selectedRole === 'admin' ? 'Username' : 'Institutional Email'}</Label>
-              <Input type={selectedRole === 'admin' ? 'text' : 'email'} required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-slate-50 border-none" placeholder={selectedRole === 'admin' ? 'Admin Username' : 'user@college.edu'} />
+              <Label>{selectedRole === 'admin' ? 'Username' : 'Email'}</Label>
+              <Input type={selectedRole === 'admin' ? 'text' : 'email'} required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-slate-50 border-none" />
             </div>
             <div className="grid gap-2">
               <Label>Password</Label>
-              <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 bg-slate-50 border-none" placeholder="••••••••" />
+              <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 bg-slate-50 border-none" />
             </div>
           </CardContent>
           <div className="p-6 pt-0">

@@ -9,9 +9,10 @@ import {
   useFirestore, 
   updateDocumentNonBlocking, 
   deleteDocumentNonBlocking,
+  setDocumentNonBlocking,
   useUser
 } from '@/firebase';
-import { collection, doc, setDoc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -108,21 +109,26 @@ export default function UserManagementPage() {
     return matchesSearch && matchesRole;
   }) || [];
 
-  const handleCreateUser = async (e: React.FormEvent) => {
+  const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore || !formData.email || !formData.password) return;
 
     const userId = crypto.randomUUID();
     const userRef = doc(firestore, 'colleges', collegeId, 'users', userId);
     
-    await setDoc(userRef, {
+    // Use non-blocking utility for automatic error surfacing
+    setDocumentNonBlocking(userRef, {
       ...formData,
       id: userId,
       collegeId,
       createdAt: new Date().toISOString()
     });
 
-    toast({ title: 'User Registered', description: `${formData.firstName} has been added to the directory.` });
+    toast({ 
+      title: 'User Registered', 
+      description: `${formData.firstName} has been added to the local directory queue.` 
+    });
+    
     setIsAddOpen(false);
     setFormData({ firstName: '', lastName: '', email: '', password: '', role: 'student', status: 'active' });
   };
@@ -363,10 +369,18 @@ export default function UserManagementPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-                  {filteredUsers.length === 0 && (
+                  {filteredUsers.length === 0 && !isDataLoading && (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">
                         No users found matching your criteria.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                  {filteredUsers.length === 0 && isDataLoading && (
+                    <TableRow>
+                      <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">
+                        <Loader2 className="animate-spin h-6 w-6 mx-auto mb-2" />
+                        Verifying administrative access...
                       </TableCell>
                     </TableRow>
                   )}

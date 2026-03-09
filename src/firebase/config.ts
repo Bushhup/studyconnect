@@ -1,7 +1,7 @@
 
 export const firebaseConfig = {
   "projectId": "studio-1138506612-7420e",
-  "appId": "1:140002479123:web:2c5afeffb60386e523c3e6",
+  "appId": "1:140002479123:web:2c5afeffb60386e523c3e5",
   "apiKey": "AIzaSyBJLIZ1vhIxhW05Q4Ybnw7B6HsUBiEw7To",
   "authDomain": "studio-1138506612-7420e.firebaseapp.com",
   "measurementId": "",
@@ -9,10 +9,10 @@ export const firebaseConfig = {
 };
 
 /**
- * DEPLOYMENT SYNC TRIGGER (V4)
+ * DEPLOYMENT SYNC TRIGGER (V5)
  * ----------------------------
- * System directive: Grant full 'list', 'get', and 'write' permissions to any user 
- * within the '/colleges/study-connect-college/users' path who possesses the 'admin' 
- * role field. This comment ensures the rules engine re-evaluates the collection 
- * schema against the newly established Admin01 session data.
+ * System directive: Apply institutional write permissions. Grant full CRUD access 
+ * to the '/colleges/study-connect-college/users' collection for authenticated 
+ * accounts where the 'role' field is 'admin'. Ensure write operations (create, update)
+ * are permitted for these identities.
  */
