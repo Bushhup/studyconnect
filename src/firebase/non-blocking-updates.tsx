@@ -1,89 +1,53 @@
 'use client';
     
-import {
-  setDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  CollectionReference,
-  DocumentReference,
-  SetOptions,
-} from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import {FirestorePermissionError} from '@/firebase/errors';
+import { getLocalData, setLocalData } from '@/lib/mock-db';
 
 /**
- * Initiates a setDoc operation for a document reference.
- * Does NOT await the write operation internally.
+ * MOCK UPDATES
+ * Intercepts cloud writes and redirects them to local state.
  */
-export function setDocumentNonBlocking(docRef: DocumentReference, data: any, options: SetOptions) {
-  setDoc(docRef, data, options).catch(error => {
-    errorEmitter.emit(
-      'permission-error',
-      new FirestorePermissionError({
-        path: docRef.path,
-        operation: 'write', // or 'create'/'update' based on options
-        requestResourceData: data,
-      })
-    )
-  })
-  // Execution continues immediately
+
+function getCollectionFromPath(path: string) {
+  return path.split('/').slice(-2, -1)[0] || path.split('/').pop();
 }
 
+export function setDocumentNonBlocking(docRef: any, data: any, options: any) {
+  const path = docRef.path || '';
+  const parts = path.split('/');
+  const collectionName = parts[parts.length - 2];
+  const id = parts[parts.length - 1];
 
-/**
- * Initiates an addDoc operation for a collection reference.
- * Does NOT await the write operation internally.
- * Returns the Promise for the new doc ref, but typically not awaited by caller.
- */
-export function addDocumentNonBlocking(colRef: CollectionReference, data: any) {
-  const promise = addDoc(colRef, data)
-    .catch(error => {
-      errorEmitter.emit(
-        'permission-error',
-        new FirestorePermissionError({
-          path: colRef.path,
-          operation: 'create',
-          requestResourceData: data,
-        })
-      )
-    });
-  return promise;
+  const current = getLocalData(collectionName);
+  const index = current.findIndex((i: any) => i.id === id);
+  
+  if (index > -1) {
+    current[index] = options?.merge ? { ...current[index], ...data } : data;
+  } else {
+    current.push({ ...data, id });
+  }
+  
+  setLocalData(collectionName, current);
 }
 
-
-/**
- * Initiates an updateDoc operation for a document reference.
- * Does NOT await the write operation internally.
- */
-export function updateDocumentNonBlocking(docRef: DocumentReference, data: any) {
-  updateDoc(docRef, data)
-    .catch(error => {
-      errorEmitter.emit(
-        'permission-error',
-        new FirestorePermissionError({
-          path: docRef.path,
-          operation: 'update',
-          requestResourceData: data,
-        })
-      )
-    });
+export function addDocumentNonBlocking(colRef: any, data: any) {
+  const collectionName = colRef.path?.split('/').pop() || '';
+  const current = getLocalData(collectionName);
+  const newDoc = { ...data, id: crypto.randomUUID() };
+  current.push(newDoc);
+  setLocalData(collectionName, current);
+  return Promise.resolve({ id: newDoc.id });
 }
 
+export function updateDocumentNonBlocking(docRef: any, data: any) {
+  setDocumentNonBlocking(docRef, data, { merge: true });
+}
 
-/**
- * Initiates a deleteDoc operation for a document reference.
- * Does NOT await the write operation internally.
- */
-export function deleteDocumentNonBlocking(docRef: DocumentReference) {
-  deleteDoc(docRef)
-    .catch(error => {
-      errorEmitter.emit(
-        'permission-error',
-        new FirestorePermissionError({
-          path: docRef.path,
-          operation: 'delete',
-        })
-      )
-    });
+export function deleteDocumentNonBlocking(docRef: any) {
+  const parts = docRef.path?.split('/') || [];
+  const collectionName = parts[parts.length - 2];
+  const id = parts[parts.length - 1];
+  
+  const current = getLocalData(collectionName);
+  const filtered = current.filter((i: any) => i.id !== id);
+  setLocalData(collectionName, filtered);
 }
