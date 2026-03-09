@@ -31,6 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { cn } from '@/lib/utils';
 
 const weeklyData = [
   { label: 'Mon', engineering: 92, management: 88, arts: 85, science: 94 },
