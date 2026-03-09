@@ -348,7 +348,7 @@ export default function StudentManagementPage() {
                       </div>
                     </TableCell>
                     <TableCell className="text-right pr-6">
-                      <DropdownMenu>
+                      <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
                             <MoreHorizontal className="h-4 w-4 text-muted-foreground" />

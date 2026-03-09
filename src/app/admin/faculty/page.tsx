@@ -194,7 +194,7 @@ export default function FacultyManagementPage() {
                       {dept?.name || 'Academic Faculty'}
                     </Badge>
                   </div>
-                  <DropdownMenu>
+                  <DropdownMenu modal={false}>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full -mt-1 -mr-1">
                         <MoreHorizontal className="h-4 w-4" />
