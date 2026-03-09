@@ -21,6 +21,7 @@
         "id": { "type": "string" },
         "collegeId": { "type": "string" },
         "email": { "type": "string", "format": "email" },
+        "password": { "type": "string", "description": "Temporary password for first-time provisioning." },
         "firstName": { "type": "string" },
         "lastName": { "type": "string" },
         "role": { "type": "string", "enum": ["student", "faculty", "admin"] },

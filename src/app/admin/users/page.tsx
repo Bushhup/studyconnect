@@ -27,7 +27,7 @@ import {
 import { 
   Users, Search, MoreHorizontal, Plus, 
   GraduationCap, ShieldCheck, UserCog, Edit3, 
-  Eye, Trash2, Loader2, CheckCircle2 
+  Eye, Trash2, Loader2, CheckCircle2, Lock 
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -75,6 +75,7 @@ export default function UserManagementPage() {
     firstName: '',
     lastName: '',
     email: '',
+    password: '',
     role: 'student',
     status: 'active'
   });
@@ -97,7 +98,7 @@ export default function UserManagementPage() {
 
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !formData.email) return;
+    if (!firestore || !formData.email || !formData.password) return;
 
     const userId = crypto.randomUUID();
     const userRef = doc(firestore, 'colleges', collegeId, 'users', userId);
@@ -109,9 +110,9 @@ export default function UserManagementPage() {
       createdAt: new Date().toISOString()
     });
 
-    toast({ title: 'User Registered', description: `${formData.firstName} has been added to the directory.` });
+    toast({ title: 'User Registered', description: `${formData.firstName} has been added to the directory with a temporary password.` });
     setIsAddOpen(false);
-    setFormData({ firstName: '', lastName: '', email: '', role: 'student', status: 'active' });
+    setFormData({ firstName: '', lastName: '', email: '', password: '', role: 'student', status: 'active' });
   };
 
   const handleUpdateUser = (e: React.FormEvent) => {
@@ -144,6 +145,7 @@ export default function UserManagementPage() {
       firstName: user.firstName,
       lastName: user.lastName,
       email: user.email,
+      password: user.password || '',
       role: user.role,
       status: user.status
     });
@@ -207,6 +209,18 @@ export default function UserManagementPage() {
                   value={formData.email} 
                   onChange={(e) => setFormData({...formData, email: e.target.value})} 
                   className="bg-slate-50 border-none" required 
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Lock className="h-3.5 w-3.5 text-muted-foreground" /> Temporary Password
+                </Label>
+                <Input 
+                  type="password" 
+                  value={formData.password} 
+                  onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                  className="bg-slate-50 border-none" required 
+                  placeholder="Minimum 6 characters"
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">

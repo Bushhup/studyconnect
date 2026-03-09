@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -15,14 +16,16 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { GraduationCap, BookOpen, ShieldCheck, ArrowLeft, Loader2 } from 'lucide-react';
 import { useFirebase } from '@/firebase';
-import { signInWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInAnonymously, createUserWithEmailAndPassword } from 'firebase/auth';
+import { collection, query, where, getDocs, doc, setDoc, deleteDoc } from 'firebase/firestore';
 
 type UserRole = 'student' | 'faculty' | 'admin';
+const collegeId = 'study-connect-college';
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { auth } = useFirebase();
+  const { auth, firestore } = useFirebase();
 
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
   const [email, setEmail] = useState('');
@@ -34,15 +37,15 @@ export default function LoginPage() {
     if (!email || !password) return;
 
     setIsLoading(true);
+    const normalizedEmail = email.trim().toLowerCase();
+
     try {
       const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
       const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
       if (selectedRole === 'admin') {
-        if (email.trim().toLowerCase() === adminEmail?.trim().toLowerCase() && password === adminPass) {
-          // Sign in the admin anonymously so they have a UID for Firestore Security Rules
+        if (normalizedEmail === adminEmail?.trim().toLowerCase() && password === adminPass) {
           await signInAnonymously(auth);
-          
           toast({ title: 'System Access Granted', description: 'Welcome to the Master Control.' });
           router.push('/admin/dashboard');
           return;
@@ -51,11 +54,52 @@ export default function LoginPage() {
         }
       }
 
-      // For Faculty and Students, we use real Firebase Auth
-      await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
-      
-      toast({ title: 'Welcome Back', description: `Authenticated as ${selectedRole}.` });
-      router.push('/profile');
+      // 1. Attempt standard login
+      try {
+        await signInWithEmailAndPassword(auth, normalizedEmail, password);
+        toast({ title: 'Welcome Back', description: `Authenticated as ${selectedRole}.` });
+        router.push('/profile');
+      } catch (authError: any) {
+        // 2. If standard login fails, check for provisioned user in Firestore
+        const usersRef = collection(firestore, 'colleges', collegeId, 'users');
+        const q = query(usersRef, where('email', '==', normalizedEmail));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+          const userData = querySnapshot.docs[0].data();
+          
+          // Verify password against institutional record
+          if (userData.password === password) {
+            // 3. "Bootstrap" this user into Firebase Auth
+            const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+            const newUser = userCredential.user;
+            
+            // 4. Migrate institutional record to new UID-based document
+            const newDocRef = doc(firestore, 'colleges', collegeId, 'users', newUser.uid);
+            const oldDocRef = doc(firestore, 'colleges', collegeId, 'users', querySnapshot.docs[0].id);
+            
+            await setDoc(newDocRef, {
+              ...userData,
+              id: newUser.uid,
+              uid: newUser.uid,
+              authBootstrapped: true,
+              updatedAt: new Date().toISOString()
+            });
+
+            // 5. Cleanup the temporary provisioned record
+            if (oldDocRef.id !== newDocRef.id) {
+              await deleteDoc(oldDocRef);
+            }
+
+            toast({ title: 'Account Activated', description: 'Your institutional profile has been successfully linked.' });
+            router.push('/profile');
+          } else {
+            throw new Error('Invalid institutional password.');
+          }
+        } else {
+          throw authError; // Rethrow original auth error if no institutional record exists
+        }
+      }
     } catch (error: any) {
       toast({
         variant: 'destructive',

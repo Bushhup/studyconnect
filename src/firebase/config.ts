@@ -8,4 +8,4 @@ export const firebaseConfig = {
   "messagingSenderId": "140002479123"
 };
 
-// Security Rules trigger: ensuring rules are deployed for the college institutional schema.
+// Sync Trigger: Ensuring security rules are deployed for provisioned user bootstrapping.
