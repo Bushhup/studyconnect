@@ -49,7 +49,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UserPlus, Users, Search, MoreHorizontal, Plus, GraduationCap, ShieldCheck, UserCog, Edit, Trash, Eye, Mail, Fingerprint, Lock, ShieldAlert, Copy } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -121,7 +121,6 @@ export default function UserManagementPage() {
 
     setIsSubmitting(true);
     const cleanEmail = email.toLowerCase().trim();
-    // CRITICAL: For the bootstrap logic to work, use email as the initial document ID
     const userRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
     
     setDocumentNonBlocking(userRef, {

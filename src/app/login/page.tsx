@@ -20,6 +20,8 @@ import { Loader2, GraduationCap, BookOpen, ShieldCheck, ArrowLeft, Info } from '
 
 type UserRole = 'student' | 'faculty' | 'admin';
 
+const collegeId = 'study-connect-college';
+
 export default function LoginPage() {
   const auth = useAuth();
   const firestore = useFirestore();
@@ -32,20 +34,22 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  const collegeId = 'study-connect-college';
-
-  // Instant redirect if already authenticated
+  // Instant redirect if already authenticated and fully migrated
   useEffect(() => {
     if (user && !isLoading) {
-      const checkAdmin = async () => {
-        const adminDoc = await getDoc(doc(firestore, 'colleges', collegeId, 'users', user.uid));
-        if (adminDoc.exists() && adminDoc.data().role === 'admin') {
-          router.replace('/admin/dashboard');
-        } else {
-          router.replace('/profile');
+      const checkProfileAndRedirect = async () => {
+        const userDocRef = doc(firestore, 'colleges', collegeId, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
+        
+        if (userDoc.exists()) {
+          if (userDoc.data().role === 'admin') {
+            router.replace('/admin/dashboard');
+          } else {
+            router.replace('/profile');
+          }
         }
       };
-      checkAdmin();
+      checkProfileAndRedirect();
     }
   }, [user, router, isLoading, firestore]);
 
@@ -65,93 +69,101 @@ export default function LoginPage() {
     
     try {
       let userCredential;
+      let needsMigration = false;
+      let migrationSourceData: any = null;
+
       try {
-        // 1. Try standard sign in (for already bootstrapped users)
+        // 1. Attempt standard sign-in
         userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
       } catch (authError: any) {
-        // 2. Bootstrap logic: Check Firestore for pre-provisioned records using email as ID
-        const userDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
-        const userDoc = await getDoc(userDocRef);
+        // 2. Fallback to Bootstrap logic if sign-in fails
+        const emailDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
+        const emailDoc = await getDoc(emailDocRef);
 
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-
-          // Verify plain text password stored by admin during initial provisioning
+        if (emailDoc.exists()) {
+          const userData = emailDoc.data();
           if (userData.password === password) {
             if (userData.role !== selectedRole) {
-              throw new Error(`This account is registered as a ${userData.role}, not a ${selectedRole}.`);
+              throw new Error(`Account registered as ${userData.role}, not ${selectedRole}.`);
             }
 
-            // Success! Create the real secure Auth account
-            userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
-            
-            // Migrate document to use Auth UID for standard security rules compliance
-            const batch = writeBatch(firestore);
-            const newDocRef = doc(firestore, 'colleges', collegeId, 'users', userCredential.user.uid);
-            
-            batch.set(newDocRef, {
-              ...userData,
-              id: userCredential.user.uid,
-              updatedAt: new Date().toISOString()
-            });
-
-            // Remove the temporary email-based record
-            batch.delete(userDocRef);
-            
-            await batch.commit();
+            try {
+              userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+            } catch (createError: any) {
+              if (createError.code === 'auth/email-already-in-use') {
+                // Already in Auth but migration failed previously
+                userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+              } else {
+                throw createError;
+              }
+            }
+            needsMigration = true;
+            migrationSourceData = userData;
           } else {
-            throw new Error("Invalid password for this institutional account.");
+            throw new Error("Invalid password for institutional account.");
+          }
+        } else if (cleanEmail === 'admin01@college.edu' && password === 'minister123' && selectedRole === 'admin') {
+          // Special case for initial system admin
+          try {
+            userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+          } catch (err: any) {
+            userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
           }
         } else {
-          // Special case for initial dev admin bootstrap
-          if (cleanEmail === 'admin01@college.edu' && password === 'minister123' && selectedRole === 'admin') {
-            userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
-          } else {
-            // Re-surface original auth error if no bootstrap record found
-            throw new Error("Account not found in institutional directory or invalid credentials.");
-          }
+          throw new Error("Account not found in directory or invalid credentials.");
         }
       }
 
       const loggedInUser = userCredential!.user;
-      const userDocRef = doc(firestore, 'colleges', collegeId, 'users', loggedInUser.uid);
-      
-      // Post-auth verification
-      const userDoc = await getDoc(userDocRef);
+      const uidDocRef = doc(firestore, 'colleges', collegeId, 'users', loggedInUser.uid);
+      const emailDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
 
-      if (!userDoc.exists()) {
-        if (cleanEmail === 'admin01@college.edu' && selectedRole === 'admin') {
-          // One-time provision for system admin if Firestore doc doesn't exist yet
-          setDocumentNonBlocking(userDocRef, {
-            id: loggedInUser.uid,
-            collegeId: collegeId,
-            email: cleanEmail,
-            firstName: 'System',
-            lastName: 'Admin',
-            role: 'admin',
-            status: 'active'
-          }, { merge: true });
-        } else {
-          await signOut(auth);
-          throw new Error(`Profile synchronization failed. Please contact administrator.`);
+      // Check if we need to perform/finish migration
+      if (needsMigration || cleanEmail === 'admin01@college.edu') {
+        const batch = writeBatch(firestore);
+        
+        // If we have migration data from bootstrap step, use it
+        const finalData = migrationSourceData || {
+          id: loggedInUser.uid,
+          collegeId,
+          email: cleanEmail,
+          firstName: 'System',
+          lastName: 'Admin',
+          role: 'admin',
+          status: 'active'
+        };
+
+        batch.set(uidDocRef, {
+          ...finalData,
+          id: loggedInUser.uid,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        // Cleanup temporary email record if it exists
+        const emailDoc = await getDoc(emailDocRef);
+        if (emailDoc.exists()) {
+          batch.delete(emailDocRef);
         }
-      } else if (userDoc.data()?.role !== selectedRole) {
-        await signOut(auth);
-        throw new Error(`This account does not have ${selectedRole} permissions.`);
+
+        await batch.commit();
       }
 
-      toast({ title: 'Login Successful', description: `Welcome back, ${userDoc.data()?.firstName || 'User'}!` });
-      
-      if (selectedRole === 'admin') {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/profile');
+      // Final Role Verification
+      const finalDoc = await getDoc(uidDocRef);
+      if (!finalDoc.exists() || finalDoc.data().role !== selectedRole) {
+        await signOut(auth);
+        throw new Error(`Unauthorized access. Expected ${selectedRole} role.`);
       }
+
+      toast({ title: 'Login Successful', description: `Welcome, ${finalDoc.data().firstName}!` });
+      router.push(selectedRole === 'admin' ? '/admin/dashboard' : '/profile');
+
     } catch (error: any) {
+      console.error('Auth Error:', error);
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: error.message || 'Invalid email or password.',
+        description: error.message || 'Invalid credentials.',
       });
       setIsLoading(false);
     }
