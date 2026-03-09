@@ -28,13 +28,13 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Static Login Simulation: Any non-empty input works
+    // Static Login: Accepts any non-empty input for prototyping
     if (!email || !password) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Please enter your credentials.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Please enter any credentials to enter the prototype.' });
       return;
     }
 
-    toast({ title: 'Welcome Back', description: `Access granted to the ${selectedRole} portal.` });
+    toast({ title: 'Welcome Back', description: `Accessing the ${selectedRole} portal prototype.` });
     
     // Redirect based on role
     if (selectedRole === 'admin') {
@@ -65,28 +65,28 @@ export default function LoginPage() {
 
   return (
     <div className="container mx-auto flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
-      <Card className="w-full max-w-sm shadow-2xl overflow-hidden bg-white">
+      <Card className="w-full max-w-sm shadow-2xl overflow-hidden bg-white border-primary/20">
         <div className="h-2 bg-primary w-full" />
         <CardHeader>
-          <Button variant="ghost" size="sm" className="w-fit p-0 mb-4" onClick={() => setSelectedRole(null)}>
+          <Button variant="ghost" size="sm" className="w-fit p-0 mb-4 hover:bg-transparent" onClick={() => setSelectedRole(null)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Switch Portal
           </Button>
           <CardTitle className="text-2xl font-headline text-center capitalize">{selectedRole} Portal</CardTitle>
-          <CardDescription className="text-center">Enter any credentials to enter the static prototype.</CardDescription>
+          <CardDescription className="text-center">Enter any institutional credentials to enter.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
               <Label>Email Address</Label>
-              <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11" placeholder="admin@college.edu" />
+              <Input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-slate-50 border-none" placeholder="e.g. user@college.edu" />
             </div>
             <div className="grid gap-2">
               <Label>Password</Label>
-              <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="h-11" placeholder="••••••••" />
+              <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 bg-slate-50 border-none" placeholder="••••••••" />
             </div>
           </CardContent>
           <div className="p-6 pt-0">
-            <Button className="w-full h-12 text-lg" type="submit">
+            <Button className="w-full h-12 text-lg font-bold shadow-lg shadow-primary/20" type="submit">
               Enter Portal
             </Button>
           </div>
@@ -98,9 +98,9 @@ export default function LoginPage() {
 
 function RoleCard({ title, description, icon: Icon, onClick }: any) {
   return (
-    <Card className="cursor-pointer transition-all hover:bg-accent/5 hover:-translate-y-1 flex flex-col items-center text-center p-8" onClick={onClick}>
+    <Card className="cursor-pointer transition-all hover:bg-accent/5 hover:-translate-y-1 flex flex-col items-center text-center p-8 border-none shadow-sm bg-white" onClick={onClick}>
       <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-4">
-        <Icon className="w-8 h-8" />
+        <Icon className="w-8 h-8 text-primary" />
       </div>
       <CardTitle className="font-headline text-xl mb-1">{title}</CardTitle>
       <CardDescription>{description}</CardDescription>
