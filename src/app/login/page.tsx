@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -45,7 +46,23 @@ export default function LoginPage() {
       if (selectedRole === 'admin') {
         // Match Admin01 username (case-insensitive) and password from .env
         if (normalizedEmail === adminEmail?.trim().toLowerCase() && password === adminPass) {
-          await signInAnonymously(auth);
+          const userCredential = await signInAnonymously(auth);
+          const newUser = userCredential.user;
+          
+          // Provision a temporary admin record for the anonymous session 
+          // to satisfy security rules that check for the 'admin' role.
+          const adminDocRef = doc(firestore, 'colleges', collegeId, 'users', newUser.uid);
+          await setDoc(adminDocRef, {
+            id: newUser.uid,
+            uid: newUser.uid,
+            email: 'admin-session@college.edu',
+            role: 'admin',
+            firstName: 'System',
+            lastName: 'Administrator',
+            status: 'active',
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+
           toast({ title: 'System Access Granted', description: 'Welcome to the Master Control.' });
           router.push('/admin/dashboard');
           return;

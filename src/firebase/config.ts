@@ -8,4 +8,4 @@ export const firebaseConfig = {
   "messagingSenderId": "140002479123"
 };
 
-// Sync Trigger: Ensuring security rules are deployed for provisioned user bootstrapping.
+// Sync Trigger: Ensuring security rules allow administrative listing of the users collection.
