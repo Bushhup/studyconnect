@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useMemoFirebase, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -12,28 +12,44 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Search, FileSpreadsheet, Download, Send, 
   AlertCircle, Loader2, TrendingUp, Trophy,
-  Star, ChevronRight
+  Star, ChevronRight, Edit3, CheckCircle2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip
 } from 'recharts';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
 
 const collegeId = 'study-connect-college';
 
 const chartData = [
-  { name: 'Unit 1', avg: 72 },
-  { name: 'Unit 2', avg: 78 },
-  { name: 'Midterm', avg: 85 },
-  { name: 'Unit 3', avg: 82 },
-  { name: 'Finals', avg: 88 },
+  { name: 'CAT-1', avg: 72 },
+  { name: 'CAT-2', avg: 78 },
+  { name: 'Model', avg: 82 },
+  { name: 'Final', avg: 88 },
 ];
 
 export default function MarksManagementPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [isMarkDialogOpen, setIsMarkDialogOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Mark states
+  const [cat1, setCat1] = useState('');
+  const [cat2, setCat2] = useState('');
+  const [modelExam, setModelExam] = useState('');
+  const [finalSemester, setFinalSemester] = useState('');
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -48,12 +64,47 @@ export default function MarksManagementPage() {
      u.id.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
+  const openMarkDialog = (student: any) => {
+    setSelectedStudent(student);
+    setCat1(student.marks?.cat1 || '');
+    setCat2(student.marks?.cat2 || '');
+    setModelExam(student.marks?.model || '');
+    setFinalSemester(student.marks?.final || '');
+    setIsMarkDialogOpen(true);
+  };
+
+  const handleSaveMarks = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedStudent) return;
+
+    setIsSubmitting(true);
+    const userRef = doc(firestore, 'colleges', collegeId, 'users', selectedStudent.id);
+    
+    setDocumentNonBlocking(userRef, {
+      marks: {
+        cat1: parseInt(cat1) || 0,
+        cat2: parseInt(cat2) || 0,
+        model: parseInt(modelExam) || 0,
+        final: parseInt(finalSemester) || 0,
+        updatedAt: new Date().toISOString()
+      }
+    }, { merge: true });
+
+    toast({ 
+      title: 'Academic Record Updated', 
+      description: `Assessment results for ${selectedStudent.firstName} have been synchronized.` 
+    });
+
+    setIsSubmitting(false);
+    setIsMarkDialogOpen(false);
+  };
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Academic Grading</h1>
-          <p className="text-muted-foreground mt-1">Manage assessment results, grade distribution, and institutional rankings.</p>
+          <p className="text-muted-foreground mt-1">Manage CATs, Model Exams, and Final Semester results.</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" className="gap-2 shadow-sm rounded-full" onClick={() => toast({ title: "Export Started", description: "Generating grade report..." })}>
@@ -69,8 +120,8 @@ export default function MarksManagementPage() {
         <Card className="lg:col-span-3 border-none shadow-sm bg-white overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <div>
-              <CardTitle className="text-lg">Semester Performance Trend</CardTitle>
-              <CardDescription>Average score progression across all subjects</CardDescription>
+              <CardTitle className="text-lg font-headline">Assessment Progression</CardTitle>
+              <CardDescription>Average performance across institutional benchmarks</CardDescription>
             </div>
             <Badge className="bg-emerald-50 text-emerald-600 border-none font-bold gap-1.5 py-1">
               <TrendingUp className="h-3 w-3" /> +5.2% Growth
@@ -99,29 +150,33 @@ export default function MarksManagementPage() {
           <Card className="border-none shadow-sm bg-primary text-white overflow-hidden relative">
             <Trophy className="absolute right-[-10px] bottom-[-10px] h-24 w-24 text-white/10 rotate-12" />
             <CardHeader className="pb-2">
-               <CardDescription className="text-white/70 font-bold uppercase text-[10px] tracking-widest">Class Leader</CardDescription>
+               <CardDescription className="text-white/70 font-bold uppercase text-[10px] tracking-widest">Top Scorer</CardDescription>
                <CardTitle className="text-2xl">Sarah Miller</CardTitle>
             </CardHeader>
             <CardContent>
                <div className="flex items-center gap-2 text-3xl font-bold">
                  98.4 <span className="text-sm font-medium text-white/70">GPA 4.0</span>
                </div>
-               <p className="text-[10px] text-white/60 mt-2 font-medium">Top Rank • Computer Science Dept.</p>
+               <p className="text-[10px] text-white/60 mt-2 font-medium">Rank #1 • Computer Science</p>
             </CardContent>
           </Card>
           
           <Card className="border-none shadow-sm bg-white">
             <CardHeader className="pb-4">
-              <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Distribution</CardTitle>
+              <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Grade Distribution</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {['A', 'B', 'C'].map((grade, i) => (
-                <div key={grade} className="space-y-1.5">
+              {[
+                { label: 'O (Outstanding)', value: 25 },
+                { label: 'A+ (Excellence)', value: 45 },
+                { label: 'A (Good)', value: 30 },
+              ].map((grade, i) => (
+                <div key={grade.label} className="space-y-1.5">
                   <div className="flex justify-between items-center text-[10px] font-bold">
-                    <span>Grade {grade}</span>
-                    <span className="text-slate-400">{45 - (i * 10)}%</span>
+                    <span>{grade.label}</span>
+                    <span className="text-slate-400">{grade.value}%</span>
                   </div>
-                  <Progress value={45 - (i * 10)} className="h-1 bg-slate-100" />
+                  <Progress value={grade.value} className="h-1 bg-slate-100" />
                 </div>
               ))}
             </CardContent>
@@ -135,15 +190,15 @@ export default function MarksManagementPage() {
             <div className="relative w-full sm:w-80">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Filter by student name or ID..." 
+                placeholder="Search by student name or ID..." 
                 className="pl-10 bg-slate-50 border-none h-10"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
             <div className="flex items-center gap-3">
-               <Badge variant="outline" className="border-slate-200 text-slate-500 font-bold px-3 py-1">Batch of 2026</Badge>
                <Badge variant="outline" className="border-slate-200 text-slate-500 font-bold px-3 py-1">Semester 4</Badge>
+               <Badge variant="outline" className="border-slate-200 text-slate-500 font-bold px-3 py-1">2024-25</Badge>
             </div>
           </div>
         </CardHeader>
@@ -152,11 +207,11 @@ export default function MarksManagementPage() {
             <TableHeader className="bg-slate-50/50">
               <TableRow className="border-none hover:bg-transparent">
                 <TableHead className="font-bold pl-6 py-4">Student Name</TableHead>
-                <TableHead className="font-bold">Progress Track</TableHead>
-                <TableHead className="font-bold text-center">Final Score</TableHead>
-                <TableHead className="font-bold">Grade Badge</TableHead>
+                <TableHead className="font-bold">Latest Assessment</TableHead>
+                <TableHead className="font-bold text-center">Avg Score</TableHead>
+                <TableHead className="font-bold">Grade</TableHead>
                 <TableHead className="font-bold">Ranking</TableHead>
-                <TableHead className="text-right pr-6 font-bold">Details</TableHead>
+                <TableHead className="text-right pr-6 font-bold">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -167,8 +222,10 @@ export default function MarksManagementPage() {
                   </TableCell>
                 </TableRow>
               ) : students?.map((student, idx) => {
-                const score = 100 - (idx * 3) - Math.floor(Math.random() * 5);
-                const grade = score > 90 ? 'A+' : score > 80 ? 'A' : score > 70 ? 'B' : 'C';
+                const m = student.marks || {};
+                const avg = m.final ? Math.round((m.cat1 + m.cat2 + m.model + m.final) / 4) : 0;
+                const displayScore = avg || (100 - (idx * 2) - Math.floor(Math.random() * 5));
+                const grade = displayScore > 90 ? 'O' : displayScore > 80 ? 'A+' : displayScore > 70 ? 'A' : 'B';
                 
                 return (
                   <TableRow key={student.id} className="group hover:bg-slate-50/50 border-slate-100 transition-colors">
@@ -179,25 +236,19 @@ export default function MarksManagementPage() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="w-24 space-y-1.5">
-                        <Progress value={score} className={cn(
-                          "h-1.5",
-                          score > 90 ? "bg-emerald-100" : "bg-blue-100"
-                        )} />
-                        <span className="text-[9px] font-bold text-slate-400">Consistency: High</span>
-                      </div>
+                       <div className="flex flex-col gap-1">
+                          <span className="text-xs font-medium text-slate-600">Final Semester</span>
+                          <Progress value={displayScore} className="h-1 w-24 bg-slate-100" />
+                       </div>
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="flex flex-col items-center">
-                        <span className="text-sm font-bold">{score} / 100</span>
-                        <span className="text-[9px] text-muted-foreground uppercase">Average Performance</span>
-                      </div>
+                      <span className="text-sm font-bold">{displayScore}%</span>
                     </TableCell>
                     <TableCell>
                       <Badge className={cn(
                         "font-bold px-3 py-0.5 border-none",
-                        grade.startsWith('A') ? "bg-emerald-100 text-emerald-700" :
-                        grade.startsWith('B') ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
+                        grade === 'O' ? "bg-emerald-100 text-emerald-700" :
+                        grade === 'A+' ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"
                       )}>
                         {grade}
                       </Badge>
@@ -205,15 +256,15 @@ export default function MarksManagementPage() {
                     <TableCell>
                       {idx < 3 ? (
                         <div className="flex items-center gap-1.5 text-amber-500 font-bold text-xs">
-                          <Star className="h-3.5 w-3.5 fill-current" /> Top {idx + 1}
+                          <Star className="h-3.5 w-3.5 fill-current" /> Rank #{idx + 1}
                         </div>
                       ) : (
                         <span className="text-xs font-medium text-slate-500">Above Avg</span>
                       )}
                     </TableCell>
                     <TableCell className="text-right pr-6">
-                      <Button variant="ghost" size="sm" className="h-8 w-8 rounded-full">
-                        <ChevronRight className="h-4 w-4" />
+                      <Button variant="ghost" size="sm" className="gap-2 font-bold text-primary hover:bg-primary/5" onClick={() => openMarkDialog(student)}>
+                        <Edit3 className="h-4 w-4" /> Assign Marks
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -223,6 +274,68 @@ export default function MarksManagementPage() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Mark Assignment Dialog */}
+      <Dialog open={isMarkDialogOpen} onOpenChange={setIsMarkDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-primary" /> Assign Marks
+            </DialogTitle>
+            <DialogDescription>
+              Record assessment results for {selectedStudent?.firstName} {selectedStudent?.lastName}.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveMarks} className="space-y-4 pt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">CAT-1 (Max 50)</Label>
+                <Input 
+                  type="number" 
+                  value={cat1} 
+                  onChange={e => setCat1(e.target.value)} 
+                  placeholder="0"
+                  className="bg-slate-50 border-none"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">CAT-2 (Max 50)</Label>
+                <Input 
+                  type="number" 
+                  value={cat2} 
+                  onChange={e => setCat2(e.target.value)} 
+                  placeholder="0"
+                  className="bg-slate-50 border-none"
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Model Exam (Max 100)</Label>
+              <Input 
+                type="number" 
+                value={modelExam} 
+                onChange={e => setModelExam(e.target.value)} 
+                placeholder="0"
+                className="bg-slate-50 border-none"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Final Semester Exam (Max 100)</Label>
+              <Input 
+                type="number" 
+                value={finalSemester} 
+                onChange={e => setFinalSemester(e.target.value)} 
+                placeholder="0"
+                className="bg-slate-50 border-none"
+              />
+            </div>
+            <Button type="submit" className="w-full h-11 font-bold shadow-lg shadow-primary/20" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+              Save Assessment Record
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
