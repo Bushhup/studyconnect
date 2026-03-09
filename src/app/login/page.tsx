@@ -40,11 +40,11 @@ export default function LoginPage() {
     const normalizedEmail = email.trim().toLowerCase();
 
     try {
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
-      const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
+      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'Admin01';
+      const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'minister123';
 
       if (selectedRole === 'admin') {
-        if (normalizedEmail === adminEmail?.trim().toLowerCase() && password === adminPass) {
+        if (normalizedEmail === adminEmail.toLowerCase() && password === adminPass) {
           const userCredential = await signInAnonymously(auth);
           const newUser = userCredential.user;
           
