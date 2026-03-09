@@ -22,8 +22,9 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
     
-    function isExistingDoc() {
-      return resource != null;
+    function isEmailOwner(emailId) {
+      // Allows users to manage their own temporary email-based bootstrap records
+      return isSignedIn() && request.auth.token.email.lower() == emailId.lower();
     }
 
     function isCollegeAdmin(collegeId) {
@@ -86,12 +87,13 @@ service cloud.firestore {
       }
       
       match /users/{userId} {
-        // Allow public get for login/bootstrap logic (email-based ID)
+        // Allow public get for login/bootstrap logic (email-based ID or UID)
         allow get: if true; 
         allow list: if isCollegeAdmin(collegeId);
         allow create: if isOwner(userId) || isCollegeAdmin(collegeId);
-        allow update: if (isOwner(userId) && incomingData().role == existingData().role) || isCollegeAdmin(collegeId);
-        allow delete: if isCollegeAdmin(collegeId);
+        // Allow email owners to update or delete their temp records during bootstrap
+        allow update: if (isOwner(userId) && incomingData().role == existingData().role) || isEmailOwner(userId) || isCollegeAdmin(collegeId);
+        allow delete: if isEmailOwner(userId) || isCollegeAdmin(collegeId);
       }
     }
   }

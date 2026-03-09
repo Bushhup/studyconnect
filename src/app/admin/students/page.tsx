@@ -39,7 +39,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import { 
   Select, 
   SelectContent, 
@@ -100,8 +100,10 @@ export default function StudentManagementPage() {
 
   const students = users?.filter(u => {
     const isStudent = u.role === 'student';
-    const matchesSearch = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          (u.email || '').toLowerCase().includes(searchQuery.toLowerCase());
+    const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
+    const emailStr = (u.email || '').toLowerCase();
+    const query = searchQuery.toLowerCase();
+    const matchesSearch = fullName.includes(query) || emailStr.includes(query);
     const matchesDept = deptFilter === 'all' || u.departmentId === deptFilter;
     return isStudent && matchesSearch && matchesDept;
   }) || [];
@@ -114,7 +116,8 @@ export default function StudentManagementPage() {
     }
 
     setIsSubmitting(true);
-    const studentEmail = newStudent.email.toLowerCase();
+    const studentEmail = newStudent.email.toLowerCase().trim();
+    // CRITICAL: For the bootstrap logic to work, use email as the initial document ID
     const userRef = doc(firestore, 'colleges', collegeId, 'users', studentEmail);
     
     setDocumentNonBlocking(userRef, {
@@ -127,7 +130,8 @@ export default function StudentManagementPage() {
       role: 'student',
       status: 'active',
       departmentId: newStudent.departmentId,
-      degreeType: newStudent.degreeType
+      degreeType: newStudent.degreeType,
+      createdAt: new Date().toISOString()
     }, { merge: true });
 
     toast({ title: 'Student Registered', description: `${newStudent.firstName} has been added to the ${newStudent.departmentId} program.` });
@@ -169,7 +173,7 @@ export default function StudentManagementPage() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Register New Student</DialogTitle>
-                <DialogDescription>Create a new institutional record. Use a strong initial password.</DialogDescription>
+                <DialogDescription>Create a new institutional record. Emails will be automatically trimmed and lowercased.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleAddStudent} className="space-y-4 pt-4">
                 <div className="grid grid-cols-2 gap-3">

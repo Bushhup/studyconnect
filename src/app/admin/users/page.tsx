@@ -49,7 +49,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, UserPlus, Users, Search, MoreHorizontal, Plus, GraduationCap, ShieldCheck, UserCog, Edit, Trash, Eye, Mail, Fingerprint, Lock, ShieldAlert, Copy } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -120,18 +120,20 @@ export default function UserManagementPage() {
     }
 
     setIsSubmitting(true);
+    const cleanEmail = email.toLowerCase().trim();
     // CRITICAL: For the bootstrap logic to work, use email as the initial document ID
-    const userRef = doc(firestore, 'colleges', collegeId, 'users', email.toLowerCase());
+    const userRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
     
     setDocumentNonBlocking(userRef, {
-      id: email.toLowerCase(),
+      id: cleanEmail,
       collegeId: collegeId,
-      email: email.toLowerCase(),
+      email: cleanEmail,
       password, 
       firstName,
       lastName,
       role,
       status,
+      createdAt: new Date().toISOString()
     }, { merge: true });
 
     toast({ title: 'User Record Created', description: `${firstName} ${lastName} has been added.` });
@@ -146,14 +148,16 @@ export default function UserManagementPage() {
 
     setIsSubmitting(true);
     const userRef = doc(firestore, 'colleges', collegeId, 'users', selectedUser.id);
+    const cleanEmail = editEmail.toLowerCase().trim();
     
     const updateData: any = {
       firstName: editFirstName,
       lastName: editLastName,
-      email: editEmail.toLowerCase(),
+      email: cleanEmail,
       role: editRole,
       status: editStatus,
       password: editPassword,
+      updatedAt: new Date().toISOString()
     };
 
     setDocumentNonBlocking(userRef, updateData, { merge: true });
@@ -216,7 +220,7 @@ export default function UserManagementPage() {
                   <UserPlus className="h-5 w-5 text-primary" /> Provision User
                 </DialogTitle>
                 <DialogDescription>
-                  Create a new institutional record. A unique ID will be generated automatically.
+                  Create a new institutional record. Normalization will be applied to the email.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
@@ -449,7 +453,7 @@ export default function UserManagementPage() {
                         <Lock className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold uppercase text-primary/70 tracking-tighter">Current Password (Admin Only)</span>
+                        <span className="text-[10px] font-bold uppercase text-primary/70 tracking-tighter">Initial Password (Admin Only)</span>
                         <span className="text-sm font-mono font-bold text-primary">{selectedUser.password || 'Not Set'}</span>
                       </div>
                     </div>
@@ -458,7 +462,7 @@ export default function UserManagementPage() {
                     </Button>
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-2 italic flex items-center gap-1">
-                    <ShieldAlert className="h-3 w-3" /> Provide this password to the user if they have forgotten it.
+                    <ShieldAlert className="h-3 w-3" /> This password is used for the user's first login bootstrap.
                   </p>
                 </div>
               </div>

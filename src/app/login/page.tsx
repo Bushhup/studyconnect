@@ -37,13 +37,17 @@ export default function LoginPage() {
   // Instant redirect if already authenticated
   useEffect(() => {
     if (user && !isLoading) {
-      if (user.email === 'admin01@college.edu') {
-         router.replace('/admin/dashboard');
-      } else {
-         router.replace('/profile');
-      }
+      const checkAdmin = async () => {
+        const adminDoc = await getDoc(doc(firestore, 'colleges', collegeId, 'users', user.uid));
+        if (adminDoc.exists() && adminDoc.data().role === 'admin') {
+          router.replace('/admin/dashboard');
+        } else {
+          router.replace('/profile');
+        }
+      };
+      checkAdmin();
     }
-  }, [user, router, isLoading]);
+  }, [user, router, isLoading, firestore]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -62,19 +66,22 @@ export default function LoginPage() {
     try {
       let userCredential;
       try {
-        // 1. Try standard sign in
+        // 1. Try standard sign in (for already bootstrapped users)
         userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
       } catch (authError: any) {
         // 2. Bootstrap logic: Check Firestore for pre-provisioned records using email as ID
-        // (Rules updated to allow unauthenticated 'get' on users)
         const userDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
           const userData = userDoc.data();
 
-          // Prototype security: verify plain text password stored by admin
-          if (userData.password === password && userData.role === selectedRole) {
+          // Verify plain text password stored by admin during initial provisioning
+          if (userData.password === password) {
+            if (userData.role !== selectedRole) {
+              throw new Error(`This account is registered as a ${userData.role}, not a ${selectedRole}.`);
+            }
+
             // Success! Create the real secure Auth account
             userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
             
@@ -85,7 +92,7 @@ export default function LoginPage() {
             batch.set(newDocRef, {
               ...userData,
               id: userCredential.user.uid,
-              // Plaintext password remains for admin reference but is not needed for future logins
+              updatedAt: new Date().toISOString()
             });
 
             // Remove the temporary email-based record
@@ -93,14 +100,15 @@ export default function LoginPage() {
             
             await batch.commit();
           } else {
-            throw new Error("Invalid credentials or role mismatch for this portal.");
+            throw new Error("Invalid password for this institutional account.");
           }
         } else {
           // Special case for initial dev admin bootstrap
           if (cleanEmail === 'admin01@college.edu' && password === 'minister123' && selectedRole === 'admin') {
             userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
           } else {
-            throw authError;
+            // Re-surface original auth error if no bootstrap record found
+            throw new Error("Account not found in institutional directory or invalid credentials.");
           }
         }
       }
@@ -113,7 +121,7 @@ export default function LoginPage() {
 
       if (!userDoc.exists()) {
         if (cleanEmail === 'admin01@college.edu' && selectedRole === 'admin') {
-          // One-time provision for system admin
+          // One-time provision for system admin if Firestore doc doesn't exist yet
           setDocumentNonBlocking(userDocRef, {
             id: loggedInUser.uid,
             collegeId: collegeId,
@@ -121,17 +129,18 @@ export default function LoginPage() {
             firstName: 'System',
             lastName: 'Admin',
             role: 'admin',
+            status: 'active'
           }, { merge: true });
         } else {
           await signOut(auth);
-          throw new Error(`Profile synchronization failed.`);
+          throw new Error(`Profile synchronization failed. Please contact administrator.`);
         }
       } else if (userDoc.data()?.role !== selectedRole) {
         await signOut(auth);
         throw new Error(`This account does not have ${selectedRole} permissions.`);
       }
 
-      toast({ title: 'Login Successful', description: `Welcome to the ${selectedRole} portal!` });
+      toast({ title: 'Login Successful', description: `Welcome back, ${userDoc.data()?.firstName || 'User'}!` });
       
       if (selectedRole === 'admin') {
         router.push('/admin/dashboard');
