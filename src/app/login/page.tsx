@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, GraduationCap, BookOpen, ShieldCheck, ArrowLeft, Info, AlertCircle } from 'lucide-react';
+import { Loader2, GraduationCap, BookOpen, ShieldCheck, ArrowLeft, Info } from 'lucide-react';
 
 type UserRole = 'student' | 'faculty' | 'admin';
 
@@ -35,7 +35,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Redirection logic for already-logged-in users
+  // Automatic redirection for already authenticated users
   useEffect(() => {
     if (user && !isLoading) {
       const checkAndRedirect = async () => {
@@ -45,6 +45,7 @@ export default function LoginPage() {
           
           if (uidDoc.exists()) {
             const role = uidDoc.data().role;
+            // Only redirect if they are in the portal they selected or we know their role
             router.replace(role === 'admin' ? '/admin/dashboard' : '/profile');
           }
         } catch (err) {
@@ -72,123 +73,93 @@ export default function LoginPage() {
     
     try {
       let userCredential;
-      let needsMigration = false;
-      let migrationSourceData: any = null;
-
-      // 1. Attempt Standard Sign-In
-      try {
-        userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
-      } catch (authError: any) {
-        // 2. Auth failed? Check for Bootstrap Record (email-based ID)
-        // This handles users created by admin who haven't signed in yet.
-        const emailDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
-        const emailDoc = await getDoc(emailDocRef);
-
-        if (emailDoc.exists()) {
-          const userData = emailDoc.data();
-          
-          // Verify Password against Firestore Record
-          if (userData.password === cleanPass) {
-            if (userData.role !== selectedRole) {
-              throw new Error(`This account is authorized for the ${userData.role} portal only.`);
-            }
-
-            try {
-              // Create Auth account using institutional password
-              userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPass);
-            } catch (createError: any) {
-              if (createError.code === 'auth/email-already-in-use') {
-                // Account exists in Auth but sign-in failed -> Wrong Password
-                throw new Error("Invalid password for this institutional account.");
-              }
-              throw createError;
-            }
-            needsMigration = true;
-            migrationSourceData = userData;
-          } else {
-            throw new Error("Invalid password for this institutional account.");
-          }
-        } else if (cleanEmail === 'admin01@college.edu' && cleanPass === 'minister123' && selectedRole === 'admin') {
-          // System Setup Fallback
-          try {
-            userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPass);
-          } catch (err: any) {
-            userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
-          }
-          needsMigration = true; // Ensure they get a doc
-        } else {
-          // No Auth account and no email document found
-          throw new Error("Account not found in directory. Please contact your administrator.");
-        }
-      }
-
-      // 3. Post-Auth Verification and Migration
-      const loggedInUser = userCredential!.user;
-      const uidDocRef = doc(firestore, 'colleges', collegeId, 'users', loggedInUser.uid);
+      
+      // 1. Check for Institutional "Bootstrap" Record First (Email-based ID)
       const emailDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
+      const emailDoc = await getDoc(emailDocRef);
 
-      // Check if migration is needed (even if standard login worked but UID doc is missing)
-      const uidDoc = await getDoc(uidDocRef);
-      if (!uidDoc.exists()) {
+      if (emailDoc.exists()) {
+        const userData = emailDoc.data();
+        
+        // Verify Password against Firestore Record
+        if (userData.password !== cleanPass) {
+          throw new Error("Invalid password for this institutional account.");
+        }
+
+        if (userData.role !== selectedRole) {
+          throw new Error(`This account is registered for the ${userData.role} portal.`);
+        }
+
+        // Try to sign in or create Auth account
+        try {
+          userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
+        } catch (authError: any) {
+          if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
+            // Create the Auth account since they exist in directory but not in Auth
+            userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPass);
+          } else {
+            throw authError;
+          }
+        }
+
+        // Perform Migration to UID-based record
+        const loggedInUser = userCredential.user;
+        const uidDocRef = doc(firestore, 'colleges', collegeId, 'users', loggedInUser.uid);
         const batch = writeBatch(firestore);
         
-        // Use migration data or check if email doc exists to pull from
-        let dataToMigrate = migrationSourceData;
-        if (!dataToMigrate) {
-          const checkEmailDoc = await getDoc(emailDocRef);
-          if (checkEmailDoc.exists()) {
-            dataToMigrate = checkEmailDoc.data();
+        batch.set(uidDocRef, {
+          ...userData,
+          id: loggedInUser.uid,
+          updatedAt: new Date().toISOString()
+        }, { merge: true });
+
+        batch.delete(emailDocRef);
+        await batch.commit();
+
+      } else {
+        // 2. No Email-based record found. Try standard Auth sign-in (for already migrated users)
+        try {
+          userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
+        } catch (err: any) {
+          // System Setup Fallback for first-time Admin
+          if (cleanEmail === 'admin01@college.edu' && cleanPass === 'minister123' && selectedRole === 'admin') {
+            userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPass);
+            const uidDocRef = doc(firestore, 'colleges', collegeId, 'users', userCredential.user.uid);
+            await writeBatch(firestore).set(uidDocRef, {
+              id: userCredential.user.uid,
+              collegeId,
+              email: cleanEmail,
+              firstName: 'System',
+              lastName: 'Admin',
+              role: 'admin',
+              status: 'active',
+              createdAt: new Date().toISOString()
+            }).commit();
+          } else {
+            throw new Error("Account not found in directory or incorrect password.");
           }
-        }
-
-        // Default for first admin if nothing found
-        if (!dataToMigrate && cleanEmail === 'admin01@college.edu') {
-          dataToMigrate = {
-            collegeId,
-            email: cleanEmail,
-            firstName: 'System',
-            lastName: 'Admin',
-            role: 'admin',
-            status: 'active'
-          };
-        }
-
-        if (dataToMigrate) {
-          batch.set(uidDocRef, {
-            ...dataToMigrate,
-            id: loggedInUser.uid,
-            updatedAt: new Date().toISOString()
-          }, { merge: true });
-
-          // Cleanup temporary record
-          const checkEmailDoc = await getDoc(emailDocRef);
-          if (checkEmailDoc.exists()) {
-            batch.delete(emailDocRef);
-          }
-          await batch.commit();
-        } else {
-          // If no data to migrate and no UID doc, this is an orphaned Auth account
-          await signOut(auth);
-          throw new Error("Account configuration incomplete. Please contact your administrator.");
         }
       }
 
-      // 4. Final Role Check
-      const finalDoc = await getDoc(uidDocRef);
+      // 3. Final Verification of the UID record
+      const finalUser = userCredential!.user;
+      const finalDocRef = doc(firestore, 'colleges', collegeId, 'users', finalUser.uid);
+      const finalDoc = await getDoc(finalDocRef);
+
       if (!finalDoc.exists() || finalDoc.data().role !== selectedRole) {
         await signOut(auth);
-        throw new Error(`Unauthorized access: You do not have ${selectedRole} privileges.`);
+        throw new Error(`Unauthorized: You do not have permissions for the ${selectedRole} portal.`);
       }
 
-      toast({ title: 'Access Granted', description: `Signed in as ${finalDoc.data().firstName}.` });
+      toast({ title: 'Access Granted', description: `Welcome back, ${finalDoc.data().firstName}.` });
       router.push(selectedRole === 'admin' ? '/admin/dashboard' : '/profile');
 
     } catch (error: any) {
       console.error('Login Error:', error);
       toast({
         variant: 'destructive',
-        title: 'Login Failed',
-        description: error.message || 'Authentication failed. Please check your credentials.',
+        title: 'Authentication Failed',
+        description: error.message || 'Please check your credentials and try again.',
       });
       setIsLoading(false);
     }
@@ -215,21 +186,21 @@ export default function LoginPage() {
             <RoleCard 
               role="student" 
               title="Student" 
-              description="Courses, grades, and campus events."
+              description="Access courses, grades, and campus events."
               icon={GraduationCap}
               onClick={() => setSelectedRole('student')}
             />
             <RoleCard 
               role="faculty" 
               title="Faculty" 
-              description="Classes, research, and materials."
+              description="Manage classes, students, and research."
               icon={BookOpen}
               onClick={() => setSelectedRole('faculty')}
             />
             <RoleCard 
               role="admin" 
               title="Administrator" 
-              description="System management and provisioning."
+              description="System configuration and user provisioning."
               icon={ShieldCheck}
               onClick={() => setSelectedRole('admin')}
             />
@@ -242,7 +213,7 @@ export default function LoginPage() {
             <span>Developer Bypass: <strong>admin01@college.edu</strong> / <strong>minister123</strong></span>
           </div>
           <Button variant="outline" size="sm" onClick={useDemoAdmin} className="rounded-full">
-            Quick Sign-In (Demo Admin)
+            Sign-In as Demo Admin
           </Button>
         </div>
       </div>
@@ -300,10 +271,10 @@ export default function LoginPage() {
           <div className="p-6 pt-0">
             <Button className="w-full font-headline h-12 text-lg shadow-lg hover:shadow-xl transition-all" type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-              {isLoading ? 'Verifying Credentials...' : 'Sign In'}
+              {isLoading ? 'Authenticating...' : 'Sign In'}
             </Button>
             <p className="text-[10px] text-center text-muted-foreground mt-4 uppercase font-bold tracking-widest flex items-center justify-center gap-1">
-              <ShieldCheck className="h-3 w-3" /> Secure Institutional Access
+              <ShieldCheck className="h-3 w-3" /> Secure System Access
             </p>
           </div>
         </form>
@@ -324,11 +295,11 @@ function RoleCard({ title, description, icon: Icon, onClick }: {
       className="group cursor-pointer relative"
       onClick={onClick}
     >
-      <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-accent/50 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500 group-active:duration-200"></div>
+      <div className="absolute -inset-1 bg-gradient-to-r from-primary/50 to-accent/50 rounded-2xl blur opacity-0 group-hover:opacity-100 transition duration-500"></div>
       <Card 
         className="relative h-full transition-all duration-300 border-primary/5 bg-card hover:bg-accent/5 hover:-translate-y-2 overflow-hidden flex flex-col items-center text-center p-8"
       >
-        <div className="w-20 h-20 rounded-2xl bg-primary/5 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 transform group-hover:rotate-3 shadow-sm group-hover:shadow-lg">
+        <div className="w-20 h-20 rounded-2xl bg-primary/5 flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-500 shadow-sm group-hover:shadow-lg">
           <Icon className="w-10 h-10" />
         </div>
         <CardTitle className="font-headline text-2xl mb-2">{title}</CardTitle>

@@ -222,7 +222,7 @@ export default function UserManagementPage() {
                   <UserPlus className="h-5 w-5 text-primary" /> Provision User
                 </DialogTitle>
                 <DialogDescription>
-                  Create a new institutional record. Normalization will be applied to the email and password.
+                  Create a new institutional record. Data will be normalized for portal bootstrap.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
@@ -439,11 +439,11 @@ export default function UserManagementPage() {
                   <div className="flex items-center gap-3">
                     <Fingerprint className="h-4 w-4 text-muted-foreground" />
                     <div className="flex flex-col">
-                      <span className="text-[10px] font-bold uppercase text-muted-foreground">Internal UID</span>
+                      <span className="text-[10px] font-bold uppercase text-muted-foreground">Internal ID</span>
                       <span className="text-sm font-mono truncate">{selectedUser.id}</span>
                     </div>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => copyToClipboard(selectedUser.id, 'UID')}>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => copyToClipboard(selectedUser.id, 'ID')}>
                     <Copy className="h-3 w-3" />
                   </Button>
                 </div>
@@ -455,7 +455,7 @@ export default function UserManagementPage() {
                         <Lock className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold uppercase text-primary/70 tracking-tighter">Institutional Password</span>
+                        <span className="text-[10px] font-bold uppercase text-primary/70 tracking-tighter">Initial Password</span>
                         <span className="text-sm font-mono font-bold text-primary">{selectedUser.password || 'Not Set'}</span>
                       </div>
                     </div>
@@ -464,7 +464,7 @@ export default function UserManagementPage() {
                     </Button>
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-2 italic flex items-center gap-1">
-                    <ShieldAlert className="h-3 w-3" /> This password is used for the user's initial portal bootstrap.
+                    <ShieldAlert className="h-3 w-3" /> Used for initial account bootstrap.
                   </p>
                 </div>
               </div>
@@ -506,12 +506,12 @@ export default function UserManagementPage() {
               <Input id="editEmail" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required className="bg-slate-50 border-none" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editPass" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Initial Password</Label>
+              <Label htmlFor="editPass" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Login Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input id="editPass" type="text" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="Enter password" className="pl-10 bg-slate-50 border-none font-mono" />
               </div>
-              <p className="text-[10px] text-muted-foreground italic">Plaintext password for institutional reference.</p>
+              <p className="text-[10px] text-muted-foreground italic">Institutional reference for password recovery.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">

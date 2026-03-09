@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useUser, useDoc, useMemoFirebase, useFirestore, useAuth } from '@/firebase';
@@ -61,10 +62,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { data: profile, isLoading: isProfileLoading } = useDoc(userProfileRef);
 
   useEffect(() => {
+    // Wait until loading is done before redirecting
     if (!isUserLoading && !authUser) {
       router.replace('/login');
     }
-    if (!isProfileLoading && profile && profile.role !== 'admin') {
+    // Only check role if we definitely have a profile or loading is done
+    if (!isUserLoading && !isProfileLoading && profile && profile.role !== 'admin') {
       router.replace('/profile');
     }
   }, [authUser, isUserLoading, profile, isProfileLoading, router]);
@@ -78,19 +81,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   };
 
-  // Faster initial check: if we are loading but have cached authUser, we can start showing the shell
+  // Show shell if we have a user, even if profile is still fetching
   if (isUserLoading && !authUser) {
     return <div className="flex h-screen items-center justify-center bg-background">
       <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
     </div>;
   }
 
-  // If no auth user yet, or profile mismatch, keep showing loading until redirect
+  // If no auth user yet, or profile mismatch, keep showing loading until redirect completes
   if (!authUser || (isProfileLoading && !profile)) {
     return <div className="flex h-screen items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-        <p className="text-muted-foreground font-medium">Authorizing Admin Session...</p>
+        <p className="text-muted-foreground font-medium">Validating Admin Session...</p>
       </div>
     </div>;
   }
@@ -191,7 +194,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Button variant="ghost" size="icon" className="text-muted-foreground">
               <Mail className="h-5 w-5" />
             </Button>
-            <DropdownMenu>
+            <DropdownMenu modal={false}>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-0 hover:bg-transparent">
                    <Avatar className="h-8 w-8 hover:ring-2 ring-primary/20 transition-all">
