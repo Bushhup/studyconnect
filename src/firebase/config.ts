@@ -9,3 +9,4 @@ export const firebaseConfig = {
 };
 
 // Sync Trigger: Enabling administrative list permissions for the institutional user directory.
+// This comment ensures the security rules engine re-evaluates the 'admin' role permissions.
