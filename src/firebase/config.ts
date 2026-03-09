@@ -8,4 +8,4 @@ export const firebaseConfig = {
   "messagingSenderId": "140002479123"
 };
 
-// Sync Trigger: Ensuring security rules allow administrative listing of the users collection.
+// Sync Trigger: Enabling administrative list permissions for the institutional user directory.
