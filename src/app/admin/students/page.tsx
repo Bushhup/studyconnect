@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -117,6 +118,8 @@ export default function StudentManagementPage() {
 
     setIsSubmitting(true);
     const studentEmail = newStudent.email.toLowerCase().trim();
+    const studentPass = newStudent.password.trim();
+    
     // CRITICAL: For the bootstrap logic to work, use email as the initial document ID
     const userRef = doc(firestore, 'colleges', collegeId, 'users', studentEmail);
     
@@ -126,7 +129,7 @@ export default function StudentManagementPage() {
       email: studentEmail,
       firstName: newStudent.firstName,
       lastName: newStudent.lastName,
-      password: newStudent.password,
+      password: studentPass,
       role: 'student',
       status: 'active',
       departmentId: newStudent.departmentId,
@@ -173,7 +176,7 @@ export default function StudentManagementPage() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>Register New Student</DialogTitle>
-                <DialogDescription>Create a new institutional record. Emails will be automatically trimmed and lowercased.</DialogDescription>
+                <DialogDescription>Create a new institutional record. Normalization will be applied to the email and password.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleAddStudent} className="space-y-4 pt-4">
                 <div className="grid grid-cols-2 gap-3">

@@ -122,13 +122,14 @@ export default function UserManagementPage() {
 
     setIsSubmitting(true);
     const cleanEmail = email.toLowerCase().trim();
+    const cleanPass = password.trim();
     const userRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
     
     setDocumentNonBlocking(userRef, {
       id: cleanEmail,
       collegeId: collegeId,
       email: cleanEmail,
-      password, 
+      password: cleanPass, 
       firstName,
       lastName,
       role,
@@ -149,6 +150,7 @@ export default function UserManagementPage() {
     setIsSubmitting(true);
     const userRef = doc(firestore, 'colleges', collegeId, 'users', selectedUser.id);
     const cleanEmail = editEmail.toLowerCase().trim();
+    const cleanPass = editPassword.trim();
     
     const updateData: any = {
       firstName: editFirstName,
@@ -156,7 +158,7 @@ export default function UserManagementPage() {
       email: cleanEmail,
       role: editRole,
       status: editStatus,
-      password: editPassword,
+      password: cleanPass,
       updatedAt: new Date().toISOString()
     };
 
@@ -220,7 +222,7 @@ export default function UserManagementPage() {
                   <UserPlus className="h-5 w-5 text-primary" /> Provision User
                 </DialogTitle>
                 <DialogDescription>
-                  Create a new institutional record. Normalization will be applied to the email.
+                  Create a new institutional record. Normalization will be applied to the email and password.
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreateUser} className="space-y-4 pt-4">

@@ -35,47 +35,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Handle redirection and migration check for already-logged-in users
+  // Redirection logic for already-logged-in users
   useEffect(() => {
     if (user && !isLoading) {
       const checkAndRedirect = async () => {
         try {
-          // Check secure UID-based path first
           const uidDocRef = doc(firestore, 'colleges', collegeId, 'users', user.uid);
           const uidDoc = await getDoc(uidDocRef);
           
           if (uidDoc.exists()) {
             const role = uidDoc.data().role;
-            if (role === 'admin') {
-              router.replace('/admin/dashboard');
-            } else {
-              router.replace('/profile');
-            }
-            return;
-          }
-
-          // If UID doc missing, check if they are stuck at the email path
-          if (user.email) {
-            const cleanEmail = user.email.toLowerCase().trim();
-            const emailDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
-            const emailDoc = await getDoc(emailDocRef);
-            
-            if (emailDoc.exists()) {
-              setIsLoading(true);
-              const batch = writeBatch(firestore);
-              batch.set(uidDocRef, {
-                ...emailDoc.data(),
-                id: user.uid,
-                updatedAt: new Date().toISOString()
-              }, { merge: true });
-              batch.delete(emailDocRef);
-              await batch.commit();
-              setIsLoading(false);
-              // Effect will re-run and hit the uidDoc branch
-            }
+            router.replace(role === 'admin' ? '/admin/dashboard' : '/profile');
           }
         } catch (err) {
-          console.error("Redirection/Migration Check Error:", err);
+          console.error("Redirection Check Error:", err);
         }
       };
       checkAndRedirect();
@@ -94,6 +67,7 @@ export default function LoginPage() {
     }
 
     const cleanEmail = email.toLowerCase().trim();
+    const cleanPass = password.trim();
     setIsLoading(true);
     
     try {
@@ -101,103 +75,118 @@ export default function LoginPage() {
       let needsMigration = false;
       let migrationSourceData: any = null;
 
+      // 1. Attempt Standard Sign-In
       try {
-        // 1. Attempt standard sign-in (handles already migrated users)
-        userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+        userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
       } catch (authError: any) {
-        // 2. Fallback to Bootstrap logic if sign-in fails
-        // This covers users who exist in Firestore but don't have an Auth account yet.
+        // 2. Auth failed? Check for Bootstrap Record (email-based)
         const emailDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
         const emailDoc = await getDoc(emailDocRef);
 
         if (emailDoc.exists()) {
           const userData = emailDoc.data();
           
-          // Verify institutional password
-          if (userData.password === password) {
+          // Verify Password against Firestore Record
+          if (userData.password === cleanPass) {
             if (userData.role !== selectedRole) {
-              throw new Error(`This account is registered for the ${userData.role} portal, not ${selectedRole}.`);
+              throw new Error(`This account is authorized for the ${userData.role} portal only.`);
             }
 
             try {
-              // Create the Auth account using the password set by admin
-              userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+              // Create Auth account using institutional password
+              userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPass);
             } catch (createError: any) {
               if (createError.code === 'auth/email-already-in-use') {
-                // If Auth exists but sign-in failed (at the top), the password must be wrong.
+                // Account exists in Auth but sign-in failed -> Wrong Password
                 throw new Error("Incorrect password for this institutional account.");
-              } else {
-                throw createError;
               }
+              throw createError;
             }
             needsMigration = true;
             migrationSourceData = userData;
           } else {
-            throw new Error("Invalid institutional password provided.");
+            throw new Error("Invalid password for this institutional account.");
           }
-        } else if (cleanEmail === 'admin01@college.edu' && password === 'minister123' && selectedRole === 'admin') {
-          // Special fallback for initial system setup
+        } else if (cleanEmail === 'admin01@college.edu' && cleanPass === 'minister123' && selectedRole === 'admin') {
+          // System Setup Fallback
           try {
-            userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
+            userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPass);
           } catch (err: any) {
-            userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+            userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPass);
           }
+          needsMigration = true; // Ensure they get a doc
         } else {
-          // Check if we can find them via UID (already migrated but wrong password)?
-          // Since we can't search by email without login, we assume it's a password issue
-          // if we can't find an unmigrated email-based document.
-          throw new Error("Account not found in directory or invalid password. Please contact your administrator.");
+          throw new Error("Account not found in directory. Please contact your administrator.");
         }
       }
 
+      // 3. Post-Auth Verification and Migration
       const loggedInUser = userCredential!.user;
       const uidDocRef = doc(firestore, 'colleges', collegeId, 'users', loggedInUser.uid);
       const emailDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
 
-      // Perform migration if required
-      if (needsMigration || cleanEmail === 'admin01@college.edu') {
+      // Check if migration is needed (even if standard login worked but UID doc is missing)
+      const uidDoc = await getDoc(uidDocRef);
+      if (!uidDoc.exists()) {
         const batch = writeBatch(firestore);
         
-        const finalData = migrationSourceData || {
-          collegeId,
-          email: cleanEmail,
-          firstName: 'System',
-          lastName: 'Admin',
-          role: 'admin',
-          status: 'active'
-        };
-
-        batch.set(uidDocRef, {
-          ...finalData,
-          id: loggedInUser.uid,
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
-
-        // Safely check and delete the temporary email record
-        const checkEmailDoc = await getDoc(emailDocRef);
-        if (checkEmailDoc.exists()) {
-          batch.delete(emailDocRef);
+        // Use migration data or check if email doc exists to pull from
+        let dataToMigrate = migrationSourceData;
+        if (!dataToMigrate) {
+          const checkEmailDoc = await getDoc(emailDocRef);
+          if (checkEmailDoc.exists()) {
+            dataToMigrate = checkEmailDoc.data();
+          }
         }
 
-        await batch.commit();
+        // Default for first admin if nothing found
+        if (!dataToMigrate && cleanEmail === 'admin01@college.edu') {
+          dataToMigrate = {
+            collegeId,
+            email: cleanEmail,
+            firstName: 'System',
+            lastName: 'Admin',
+            role: 'admin',
+            status: 'active'
+          };
+        }
+
+        if (dataToMigrate) {
+          batch.set(uidDocRef, {
+            ...dataToMigrate,
+            id: loggedInUser.uid,
+            updatedAt: new Date().toISOString()
+          }, { merge: true });
+
+          // Cleanup temporary record
+          const checkEmailDoc = await getDoc(emailDocRef);
+          if (checkEmailDoc.exists()) {
+            batch.delete(emailDocRef);
+          }
+          await batch.commit();
+        } else {
+          // If no data to migrate and no UID doc, this is an orphaned Auth account
+          await signOut(auth);
+          throw new Error("Account data missing. Please contact your administrator.");
+        }
       }
 
-      // Final verification of role after sync
+      // 4. Final Role Check
       const finalDoc = await getDoc(uidDocRef);
       if (!finalDoc.exists() || finalDoc.data().role !== selectedRole) {
         await signOut(auth);
-        throw new Error(`Unauthorized access: This account does not have ${selectedRole} privileges.`);
+        throw new Error(`Unauthorized access: You do not have ${selectedRole} privileges.`);
       }
 
       toast({ title: 'Access Granted', description: `Signed in as ${finalDoc.data().firstName}.` });
       router.push(selectedRole === 'admin' ? '/admin/dashboard' : '/profile');
 
     } catch (error: any) {
-      console.error('Login Error Detail:', error);
+      console.error('Login Error:', error);
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: error.message || 'Authentication failed. Please verify your portal and credentials.',
+        description: error.message || 'Authentication failed. Please check your credentials.',
       });
       setIsLoading(false);
     }
