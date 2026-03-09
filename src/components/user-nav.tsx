@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LogOut, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { signOut } from 'firebase/auth';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,9 +22,13 @@ export function UserNav() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
 
-  const handleLogout = () => {
-    auth.signOut();
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const getInitials = (email?: string | null) => {

@@ -1,10 +1,10 @@
-
 'use client';
 
 import { useUser, useAuth, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import { signOut } from 'firebase/auth';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { doc } from 'firebase/firestore';
@@ -44,9 +44,13 @@ export default function ProfilePage() {
     }
   }, [authUser, isAuthLoading, router]);
 
-  const handleLogout = () => {
-    auth.signOut();
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   if (isAuthLoading || isProfileLoading) {

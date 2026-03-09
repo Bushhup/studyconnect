@@ -1,8 +1,8 @@
-
 'use client';
 
-import { useUser, useDoc, useMemoFirebase, useFirestore } from '@/firebase';
+import { useUser, useDoc, useMemoFirebase, useFirestore, useAuth } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 import { useRouter, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { 
@@ -48,6 +48,7 @@ const adminLinks = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const { user: authUser, isUserLoading } = useUser();
   const firestore = useFirestore();
+  const auth = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -67,6 +68,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       router.replace('/profile');
     }
   }, [authUser, isUserLoading, profile, isProfileLoading, router]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace('/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   // Faster initial check: if we are loading but have cached authUser, we can start showing the shell
   if (isUserLoading && !authUser) {
@@ -196,7 +206,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 <DropdownMenuItem onClick={() => router.push('/profile')}>Profile Settings</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => router.push('/admin/logs')}>Activity Log</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-500" onClick={() => router.push('/login')}>Logout</DropdownMenuItem>
+                <DropdownMenuItem className="text-red-500" onClick={handleLogout}>Logout</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>

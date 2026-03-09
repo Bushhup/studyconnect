@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { signOut } from 'firebase/auth';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useUser, useAuth } from '@/firebase';
 import { Skeleton } from './ui/skeleton';
@@ -13,9 +14,13 @@ export function MobileUserNav() {
   const { user, isUserLoading } = useUser();
   const auth = useAuth();
 
-  const handleLogout = () => {
-    auth.signOut();
-    router.push('/');
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.replace('/');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const getInitials = (email?: string | null) => {
