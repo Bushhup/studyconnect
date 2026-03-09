@@ -28,20 +28,34 @@ export default function LoginPage() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Static Login: Accepts any non-empty input for prototyping
+    // Validate that inputs are not empty
     if (!email || !password) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Please enter any credentials to enter the prototype.' });
+      toast({ variant: 'destructive', title: 'Error', description: 'Please enter credentials to enter the prototype.' });
       return;
     }
 
-    toast({ title: 'Welcome Back', description: `Accessing the ${selectedRole} portal prototype.` });
-    
-    // Redirect based on role
+    // Retrieve Admin Credentials from Environment Variables
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+    const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
+
     if (selectedRole === 'admin') {
-      router.push('/admin/dashboard');
-    } else {
-      router.push('/profile');
+      // Check against .env values for Admin access
+      if (email === adminEmail && password === adminPass) {
+        toast({ title: 'Welcome Back', description: `Accessing the admin portal prototype.` });
+        router.push('/admin/dashboard');
+      } else {
+        toast({ 
+          variant: 'destructive', 
+          title: 'Authentication Failed', 
+          description: 'Invalid admin credentials. Please check your configuration.' 
+        });
+      }
+      return;
     }
+
+    // For Student and Faculty roles in this static prototype, we allow any non-empty input for demonstration purposes
+    toast({ title: 'Welcome Back', description: `Accessing the ${selectedRole} portal prototype.` });
+    router.push('/profile');
   };
 
   if (!selectedRole) {
@@ -72,7 +86,7 @@ export default function LoginPage() {
             <ArrowLeft className="mr-2 h-4 w-4" /> Switch Portal
           </Button>
           <CardTitle className="text-2xl font-headline text-center capitalize">{selectedRole} Portal</CardTitle>
-          <CardDescription className="text-center">Enter any institutional credentials to enter.</CardDescription>
+          <CardDescription className="text-center">Enter your institutional credentials to enter.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
