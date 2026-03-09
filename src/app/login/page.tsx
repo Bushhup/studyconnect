@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, writeBatch } from 'firebase/firestore';
-import { useAuth, useUser, useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -34,22 +35,45 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Instant redirect if already authenticated and fully migrated
+  // Handle redirection and migration check for already-logged-in users
   useEffect(() => {
     if (user && !isLoading) {
-      const checkProfileAndRedirect = async () => {
-        const userDocRef = doc(firestore, 'colleges', collegeId, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
+      const checkAndRedirect = async () => {
+        // Check secure UID-based path first
+        const uidDocRef = doc(firestore, 'colleges', collegeId, 'users', user.uid);
+        const uidDoc = await getDoc(uidDocRef);
         
-        if (userDoc.exists()) {
-          if (userDoc.data().role === 'admin') {
+        if (uidDoc.exists()) {
+          const role = uidDoc.data().role;
+          if (role === 'admin') {
             router.replace('/admin/dashboard');
           } else {
             router.replace('/profile');
           }
+          return;
+        }
+
+        // If UID doc missing, check if they are stuck at the email path
+        if (user.email) {
+          const emailDocRef = doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase().trim());
+          const emailDoc = await getDoc(emailDocRef);
+          if (emailDoc.exists()) {
+            // Need to migrate! 
+            setIsLoading(true);
+            const batch = writeBatch(firestore);
+            batch.set(uidDocRef, {
+              ...emailDoc.data(),
+              id: user.uid,
+              updatedAt: new Date().toISOString()
+            }, { merge: true });
+            batch.delete(emailDocRef);
+            await batch.commit();
+            setIsLoading(false);
+            // Trigger re-run of this effect
+          }
         }
       };
-      checkProfileAndRedirect();
+      checkAndRedirect();
     }
   }, [user, router, isLoading, firestore]);
 
@@ -58,8 +82,8 @@ export default function LoginPage() {
     if (!email || !password || !selectedRole) {
       toast({
         variant: 'destructive',
-        title: 'Missing fields',
-        description: 'Please select a portal and enter credentials.',
+        title: 'Selection Required',
+        description: 'Please select a portal and enter your credentials.',
       });
       return;
     }
@@ -77,6 +101,7 @@ export default function LoginPage() {
         userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
       } catch (authError: any) {
         // 2. Fallback to Bootstrap logic if sign-in fails
+        // This covers users who exist in Firestore but don't have an Auth account yet.
         const emailDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
         const emailDoc = await getDoc(emailDocRef);
 
@@ -84,15 +109,16 @@ export default function LoginPage() {
           const userData = emailDoc.data();
           if (userData.password === password) {
             if (userData.role !== selectedRole) {
-              throw new Error(`Account registered as ${userData.role}, not ${selectedRole}.`);
+              throw new Error(`This account is registered for the ${userData.role} portal, not ${selectedRole}.`);
             }
 
             try {
+              // Create the Auth account using the password set by admin
               userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
             } catch (createError: any) {
               if (createError.code === 'auth/email-already-in-use') {
-                // Already in Auth but migration failed previously
-                userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
+                // If Auth exists but sign-in failed, the password entered must be wrong.
+                throw new Error("Invalid password for this account.");
               } else {
                 throw createError;
               }
@@ -100,17 +126,20 @@ export default function LoginPage() {
             needsMigration = true;
             migrationSourceData = userData;
           } else {
-            throw new Error("Invalid password for institutional account.");
+            throw new Error("Invalid institutional password.");
           }
         } else if (cleanEmail === 'admin01@college.edu' && password === 'minister123' && selectedRole === 'admin') {
-          // Special case for initial system admin
+          // Special fallback for initial system setup
           try {
             userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
           } catch (err: any) {
             userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
           }
         } else {
-          throw new Error("Account not found in directory or invalid credentials.");
+          // If no Auth account AND no email record exists, the account isn't in the directory.
+          // Or, if Auth account exists but sign-in failed, and email record is gone (migrated),
+          // then the password must be wrong.
+          throw new Error("Account not found in institutional directory or invalid password.");
         }
       }
 
@@ -118,13 +147,11 @@ export default function LoginPage() {
       const uidDocRef = doc(firestore, 'colleges', collegeId, 'users', loggedInUser.uid);
       const emailDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
 
-      // Check if we need to perform/finish migration
+      // Perform migration if required
       if (needsMigration || cleanEmail === 'admin01@college.edu') {
         const batch = writeBatch(firestore);
         
-        // If we have migration data from bootstrap step, use it
         const finalData = migrationSourceData || {
-          id: loggedInUser.uid,
           collegeId,
           email: cleanEmail,
           firstName: 'System',
@@ -139,31 +166,31 @@ export default function LoginPage() {
           updatedAt: new Date().toISOString()
         }, { merge: true });
 
-        // Cleanup temporary email record if it exists
-        const emailDoc = await getDoc(emailDocRef);
-        if (emailDoc.exists()) {
+        // Safely check and delete the temporary email record
+        const checkEmailDoc = await getDoc(emailDocRef);
+        if (checkEmailDoc.exists()) {
           batch.delete(emailDocRef);
         }
 
         await batch.commit();
       }
 
-      // Final Role Verification
+      // Verify role after everything is synced
       const finalDoc = await getDoc(uidDocRef);
       if (!finalDoc.exists() || finalDoc.data().role !== selectedRole) {
         await signOut(auth);
-        throw new Error(`Unauthorized access. Expected ${selectedRole} role.`);
+        throw new Error(`Unauthorized portal access for role: ${selectedRole}`);
       }
 
-      toast({ title: 'Login Successful', description: `Welcome, ${finalDoc.data().firstName}!` });
+      toast({ title: 'Welcome Back', description: `Login successful for ${finalDoc.data().firstName}.` });
       router.push(selectedRole === 'admin' ? '/admin/dashboard' : '/profile');
 
     } catch (error: any) {
-      console.error('Auth Error:', error);
+      console.error('Login Process Error:', error);
       toast({
         variant: 'destructive',
-        title: 'Login Failed',
-        description: error.message || 'Invalid credentials.',
+        title: 'Login Error',
+        description: error.message || 'Verification failed. Please check your credentials.',
       });
       setIsLoading(false);
     }
