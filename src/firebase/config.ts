@@ -1,3 +1,4 @@
+
 export const firebaseConfig = {
   "projectId": "studio-1138506612-7420e",
   "appId": "1:140002479123:web:2c5afeffb60386e523c3e6",
@@ -6,3 +7,5 @@ export const firebaseConfig = {
   "measurementId": "",
   "messagingSenderId": "140002479123"
 };
+
+// Security Rules trigger: ensuring rules are deployed for the college institutional schema.

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -6,7 +7,8 @@ import {
   useMemoFirebase, 
   useFirestore, 
   updateDocumentNonBlocking, 
-  deleteDocumentNonBlocking 
+  deleteDocumentNonBlocking,
+  useUser
 } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -56,6 +58,7 @@ const collegeId = 'study-connect-college';
 
 export default function UserManagementPage() {
   const firestore = useFirestore();
+  const { user, isUserLoading: userLoading } = useUser();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
@@ -77,11 +80,11 @@ export default function UserManagementPage() {
   });
 
   const usersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return collection(firestore, 'colleges', collegeId, 'users');
-  }, [firestore]);
+  }, [firestore, user]);
 
-  const { data: users, isLoading } = useCollection(usersQuery);
+  const { data: users, isLoading: collectionLoading } = useCollection(usersQuery);
 
   const filteredUsers = users?.filter(u => {
     const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
@@ -99,7 +102,6 @@ export default function UserManagementPage() {
     const userId = crypto.randomUUID();
     const userRef = doc(firestore, 'colleges', collegeId, 'users', userId);
     
-    // We use setDoc because the schema implies an ID property matching the doc ID
     await setDoc(userRef, {
       ...formData,
       id: userId,
@@ -157,6 +159,8 @@ export default function UserManagementPage() {
     setSelectedUser(user);
     setIsDeleteOpen(true);
   };
+
+  const isLoading = userLoading || collectionLoading;
 
   return (
     <div className="space-y-8 pb-12">

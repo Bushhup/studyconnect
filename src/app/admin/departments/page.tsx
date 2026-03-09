@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
+import { useCollection, useMemoFirebase, useFirestore, useUser } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
@@ -17,16 +17,17 @@ const collegeId = 'study-connect-college';
 
 export default function DepartmentManagement() {
   const firestore = useFirestore();
+  const { user, isUserLoading: userLoading } = useUser();
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [hod, setHod] = useState('');
 
   const deptQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return collection(firestore, 'colleges', collegeId, 'departments');
-  }, [firestore]);
+  }, [firestore, user]);
 
-  const { data: departments, isLoading } = useCollection(deptQuery);
+  const { data: departments, isLoading: collectionLoading } = useCollection(deptQuery);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,6 +43,8 @@ export default function DepartmentManagement() {
     toast({ title: 'Department Created', description: `${name} has been added.` });
     setName(''); setHod('');
   };
+
+  const isLoading = userLoading || collectionLoading;
 
   return (
     <div className="space-y-8">

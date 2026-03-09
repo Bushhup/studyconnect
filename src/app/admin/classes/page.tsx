@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState } from 'react';
-import { useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking } from '@/firebase';
+import { useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, useUser } from '@/firebase';
 import { collection } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -34,6 +35,7 @@ const collegeId = 'study-connect-college';
 
 export default function ClassManagementPage() {
   const firestore = useFirestore();
+  const { user, isUserLoading: userLoading } = useUser();
   const { toast } = useToast();
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,21 +47,21 @@ export default function ClassManagementPage() {
 
   // Fetch Classes
   const classesQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return collection(firestore, 'colleges', collegeId, 'classes');
-  }, [firestore]);
+  }, [firestore, user]);
 
   // Fetch Departments for mapping
   const deptsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return collection(firestore, 'colleges', collegeId, 'departments');
-  }, [firestore]);
+  }, [firestore, user]);
 
   // Fetch Users (Faculty) for mapping
   const usersQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !user) return null;
     return collection(firestore, 'colleges', collegeId, 'users');
-  }, [firestore]);
+  }, [firestore, user]);
 
   const { data: classes, isLoading: classesLoading } = useCollection(classesQuery);
   const { data: departments } = useCollection(deptsQuery);
@@ -94,7 +96,7 @@ export default function ClassManagementPage() {
     setSelectedFaculty('');
   };
 
-  const isLoading = classesLoading;
+  const isLoading = userLoading || classesLoading;
 
   return (
     <div className="space-y-8 pb-12">
@@ -145,7 +147,7 @@ export default function ClassManagementPage() {
 
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Assigned Instructor (Optional)</Label>
-                <Select onValueChange={setSelectedFaculty} value={selectedFaculty}>
+                <Select onValueChange={(val) => setSelectedFaculty(val)} value={selectedFaculty}>
                   <SelectTrigger className="bg-slate-50 border-none">
                     <SelectValue placeholder="Assign a Faculty Member" />
                   </SelectTrigger>
