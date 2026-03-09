@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -51,7 +52,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, UserPlus, Users, Search, MoreHorizontal, Plus, GraduationCap, ShieldCheck, UserCog, Edit, Trash, Eye, Mail, Fingerprint, Lock, ShieldAlert, Copy } from 'lucide-react';
+import { Loader2, UserPlus, Users, Search, MoreHorizontal, Plus, GraduationCap, ShieldCheck, UserCog, Edit3, Trash2, Eye, Mail, Fingerprint, Lock, ShieldAlert, Copy } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
@@ -362,14 +363,14 @@ export default function UserManagementPage() {
                               <Eye className="h-4 w-4" /> View Profile
                             </DropdownMenuItem>
                             <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => openEdit(u)}>
-                              <Edit className="h-4 w-4" /> Edit Record
+                              <Edit3 className="h-4 w-4" /> Edit Record
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem 
                               className="cursor-pointer gap-2 text-red-600 focus:text-red-600 focus:bg-red-50"
                               onClick={() => handleDeleteUser(u.id, `${u.firstName} ${u.lastName}`)}
                             >
-                              <Trash className="h-4 w-4" /> Delete User
+                              <Trash2 className="h-4 w-4" /> Delete User
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -452,7 +453,7 @@ export default function UserManagementPage() {
                         <Lock className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-bold uppercase text-primary/70 tracking-tighter">Initial Password (Admin Only)</span>
+                        <span className="text-[10px] font-bold uppercase text-primary/70 tracking-tighter">Institutional Password</span>
                         <span className="text-sm font-mono font-bold text-primary">{selectedUser.password || 'Not Set'}</span>
                       </div>
                     </div>
@@ -461,7 +462,7 @@ export default function UserManagementPage() {
                     </Button>
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-2 italic flex items-center gap-1">
-                    <ShieldAlert className="h-3 w-3" /> This password is used for the user's first login bootstrap.
+                    <ShieldAlert className="h-3 w-3" /> This password is used for the user's initial portal bootstrap.
                   </p>
                 </div>
               </div>
@@ -483,7 +484,7 @@ export default function UserManagementPage() {
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Edit className="h-5 w-5 text-primary" /> Modify Record
+              <Edit3 className="h-5 w-5 text-primary" /> Modify Record
             </DialogTitle>
             <DialogDescription>Update institutional data and security settings for this account.</DialogDescription>
           </DialogHeader>
@@ -503,12 +504,12 @@ export default function UserManagementPage() {
               <Input id="editEmail" type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} required className="bg-slate-50 border-none" />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="editPass" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Current/New Password</Label>
+              <Label htmlFor="editPass" className="text-[10px] font-bold uppercase text-muted-foreground tracking-widest">Initial Password</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input id="editPass" type="text" value={editPassword} onChange={(e) => setEditPassword(e.target.value)} placeholder="Enter password" className="pl-10 bg-slate-50 border-none font-mono" />
               </div>
-              <p className="text-[10px] text-muted-foreground italic">Plaintext password for administrative reference.</p>
+              <p className="text-[10px] text-muted-foreground italic">Plaintext password for institutional reference.</p>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">

@@ -17,7 +17,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, GraduationCap, BookOpen, ShieldCheck, ArrowLeft, Info } from 'lucide-react';
+import { Loader2, GraduationCap, BookOpen, ShieldCheck, ArrowLeft, Info, AlertCircle } from 'lucide-react';
 
 type UserRole = 'student' | 'faculty' | 'admin';
 
@@ -39,38 +39,43 @@ export default function LoginPage() {
   useEffect(() => {
     if (user && !isLoading) {
       const checkAndRedirect = async () => {
-        // Check secure UID-based path first
-        const uidDocRef = doc(firestore, 'colleges', collegeId, 'users', user.uid);
-        const uidDoc = await getDoc(uidDocRef);
-        
-        if (uidDoc.exists()) {
-          const role = uidDoc.data().role;
-          if (role === 'admin') {
-            router.replace('/admin/dashboard');
-          } else {
-            router.replace('/profile');
+        try {
+          // Check secure UID-based path first
+          const uidDocRef = doc(firestore, 'colleges', collegeId, 'users', user.uid);
+          const uidDoc = await getDoc(uidDocRef);
+          
+          if (uidDoc.exists()) {
+            const role = uidDoc.data().role;
+            if (role === 'admin') {
+              router.replace('/admin/dashboard');
+            } else {
+              router.replace('/profile');
+            }
+            return;
           }
-          return;
-        }
 
-        // If UID doc missing, check if they are stuck at the email path
-        if (user.email) {
-          const emailDocRef = doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase().trim());
-          const emailDoc = await getDoc(emailDocRef);
-          if (emailDoc.exists()) {
-            // Need to migrate! 
-            setIsLoading(true);
-            const batch = writeBatch(firestore);
-            batch.set(uidDocRef, {
-              ...emailDoc.data(),
-              id: user.uid,
-              updatedAt: new Date().toISOString()
-            }, { merge: true });
-            batch.delete(emailDocRef);
-            await batch.commit();
-            setIsLoading(false);
-            // Trigger re-run of this effect
+          // If UID doc missing, check if they are stuck at the email path
+          if (user.email) {
+            const cleanEmail = user.email.toLowerCase().trim();
+            const emailDocRef = doc(firestore, 'colleges', collegeId, 'users', cleanEmail);
+            const emailDoc = await getDoc(emailDocRef);
+            
+            if (emailDoc.exists()) {
+              setIsLoading(true);
+              const batch = writeBatch(firestore);
+              batch.set(uidDocRef, {
+                ...emailDoc.data(),
+                id: user.uid,
+                updatedAt: new Date().toISOString()
+              }, { merge: true });
+              batch.delete(emailDocRef);
+              await batch.commit();
+              setIsLoading(false);
+              // Effect will re-run and hit the uidDoc branch
+            }
           }
+        } catch (err) {
+          console.error("Redirection/Migration Check Error:", err);
         }
       };
       checkAndRedirect();
@@ -97,7 +102,7 @@ export default function LoginPage() {
       let migrationSourceData: any = null;
 
       try {
-        // 1. Attempt standard sign-in
+        // 1. Attempt standard sign-in (handles already migrated users)
         userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
       } catch (authError: any) {
         // 2. Fallback to Bootstrap logic if sign-in fails
@@ -107,6 +112,8 @@ export default function LoginPage() {
 
         if (emailDoc.exists()) {
           const userData = emailDoc.data();
+          
+          // Verify institutional password
           if (userData.password === password) {
             if (userData.role !== selectedRole) {
               throw new Error(`This account is registered for the ${userData.role} portal, not ${selectedRole}.`);
@@ -117,8 +124,8 @@ export default function LoginPage() {
               userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
             } catch (createError: any) {
               if (createError.code === 'auth/email-already-in-use') {
-                // If Auth exists but sign-in failed, the password entered must be wrong.
-                throw new Error("Invalid password for this account.");
+                // If Auth exists but sign-in failed (at the top), the password must be wrong.
+                throw new Error("Incorrect password for this institutional account.");
               } else {
                 throw createError;
               }
@@ -126,7 +133,7 @@ export default function LoginPage() {
             needsMigration = true;
             migrationSourceData = userData;
           } else {
-            throw new Error("Invalid institutional password.");
+            throw new Error("Invalid institutional password provided.");
           }
         } else if (cleanEmail === 'admin01@college.edu' && password === 'minister123' && selectedRole === 'admin') {
           // Special fallback for initial system setup
@@ -136,10 +143,9 @@ export default function LoginPage() {
             userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
           }
         } else {
-          // If no Auth account AND no email record exists, the account isn't in the directory.
-          // Or, if Auth account exists but sign-in failed, and email record is gone (migrated),
-          // then the password must be wrong.
-          throw new Error("Account not found in institutional directory or invalid password.");
+          // Check if we can find them via UID (already migrated)? 
+          // We can't query by email without being an admin, so we must assume wrong credentials.
+          throw new Error("Institutional record not found or incorrect credentials.");
         }
       }
 
@@ -175,22 +181,22 @@ export default function LoginPage() {
         await batch.commit();
       }
 
-      // Verify role after everything is synced
+      // Final verification of role after sync
       const finalDoc = await getDoc(uidDocRef);
       if (!finalDoc.exists() || finalDoc.data().role !== selectedRole) {
         await signOut(auth);
-        throw new Error(`Unauthorized portal access for role: ${selectedRole}`);
+        throw new Error(`Unauthorized access: This account does not have ${selectedRole} privileges.`);
       }
 
-      toast({ title: 'Welcome Back', description: `Login successful for ${finalDoc.data().firstName}.` });
+      toast({ title: 'Access Granted', description: `Signed in as ${finalDoc.data().firstName}.` });
       router.push(selectedRole === 'admin' ? '/admin/dashboard' : '/profile');
 
     } catch (error: any) {
-      console.error('Login Process Error:', error);
+      console.error('Login Error Detail:', error);
       toast({
         variant: 'destructive',
-        title: 'Login Error',
-        description: error.message || 'Verification failed. Please check your credentials.',
+        title: 'Login Failed',
+        description: error.message || 'Authentication failed. Please verify your portal and credentials.',
       });
       setIsLoading(false);
     }
@@ -206,9 +212,9 @@ export default function LoginPage() {
     return (
       <div className="container mx-auto py-12 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-headline font-bold mb-4 text-slate-900">Portal Selection</h1>
+          <h1 className="text-4xl md:text-5xl font-headline font-bold mb-4 text-slate-900">Institutional Access</h1>
           <p className="text-muted-foreground font-body max-w-md mx-auto">
-            Choose your access level to continue to the StudyConnect dashboard.
+            Please select your portal to continue to the StudyConnect dashboard.
           </p>
         </div>
         
@@ -241,10 +247,10 @@ export default function LoginPage() {
         <div className="mt-12 flex flex-col items-center gap-4">
           <div className="flex items-center gap-2 text-sm text-muted-foreground bg-accent/50 px-4 py-2 rounded-full border">
             <Info className="h-4 w-4" />
-            <span>Dev Mode: <strong>admin01@college.edu</strong> / <strong>minister123</strong></span>
+            <span>Developer Bypass: <strong>admin01@college.edu</strong> / <strong>minister123</strong></span>
           </div>
           <Button variant="outline" size="sm" onClick={useDemoAdmin} className="rounded-full">
-            Auto-fill Admin Credentials
+            Quick Sign-In (Demo Admin)
           </Button>
         </div>
       </div>
@@ -262,19 +268,19 @@ export default function LoginPage() {
             className="w-fit p-0 mb-4 hover:bg-transparent text-muted-foreground hover:text-primary transition-colors"
             onClick={() => setSelectedRole(null)}
           >
-            <ArrowLeft className="mr-2 h-4 w-4" /> Change Portal
+            <ArrowLeft className="mr-2 h-4 w-4" /> Switch Portal
           </Button>
           <CardTitle className="text-2xl font-headline text-center capitalize text-slate-900">
-            {selectedRole} Sign In
+            {selectedRole} Portal
           </CardTitle>
           <CardDescription className="text-center font-body">
-            Access your secure dashboard
+            Enter your institutional credentials
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="email" className="text-slate-700">Institutional Email</Label>
+              <Label htmlFor="email" className="text-slate-700">Email Address</Label>
               <Input
                 id="email"
                 type="email"
@@ -302,8 +308,11 @@ export default function LoginPage() {
           <div className="p-6 pt-0">
             <Button className="w-full font-headline h-12 text-lg shadow-lg hover:shadow-xl transition-all" type="submit" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-5 w-5 animate-spin" />}
-              {isLoading ? 'Verifying...' : 'Sign In'}
+              {isLoading ? 'Verifying Credentials...' : 'Sign In'}
             </Button>
+            <p className="text-[10px] text-center text-muted-foreground mt-4 uppercase font-bold tracking-widest flex items-center justify-center gap-1">
+              <ShieldCheck className="h-3 w-3" /> Secure Institutional Access
+            </p>
           </div>
         </form>
       </Card>
