@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -63,6 +62,11 @@ import { Progress } from '@/components/ui/progress';
 
 const collegeId = 'study-connect-college';
 
+const programs = {
+  UG: ['CSE', 'B-TECH', 'AI/DS', 'MECH', 'ECE', 'EEE'],
+  PG: ['MCA', 'MBA']
+};
+
 export default function StudentManagementPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -104,7 +108,10 @@ export default function StudentManagementPage() {
 
   const handleAddStudent = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newStudent.email || !newStudent.firstName) return;
+    if (!newStudent.email || !newStudent.firstName || !newStudent.departmentId) {
+      toast({ variant: 'destructive', title: 'Missing Info', description: 'Please fill in all fields including the program.' });
+      return;
+    }
 
     setIsSubmitting(true);
     const studentEmail = newStudent.email.toLowerCase();
@@ -119,11 +126,11 @@ export default function StudentManagementPage() {
       password: newStudent.password,
       role: 'student',
       status: 'active',
-      departmentId: newStudent.departmentId || 'general',
+      departmentId: newStudent.departmentId,
       degreeType: newStudent.degreeType
     }, { merge: true });
 
-    toast({ title: 'Student Registered', description: `${newStudent.firstName} has been added to the system.` });
+    toast({ title: 'Student Registered', description: `${newStudent.firstName} has been added to the ${newStudent.departmentId} program.` });
     setIsAddOpen(false);
     setIsSubmitting(false);
     setNewStudent({ firstName: '', lastName: '', email: '', password: '', departmentId: '', degreeType: 'UG' });
@@ -135,6 +142,8 @@ export default function StudentManagementPage() {
     updateDocumentNonBlocking(userRef, { status: 'inactive' });
     toast({ title: 'Record Deactivated', description: `Academic record for ${name} is now inactive.` });
   };
+
+  const currentAvailablePrograms = programs[newStudent.degreeType];
 
   return (
     <div className="space-y-8 pb-12">
@@ -165,33 +174,36 @@ export default function StudentManagementPage() {
               <form onSubmit={handleAddStudent} className="space-y-4 pt-4">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase">First Name</Label>
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">First Name</Label>
                     <Input value={newStudent.firstName} onChange={e => setNewStudent({...newStudent, firstName: e.target.value})} required className="bg-slate-50 border-none" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase">Last Name</Label>
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">Last Name</Label>
                     <Input value={newStudent.lastName} onChange={e => setNewStudent({...newStudent, lastName: e.target.value})} className="bg-slate-50 border-none" />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Institutional Email</Label>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">Institutional Email</Label>
                   <Input type="email" value={newStudent.email} onChange={e => setNewStudent({...newStudent, email: e.target.value})} required className="bg-slate-50 border-none" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase">Program Type</Label>
-                    <Select onValueChange={(v: 'UG' | 'PG') => setNewStudent({...newStudent, degreeType: v})} defaultValue="UG">
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">Program Type</Label>
+                    <Select 
+                      onValueChange={(v: 'UG' | 'PG') => setNewStudent({...newStudent, degreeType: v, departmentId: ''})} 
+                      defaultValue={newStudent.degreeType}
+                    >
                       <SelectTrigger className="bg-slate-50 border-none">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="UG">UG (6 Semesters)</SelectItem>
-                        <SelectItem value="PG">PG (4 Semesters)</SelectItem>
+                        <SelectItem value="UG">Undergraduate (UG)</SelectItem>
+                        <SelectItem value="PG">Postgraduate (PG)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase">Initial Password</Label>
+                    <Label className="text-xs font-bold uppercase text-muted-foreground">Initial Password</Label>
                     <div className="relative">
                        <Input type="text" value={newStudent.password} onChange={e => setNewStudent({...newStudent, password: e.target.value})} required className="pl-9 bg-slate-50 border-none" />
                        <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -199,19 +211,19 @@ export default function StudentManagementPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase">Academic Department</Label>
-                  <Select onValueChange={v => setNewStudent({...newStudent, departmentId: v})}>
+                  <Label className="text-xs font-bold uppercase text-muted-foreground">Academic Department / Program</Label>
+                  <Select onValueChange={v => setNewStudent({...newStudent, departmentId: v})} value={newStudent.departmentId}>
                     <SelectTrigger className="bg-slate-50 border-none">
-                      <SelectValue placeholder="Assign a Department" />
+                      <SelectValue placeholder="Choose program..." />
                     </SelectTrigger>
                     <SelectContent>
-                      {departments?.map(d => (
-                        <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                      {currentAvailablePrograms.map(p => (
+                        <SelectItem key={p} value={p}>{p}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <Button type="submit" className="w-full mt-4 font-bold shadow-lg shadow-primary/20" disabled={isSubmitting}>
+                <Button type="submit" className="w-full mt-4 font-bold shadow-lg shadow-primary/20 h-11" disabled={isSubmitting}>
                   {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
                   Confirm Enrollment
                 </Button>
@@ -265,13 +277,15 @@ export default function StudentManagementPage() {
                 <Filter className="h-4 w-4 text-muted-foreground" />
                 <Select value={deptFilter} onValueChange={setDeptFilter}>
                   <SelectTrigger className="w-full lg:w-[220px] bg-transparent border-none shadow-none focus:ring-0">
-                    <SelectValue placeholder="All Departments" />
+                    <SelectValue placeholder="Filter by Program" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Global (All Depts)</SelectItem>
-                    {departments?.map(dept => (
-                      <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                    ))}
+                    <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground font-bold px-2 py-1">UG Programs</DropdownMenuLabel>
+                    {programs.UG.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground font-bold px-2 py-1">PG Programs</DropdownMenuLabel>
+                    {programs.PG.map(p => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -302,7 +316,7 @@ export default function StudentManagementPage() {
                   </TableCell>
                 </TableRow>
               ) : students.map((student) => {
-                const deptName = departments?.find(d => d.id === student.departmentId)?.name || 'General';
+                const deptName = student.departmentId || 'General';
                 const attendance = 85 + Math.floor(Math.random() * 12); 
                 const gpa = (3.2 + Math.random() * 0.8).toFixed(2);
                 
