@@ -143,9 +143,10 @@ export default function LoginPage() {
             userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
           }
         } else {
-          // Check if we can find them via UID (already migrated)? 
-          // We can't query by email without being an admin, so we must assume wrong credentials.
-          throw new Error("Institutional record not found or incorrect credentials.");
+          // Check if we can find them via UID (already migrated but wrong password)?
+          // Since we can't search by email without login, we assume it's a password issue
+          // if we can't find an unmigrated email-based document.
+          throw new Error("Account not found in directory or invalid password. Please contact your administrator.");
         }
       }
 
