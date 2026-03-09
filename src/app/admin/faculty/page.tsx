@@ -1,17 +1,18 @@
 'use client';
 
 import { useState } from 'react';
-import { useCollection, useMemoFirebase, useFirestore } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useMemoFirebase, useFirestore, updateDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { 
   Search, Plus, Mail, BookOpen, MessageSquare, 
   UserPlus, Edit3, MoreHorizontal, Loader2,
-  Briefcase
+  Briefcase, CheckCircle2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -19,6 +20,21 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 const collegeId = 'study-connect-college';
@@ -33,7 +49,20 @@ const deptColors: Record<string, string> = {
 
 export default function FacultyManagementPage() {
   const firestore = useFirestore();
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Dialog States
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isAssignOpen, setIsAssignOpen] = useState(false);
+  const [selectedFaculty, setSelectedFaculty] = useState<any>(null);
+
+  // Form States
+  const [editFirstName, setEditFirstName] = useState('');
+  const [editLastName, setEditLastName] = useState('');
+  const [editDeptId, setEditDeptId] = useState('');
+  const [assignClassId, setAssignClassId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -59,6 +88,59 @@ export default function FacultyManagementPage() {
     (`${u.firstName} ${u.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) || 
      u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  const openEdit = (member: any) => {
+    setSelectedFaculty(member);
+    setEditFirstName(member.firstName || '');
+    setEditLastName(member.lastName || '');
+    setEditDeptId(member.departmentId || '');
+    setIsEditOpen(true);
+  };
+
+  const openAssign = (member: any) => {
+    setSelectedFaculty(member);
+    setAssignClassId('');
+    setIsAssignOpen(true);
+  };
+
+  const handleUpdateProfile = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFaculty || !editFirstName) return;
+
+    setIsSubmitting(true);
+    const userRef = doc(firestore, 'colleges', collegeId, 'users', selectedFaculty.id);
+    
+    updateDocumentNonBlocking(userRef, {
+      firstName: editFirstName,
+      lastName: editLastName,
+      departmentId: editDeptId,
+    });
+
+    toast({ title: 'Profile Updated', description: 'Faculty records have been synchronized.' });
+    setIsSubmitting(false);
+    setIsEditOpen(false);
+  };
+
+  const handleAssignClass = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFaculty || !assignClassId) return;
+
+    setIsSubmitting(true);
+    const classRef = doc(firestore, 'colleges', collegeId, 'classes', assignClassId);
+    
+    updateDocumentNonBlocking(classRef, {
+      facultyId: selectedFaculty.id
+    });
+
+    const className = classes?.find(c => c.id === assignClassId)?.name || 'the class';
+    toast({ 
+      title: 'Class Assigned', 
+      description: `${className} is now handled by Dr. ${selectedFaculty.firstName}.` 
+    });
+    
+    setIsSubmitting(false);
+    setIsAssignOpen(false);
+  };
 
   return (
     <div className="space-y-8 pb-12">
@@ -119,8 +201,12 @@ export default function FacultyManagementPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem className="gap-2"><Edit3 className="h-4 w-4" /> Edit Profile</DropdownMenuItem>
-                      <DropdownMenuItem className="gap-2 text-red-600"><Plus className="h-4 w-4" /> Revoke Access</DropdownMenuItem>
+                      <DropdownMenuItem className="gap-2 cursor-pointer" onClick={() => openEdit(member)}>
+                        <Edit3 className="h-4 w-4" /> Edit Profile
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="gap-2 text-red-600 cursor-pointer">
+                        <Plus className="h-4 w-4 rotate-45" /> Revoke Access
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </CardHeader>
@@ -146,7 +232,12 @@ export default function FacultyManagementPage() {
                   </div>
                 </CardContent>
                 <CardFooter className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-50">
-                  <Button variant="ghost" size="sm" className="w-full text-xs font-bold gap-2 hover:bg-primary/5 hover:text-primary">
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full text-xs font-bold gap-2 hover:bg-primary/5 hover:text-primary"
+                    onClick={() => openAssign(member)}
+                  >
                     <Briefcase className="h-3.5 w-3.5" /> Assign Class
                   </Button>
                   <Button variant="ghost" size="sm" className="w-full text-xs font-bold gap-2 hover:bg-emerald-50 hover:text-emerald-600">
@@ -168,6 +259,79 @@ export default function FacultyManagementPage() {
           )}
         </div>
       )}
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Faculty Profile</DialogTitle>
+            <DialogDescription>Update institutional metadata for this faculty member.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdateProfile} className="space-y-4 pt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">First Name</Label>
+                <Input value={editFirstName} onChange={e => setEditFirstName(e.target.value)} required className="bg-slate-50 border-none" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Last Name</Label>
+                <Input value={editLastName} onChange={e => setEditLastName(e.target.value)} required className="bg-slate-50 border-none" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Department</Label>
+              <Select onValueChange={setEditDeptId} value={editDeptId}>
+                <SelectTrigger className="bg-slate-50 border-none">
+                  <SelectValue placeholder="Select Department" />
+                </SelectTrigger>
+                <SelectContent>
+                  {departments?.map(d => (
+                    <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" className="w-full font-bold h-11" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <CheckCircle2 className="mr-2 h-4 w-4" />}
+              Save Changes
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Assign Class Dialog */}
+      <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Assign Academic Class</DialogTitle>
+            <DialogDescription>Link an existing class section to Dr. {selectedFaculty?.firstName}.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAssignClass} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Select Class Section</Label>
+              <Select onValueChange={setAssignClassId} value={assignClassId}>
+                <SelectTrigger className="bg-slate-50 border-none">
+                  <SelectValue placeholder="Choose a section to assign" />
+                </SelectTrigger>
+                <SelectContent>
+                  {classes?.filter(c => c.facultyId !== selectedFaculty?.id).map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name} {c.facultyId ? `(Reassign from current instructor)` : ''}
+                    </SelectItem>
+                  ))}
+                  {classes?.length === 0 && (
+                    <SelectItem value="none" disabled>No classes available</SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button type="submit" className="w-full font-bold h-11" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Briefcase className="mr-2 h-4 w-4" />}
+              Confirm Assignment
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
