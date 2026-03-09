@@ -4,6 +4,8 @@ import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/toaster';
 import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export const metadata: Metadata = {
   title: 'StudyConnect',
@@ -27,10 +29,13 @@ export default function RootLayout({
           'min-h-screen bg-background font-body antialiased flex flex-col'
         )}
       >
-        <Header />
-        <main className="flex-grow">{children}</main>
-        <Footer />
-        <Toaster />
+        <FirebaseClientProvider>
+          <FirebaseErrorListener />
+          <Header />
+          <main className="flex-grow">{children}</main>
+          <Footer />
+          <Toaster />
+        </FirebaseClientProvider>
       </body>
     </html>
   );
