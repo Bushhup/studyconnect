@@ -80,10 +80,11 @@ export default function UserManagementPage() {
     status: 'active'
   });
 
+  // Query only if authenticated and not loading to prevent 'auth: null' errors in security rules
   const usersQuery = useMemoFirebase(() => {
-    if (!firestore || !user) return null;
+    if (!firestore || !user || userLoading) return null;
     return collection(firestore, 'colleges', collegeId, 'users');
-  }, [firestore, user]);
+  }, [firestore, user, userLoading]);
 
   const { data: users, isLoading: collectionLoading } = useCollection(usersQuery);
 
@@ -110,7 +111,7 @@ export default function UserManagementPage() {
       createdAt: new Date().toISOString()
     });
 
-    toast({ title: 'User Registered', description: `${formData.firstName} has been added to the directory with a temporary password.` });
+    toast({ title: 'User Registered', description: `${formData.firstName} has been added to the directory.` });
     setIsAddOpen(false);
     setFormData({ firstName: '', lastName: '', email: '', password: '', role: 'student', status: 'active' });
   };
