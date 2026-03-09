@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,6 +8,8 @@ import {
   DocumentData,
   QuerySnapshot 
 } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 export function useCollection<T = DocumentData>(
   memoizedTargetRefOrQuery: Query<T> | CollectionReference<T> | null | undefined,
@@ -33,9 +34,17 @@ export function useCollection<T = DocumentData>(
         setData(items);
         setIsLoading(false);
       },
-      (err) => {
-        console.error('Firestore Collection Error:', err);
-        setError(err);
+      async (err) => {
+        // Create the rich, contextual error for the developer overlay
+        const permissionError = new FirestorePermissionError({
+          path: (memoizedTargetRefOrQuery as any).path || 'query',
+          operation: 'list',
+        } satisfies SecurityRuleContext);
+
+        // Emit the error to the global listener
+        errorEmitter.emit('permission-error', permissionError);
+        
+        setError(permissionError);
         setIsLoading(false);
       }
     );

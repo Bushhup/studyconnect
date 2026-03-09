@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -16,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { GraduationCap, BookOpen, ShieldCheck, ArrowLeft, Loader2 } from 'lucide-react';
 import { useFirebase } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 
 type UserRole = 'student' | 'faculty' | 'admin';
 
@@ -40,7 +39,10 @@ export default function LoginPage() {
       const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASSWORD;
 
       if (selectedRole === 'admin') {
-        if (email === adminEmail && password === adminPass) {
+        if (email.trim().toLowerCase() === adminEmail?.trim().toLowerCase() && password === adminPass) {
+          // Sign in the admin anonymously so they have a UID for Firestore Security Rules
+          await signInAnonymously(auth);
+          
           toast({ title: 'System Access Granted', description: 'Welcome to the Master Control.' });
           router.push('/admin/dashboard');
           return;
@@ -50,7 +52,7 @@ export default function LoginPage() {
       }
 
       // For Faculty and Students, we use real Firebase Auth
-      await signInWithEmailAndPassword(auth, email, password);
+      await signInWithEmailAndPassword(auth, email.trim().toLowerCase(), password);
       
       toast({ title: 'Welcome Back', description: `Authenticated as ${selectedRole}.` });
       router.push('/profile');

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,6 +7,8 @@ import {
   DocumentData,
   DocumentSnapshot 
 } from 'firebase/firestore';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 export function useDoc<T = DocumentData>(
   memoizedDocRef: DocumentReference<T> | null | undefined,
@@ -32,9 +33,15 @@ export function useDoc<T = DocumentData>(
         }
         setIsLoading(false);
       },
-      (err) => {
-        console.error('Firestore Document Error:', err);
-        setError(err);
+      async (err) => {
+        const permissionError = new FirestorePermissionError({
+          path: memoizedDocRef.path,
+          operation: 'get',
+        } satisfies SecurityRuleContext);
+
+        errorEmitter.emit('permission-error', permissionError);
+        
+        setError(permissionError);
         setIsLoading(false);
       }
     );
