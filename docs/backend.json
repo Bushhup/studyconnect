@@ -19,6 +19,7 @@
       "description": "Represents a user (student, faculty, or admin).",
       "properties": {
         "id": { "type": "string" },
+        "username": { "type": "string", "description": "Unique institutional username." },
         "collegeId": { "type": "string" },
         "email": { "type": "string", "format": "email" },
         "password": { "type": "string", "description": "Temporary password for first-time provisioning." },
@@ -29,7 +30,7 @@
         "degreeType": { "type": "string", "enum": ["UG", "PG"] },
         "status": { "type": "string", "enum": ["active", "inactive"] }
       },
-      "required": ["id", "collegeId", "email", "role"]
+      "required": ["id", "username", "collegeId", "email", "role"]
     },
     "Department": {
       "title": "Department",

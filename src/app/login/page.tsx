@@ -28,31 +28,31 @@ export default function LoginPage() {
   const { auth, firestore } = useFirebase();
 
   const [selectedRole, setSelectedRole] = useState<UserRole | null>(null);
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) return;
+    if (!username || !password) return;
 
     setIsLoading(true);
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedUsername = username.trim();
 
     try {
-      const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'Admin01';
+      const adminUser = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'Admin01';
       const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'minister123';
 
       if (selectedRole === 'admin') {
-        if (normalizedEmail === adminEmail.toLowerCase() && password === adminPass) {
+        if (normalizedUsername.toLowerCase() === adminUser.toLowerCase() && password === adminPass) {
           const userCredential = await signInAnonymously(auth);
           const newUser = userCredential.user;
           
-          // Ensure admin record is fully synchronized before proceeding
           const adminDocRef = doc(firestore, 'colleges', collegeId, 'users', newUser.uid);
           await setDoc(adminDocRef, {
             id: newUser.uid,
             uid: newUser.uid,
+            username: 'Admin01',
             email: 'admin-session@college.edu',
             role: 'admin',
             firstName: 'System',
@@ -69,22 +69,33 @@ export default function LoginPage() {
         }
       }
 
-      // 1. Attempt standard login
+      // Institutional User Login Logic
+      const usersRef = collection(firestore, 'colleges', collegeId, 'users');
+      const q = query(usersRef, where('username', '==', normalizedUsername));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        throw new Error('Username not found in institutional directory.');
+      }
+
+      const userData = querySnapshot.docs[0].data();
+      const userEmail = userData.email;
+
+      if (userData.role !== selectedRole) {
+        throw new Error(`This account is not registered as ${selectedRole}.`);
+      }
+
       try {
-        await signInWithEmailAndPassword(auth, normalizedEmail, password);
-        toast({ title: 'Welcome Back', description: `Authenticated as ${selectedRole}.` });
+        // Attempt standard Auth sign-in
+        await signInWithEmailAndPassword(auth, userEmail, password);
+        toast({ title: 'Welcome Back', description: `Authenticated as ${userData.firstName}.` });
         router.push('/profile');
       } catch (authError: any) {
-        // 2. If standard login fails, check for provisioned user in Firestore
-        const usersRef = collection(firestore, 'colleges', collegeId, 'users');
-        const q = query(usersRef, where('email', '==', normalizedEmail));
-        const querySnapshot = await getDocs(q);
-
-        if (!querySnapshot.empty) {
-          const userData = querySnapshot.docs[0].data();
-          
+        // Handle bootstrapping if Auth account doesn't exist yet but Firestore doc does
+        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
           if (userData.password === password) {
-            const userCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
+            // First-time login: Create Auth account
+            const userCredential = await createUserWithEmailAndPassword(auth, userEmail, password);
             const newUser = userCredential.user;
             
             const newDocRef = doc(firestore, 'colleges', collegeId, 'users', newUser.uid);
@@ -150,17 +161,30 @@ export default function LoginPage() {
             <ArrowLeft className="mr-2 h-4 w-4" /> Switch Portal
           </Button>
           <CardTitle className="text-2xl font-headline text-center capitalize">{selectedRole} Portal</CardTitle>
-          <CardDescription className="text-center">Enter credentials.</CardDescription>
+          <CardDescription className="text-center">Enter your institutional username.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label>{selectedRole === 'admin' ? 'Username' : 'Email'}</Label>
-              <Input type={selectedRole === 'admin' ? 'text' : 'email'} required value={email} onChange={(e) => setEmail(e.target.value)} className="h-11 bg-slate-50 border-none" />
+              <Label>Username</Label>
+              <Input 
+                type="text" 
+                required 
+                value={username} 
+                onChange={(e) => setUsername(e.target.value)} 
+                className="h-11 bg-slate-50 border-none" 
+                placeholder="e.g. Admin01 or student_101"
+              />
             </div>
             <div className="grid gap-2">
               <Label>Password</Label>
-              <Input type="password" required value={password} onChange={(e) => setPassword(e.target.value)} className="h-11 bg-slate-50 border-none" />
+              <Input 
+                type="password" 
+                required 
+                value={password} 
+                onChange={(e) => setPassword(e.target.value)} 
+                className="h-11 bg-slate-50 border-none" 
+              />
             </div>
           </CardContent>
           <div className="p-6 pt-0">

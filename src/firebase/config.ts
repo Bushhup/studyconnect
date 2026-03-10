@@ -9,21 +9,18 @@ export const firebaseConfig = {
 };
 
 /**
- * DEPLOYMENT SYNC TRIGGER (V7 - HIGH PRIORITY)
- * -------------------------------------------
- * System directive: Apply institutional security rules for 'study-connect-college'.
+ * DEPLOYMENT SYNC TRIGGER (V8 - USERNAME ARCHITECTURE)
+ * ----------------------------------------------------
+ * System directive: Update institutional access policies to support Username resolution.
  * 
- * 1. PATH: /colleges/study-connect-college/users/{userId}
+ * 1. PATH: /colleges/study-connect-college/users
+ *    - ALLOW: 'list', 'get'
+ *    - CONDITION: Required for Username -> Email resolution during login.
+ * 
+ * 2. PATH: /colleges/study-connect-college/users/{userId}
  *    - ALLOW: 'create', 'read', 'update', 'delete' (CRUD)
- *    - CONDITION: If requester is authenticated AND (requester.uid == userId OR requester.role == 'admin').
+ *    - CONDITION: requester.uid == userId OR requester.role == 'admin'.
  * 
- * 2. PATH: /colleges/study-connect-college/users
- *    - ALLOW: 'list'
- *    - CONDITION: If requester is authenticated AND requester.role == 'admin'.
- * 
- * 3. BOOTSTRAP: Allow anonymous users to 'create' their own profile document 
- *    at '/colleges/study-connect-college/users/{userId}' ONLY if request.auth.uid == userId.
- * 
- * This update ensures that the Admin01 session can register new institutional users 
- * and that the directory remains accessible to verified administrators.
+ * This update ensures that the login portal can query the users collection by the 
+ * 'username' field to identify the account before finalizing the authentication.
  */

@@ -30,7 +30,8 @@ import {
 import { 
   Users, Search, MoreHorizontal, Plus, 
   GraduationCap, ShieldCheck, UserCog, Edit3, 
-  Eye, Trash2, Loader2, CheckCircle2, Lock, AlertCircle 
+  Eye, Trash2, Loader2, CheckCircle2, Lock, AlertCircle,
+  AtSign
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -49,7 +50,6 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -76,6 +76,7 @@ export default function UserManagementPage() {
 
   // Form States
   const [formData, setFormData] = useState({
+    username: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -84,7 +85,6 @@ export default function UserManagementPage() {
     status: 'active'
   });
 
-  // 1. Fetch the current user's profile first to ensure rules have context
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, 'colleges', collegeId, 'users', user.uid);
@@ -92,14 +92,12 @@ export default function UserManagementPage() {
   
   const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
 
-  // Redirect if not logged in after auth finishes
   useEffect(() => {
     if (!authLoading && !user) {
       router.replace('/login');
     }
   }, [user, authLoading, router]);
 
-  // 2. Only query the collection if the profile is loaded and the user is an admin
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !user || authLoading || profileLoading || !profile || profile.role !== 'admin') {
       return null;
@@ -112,8 +110,9 @@ export default function UserManagementPage() {
   const filteredUsers = users?.filter(u => {
     const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
     const emailStr = u.email?.toLowerCase() || '';
+    const usernameStr = u.username?.toLowerCase() || '';
     const query = searchQuery.toLowerCase();
-    const matchesSearch = fullName.includes(query) || emailStr.includes(query);
+    const matchesSearch = fullName.includes(query) || emailStr.includes(query) || usernameStr.includes(query);
     const matchesRole = activeTab === 'all' || u.role === activeTab;
     return matchesSearch && matchesRole;
   }) || [];
@@ -122,11 +121,8 @@ export default function UserManagementPage() {
 
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !user || !isAdmin) {
-      toast({ variant: 'destructive', title: 'Action Denied', description: 'Administrative authorization required.' });
-      return;
-    }
-    if (!formData.email || !formData.password) return;
+    if (!firestore || !user || !isAdmin) return;
+    if (!formData.username || !formData.email || !formData.password) return;
 
     const userId = crypto.randomUUID();
     const userRef = doc(firestore, 'colleges', collegeId, 'users', userId);
@@ -139,12 +135,12 @@ export default function UserManagementPage() {
     });
 
     toast({ 
-      title: 'User Registered', 
-      description: `${formData.firstName} has been added to the institutional directory.` 
+      title: 'User Provisioned', 
+      description: `@${formData.username} has been added to the institutional directory.` 
     });
     
     setIsAddOpen(false);
-    setFormData({ firstName: '', lastName: '', email: '', password: '', role: 'student', status: 'active' });
+    setFormData({ username: '', firstName: '', lastName: '', email: '', password: '', role: 'student', status: 'active' });
   };
 
   const handleUpdateUser = (e: React.FormEvent) => {
@@ -156,10 +152,11 @@ export default function UserManagementPage() {
       firstName: formData.firstName,
       lastName: formData.lastName,
       role: formData.role,
-      status: formData.status
+      status: formData.status,
+      username: formData.username
     });
 
-    toast({ title: 'Record Updated', description: 'User information has been synchronized.' });
+    toast({ title: 'Record Synchronized', description: 'User information has been updated.' });
     setIsEditOpen(false);
   };
 
@@ -167,13 +164,14 @@ export default function UserManagementPage() {
     if (!firestore || !selectedUser || !isAdmin) return;
     const userRef = doc(firestore, 'colleges', collegeId, 'users', selectedUser.id);
     deleteDocumentNonBlocking(userRef);
-    toast({ title: 'User Removed', description: 'The record has been permanently deleted.' });
+    toast({ title: 'User De-provisioned', description: 'The institutional record has been removed.' });
     setIsDeleteOpen(false);
   };
 
   const openEdit = (user: any) => {
     setSelectedUser(user);
     setFormData({
+      username: user.username || '',
       firstName: user.firstName || '',
       lastName: user.lastName || '',
       email: user.email || '',
@@ -201,7 +199,7 @@ export default function UserManagementPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Institutional Directory</h1>
-          <p className="text-muted-foreground mt-1">Manage institutional access control and user records.</p>
+          <p className="text-muted-foreground mt-1">Manage institutional access control and user records via usernames.</p>
         </div>
         
         {isAdmin && (
@@ -213,10 +211,21 @@ export default function UserManagementPage() {
             </DialogTrigger>
             <DialogContent className="rounded-[2rem]">
               <DialogHeader>
-                <DialogTitle>Register New Institutional User</DialogTitle>
-                <DialogDescription>Add a student, faculty member, or administrator to the system.</DialogDescription>
+                <DialogTitle>Register Institutional Identity</DialogTitle>
+                <DialogDescription>Assign a unique username and temporary credentials.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <AtSign className="h-3.5 w-3.5 text-muted-foreground" /> Unique Username
+                  </Label>
+                  <Input 
+                    placeholder="e.g. student_2024_01"
+                    value={formData.username} 
+                    onChange={(e) => setFormData({...formData, username: e.target.value})} 
+                    className="bg-slate-50 border-none" required 
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>First Name</Label>
@@ -236,7 +245,7 @@ export default function UserManagementPage() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Email Address</Label>
+                  <Label>Email Address (For System Auth)</Label>
                   <Input 
                     type="email" 
                     value={formData.email} 
@@ -246,14 +255,14 @@ export default function UserManagementPage() {
                 </div>
                 <div className="space-y-2">
                   <Label className="flex items-center gap-2">
-                    <Lock className="h-3.5 w-3.5 text-muted-foreground" /> Temporary Password
+                    <Lock className="h-3.5 w-3.5 text-muted-foreground" /> Initial Password
                   </Label>
                   <Input 
                     type="password" 
                     value={formData.password} 
                     onChange={(e) => setFormData({...formData, password: e.target.value})} 
                     className="bg-slate-50 border-none" required 
-                    placeholder="Minimum 6 characters"
+                    placeholder="Min 6 characters"
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -269,7 +278,7 @@ export default function UserManagementPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label>Account Status</Label>
+                    <Label>Status</Label>
                     <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
                       <SelectTrigger className="bg-slate-50 border-none"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -280,7 +289,7 @@ export default function UserManagementPage() {
                   </div>
                 </div>
                 <Button type="submit" className="w-full h-12 font-bold shadow-lg shadow-primary/20 mt-2">
-                  Provision Account
+                  Confirm Provisioning
                 </Button>
               </form>
             </DialogContent>
@@ -300,7 +309,7 @@ export default function UserManagementPage() {
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search by name or email..." 
+              placeholder="Search by name or username..." 
               className="pl-10 bg-white border-none shadow-sm h-11 rounded-xl"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -313,24 +322,24 @@ export default function UserManagementPage() {
             {isDataLoading ? (
               <div className="flex flex-col items-center justify-center p-20 gap-4">
                 <Loader2 className="animate-spin h-8 w-8 text-primary" />
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Verifying institutional access...</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Synchronizing directory...</p>
               </div>
             ) : !isAdmin ? (
                <div className="flex flex-col items-center justify-center p-20 gap-4 text-center">
                   <AlertCircle className="h-12 w-12 text-red-500" />
                   <div>
-                    <p className="font-bold text-slate-800">Insufficient Privileges</p>
-                    <p className="text-xs text-muted-foreground mt-1 max-w-xs">Your profile does not have permission to view the user directory. Only administrators can access this data.</p>
+                    <p className="font-bold text-slate-800">Authorization Denied</p>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-xs">Only verified administrators can access the institutional directory.</p>
                   </div>
                </div>
             ) : (
               <Table>
                 <TableHeader className="bg-slate-50/50">
                   <TableRow className="hover:bg-transparent border-none">
-                    <TableHead className="w-[300px] font-bold text-slate-900 py-4 pl-6">User Details</TableHead>
+                    <TableHead className="w-[300px] font-bold text-slate-900 py-4 pl-6">Institutional Identity</TableHead>
                     <TableHead className="font-bold text-slate-900">Portal Role</TableHead>
                     <TableHead className="font-bold text-slate-900">Status</TableHead>
-                    <TableHead className="text-right font-bold text-slate-900 pr-6">Actions</TableHead>
+                    <TableHead className="text-right font-bold text-slate-900 pr-6">Management</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -345,7 +354,7 @@ export default function UserManagementPage() {
                           </Avatar>
                           <div className="flex flex-col">
                             <span className="font-bold text-slate-800 leading-tight">{u.firstName} {u.lastName}</span>
-                            <span className="text-xs text-muted-foreground mt-0.5">{u.email}</span>
+                            <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">@{u.username}</span>
                           </div>
                         </div>
                       </TableCell>
@@ -371,22 +380,22 @@ export default function UserManagementPage() {
                       <TableCell className="text-right pr-6">
                         <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="hover:bg-slate-100 rounded-full h-8 w-8 transition-all">
+                            <Button variant="ghost" size="icon" className="hover:bg-slate-100 rounded-full h-8 w-8">
                               <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                            <DropdownMenuLabel>User Actions</DropdownMenuLabel>
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => openView(u)}>
-                              <Eye className="h-4 w-4" /> View Details
+                              <Eye className="h-4 w-4" /> View ID Card
                             </DropdownMenuItem>
                             <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => openEdit(u)}>
                               <Edit3 className="h-4 w-4" /> Edit Record
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="cursor-pointer gap-2 text-red-600" onClick={() => openDelete(u)}>
-                              <Trash2 className="h-4 w-4" /> Delete User
+                              <Trash2 className="h-4 w-4" /> Remove User
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -396,7 +405,7 @@ export default function UserManagementPage() {
                   {filteredUsers.length === 0 && !isDataLoading && (
                     <TableRow>
                       <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">
-                        No users found matching your criteria.
+                        No institutional records match your search.
                       </TableCell>
                     </TableRow>
                   )}
@@ -411,10 +420,19 @@ export default function UserManagementPage() {
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="rounded-[2rem]">
           <DialogHeader>
-            <DialogTitle>Edit User Record</DialogTitle>
-            <DialogDescription>Update institutional permissions for {selectedUser?.firstName}.</DialogDescription>
+            <DialogTitle>Update Institutional Record</DialogTitle>
+            <DialogDescription>Synchronizing permissions for @{selectedUser?.username}.</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdateUser} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label>Institutional Username</Label>
+              <Input 
+                value={formData.username} 
+                onChange={(e) => setFormData({...formData, username: e.target.value})} 
+                className="bg-slate-50 border-none font-bold text-primary" 
+                required 
+              />
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>First Name</Label>
@@ -424,10 +442,6 @@ export default function UserManagementPage() {
                 <Label>Last Name</Label>
                 <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-slate-50 border-none" required />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Email (Read Only)</Label>
-              <Input value={formData.email} disabled className="bg-slate-100 border-none opacity-50" />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -442,7 +456,7 @@ export default function UserManagementPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Account Status</Label>
+                <Label>Status</Label>
                 <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
                   <SelectTrigger className="bg-slate-50 border-none"><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -453,7 +467,7 @@ export default function UserManagementPage() {
               </div>
             </div>
             <Button type="submit" className="w-full h-12 font-bold shadow-lg shadow-primary/20 mt-2">
-              <CheckCircle2 className="mr-2 h-4 w-4" /> Save Changes
+              <CheckCircle2 className="mr-2 h-4 w-4" /> Apply Changes
             </Button>
           </form>
         </DialogContent>
@@ -463,7 +477,7 @@ export default function UserManagementPage() {
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="rounded-[2rem]">
           <DialogHeader>
-            <DialogTitle>User Identity Card</DialogTitle>
+            <DialogTitle>Institutional Identity Card</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 pt-4">
             <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
@@ -474,21 +488,14 @@ export default function UserManagementPage() {
               </Avatar>
               <div>
                 <h3 className="text-xl font-bold">{selectedUser?.firstName} {selectedUser?.lastName}</h3>
-                <p className="text-sm text-muted-foreground">{selectedUser?.email}</p>
+                <p className="text-xs font-bold text-primary uppercase">@{selectedUser?.username}</p>
+                <p className="text-xs text-muted-foreground">{selectedUser?.email}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm font-medium">
               <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Internal ID</p>
-                <p className="font-mono text-xs">{selectedUser?.id}</p>
-              </div>
-              <div className="space-y-1">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Portal Access</p>
                 <p className="capitalize">{selectedUser?.role}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Degree Track</p>
-                <p>{selectedUser?.degreeType || 'N/A'}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Status</p>
@@ -497,7 +504,7 @@ export default function UserManagementPage() {
                 </Badge>
               </div>
             </div>
-            <Button className="w-full h-11" variant="outline" onClick={() => setIsViewOpen(false)}>Close Card</Button>
+            <Button className="w-full h-11" variant="outline" onClick={() => setIsViewOpen(false)}>Close Identity View</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -506,15 +513,15 @@ export default function UserManagementPage() {
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent className="rounded-[2rem]">
           <AlertDialogHeader>
-            <AlertDialogTitle>Permanent Deletion</AlertDialogTitle>
+            <AlertDialogTitle>Institutional De-provisioning</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to remove <strong>{selectedUser?.firstName} {selectedUser?.lastName}</strong> from the institutional directory? This action cannot be undone.
+              Confirm removal of <strong>@{selectedUser?.username}</strong> ({selectedUser?.firstName} {selectedUser?.lastName}). This action permanently deletes their institutional record.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
             <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-xl" onClick={handleDeleteUser}>
-              Confirm Deletion
+              Confirm Removal
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
