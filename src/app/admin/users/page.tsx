@@ -100,6 +100,7 @@ export default function UserManagementPage() {
   }, [user, authLoading, router]);
 
   const usersQuery = useMemoFirebase(() => {
+    // Only fetch directory once administrative profile is fully verified
     if (!firestore || !user || authLoading || profileLoading || !profile || profile.role !== 'admin') {
       return null;
     }
@@ -123,7 +124,10 @@ export default function UserManagementPage() {
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore || !user || !isAdmin) return;
-    if (!formData.username || !formData.email || !formData.password) return;
+    if (!formData.username || !formData.email || !formData.password) {
+      toast({ variant: 'destructive', title: 'Validation Error', description: 'Institutional Username, Email, and Password are required.' });
+      return;
+    }
 
     const userId = crypto.randomUUID();
     const userRef = doc(firestore, 'colleges', collegeId, 'users', userId);

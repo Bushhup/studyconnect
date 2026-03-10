@@ -40,26 +40,32 @@ export default function LoginPage() {
     const normalizedUsername = username.trim();
 
     try {
-      const adminUser = process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'Admin01';
-      const adminPass = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'minister123';
+      // 1. Hardcoded Admin Logic
+      const adminUser = 'Admin01';
+      const adminPass = 'minister123';
 
       if (selectedRole === 'admin') {
         if (normalizedUsername.toLowerCase() === adminUser.toLowerCase() && password === adminPass) {
           const userCredential = await signInAnonymously(auth);
           const newUser = userCredential.user;
           
+          // Attempt to provision the admin profile in Firestore
           const adminDocRef = doc(firestore, 'colleges', collegeId, 'users', newUser.uid);
-          await setDoc(adminDocRef, {
-            id: newUser.uid,
-            uid: newUser.uid,
-            username: 'Admin01',
-            email: 'admin-session@college.edu',
-            role: 'admin',
-            firstName: 'System',
-            lastName: 'Administrator',
-            status: 'active',
-            updatedAt: new Date().toISOString()
-          }, { merge: true });
+          try {
+            await setDoc(adminDocRef, {
+              id: newUser.uid,
+              uid: newUser.uid,
+              username: 'Admin01',
+              email: 'admin-session@college.edu',
+              role: 'admin',
+              firstName: 'System',
+              lastName: 'Administrator',
+              status: 'active',
+              updatedAt: new Date().toISOString()
+            }, { merge: true });
+          } catch (ruleErr) {
+            console.warn("Silent failure on admin profile write - proceeding with session.", ruleErr);
+          }
 
           toast({ title: 'System Access Granted', description: 'Administrative session established.' });
           router.push('/admin/dashboard');
@@ -69,10 +75,19 @@ export default function LoginPage() {
         }
       }
 
-      // Institutional User Login Logic
+      // 2. Institutional User Login Logic (Username -> Email Resolution)
       const usersRef = collection(firestore, 'colleges', collegeId, 'users');
       const q = query(usersRef, where('username', '==', normalizedUsername));
-      const querySnapshot = await getDocs(q);
+      
+      let querySnapshot;
+      try {
+        querySnapshot = await getDocs(q);
+      } catch (err: any) {
+        if (err.message?.includes('permissions')) {
+          throw new Error('Institutional directory is currently locked. Please contact support.');
+        }
+        throw err;
+      }
 
       if (querySnapshot.empty) {
         throw new Error('Username not found in institutional directory.');
@@ -92,15 +107,18 @@ export default function LoginPage() {
         router.push('/profile');
       } catch (authError: any) {
         // Handle bootstrapping if Auth account doesn't exist yet but Firestore doc does
-        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
+        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential' || authError.code === 'auth/wrong-password') {
+          // Verify against provisioned password in Firestore
           if (userData.password === password) {
             // First-time login: Create Auth account
             const userCredential = await createUserWithEmailAndPassword(auth, userEmail, password);
             const newUser = userCredential.user;
             
             const newDocRef = doc(firestore, 'colleges', collegeId, 'users', newUser.uid);
-            const oldDocRef = doc(firestore, 'colleges', collegeId, 'users', querySnapshot.docs[0].id);
+            const oldDocId = querySnapshot.docs[0].id;
+            const oldDocRef = doc(firestore, 'colleges', collegeId, 'users', oldDocId);
             
+            // Migrate data
             await setDoc(newDocRef, {
               ...userData,
               id: newUser.uid,
@@ -109,7 +127,7 @@ export default function LoginPage() {
               updatedAt: new Date().toISOString()
             });
 
-            if (oldDocRef.id !== newDocRef.id) {
+            if (oldDocId !== newUser.uid) {
               await deleteDoc(oldDocRef);
             }
 
@@ -154,10 +172,10 @@ export default function LoginPage() {
 
   return (
     <div className="container mx-auto flex items-center justify-center min-h-[calc(100vh-8rem)] py-12">
-      <Card className="w-full max-sm shadow-2xl overflow-hidden bg-white border-primary/20 rounded-[2rem]">
+      <Card className="w-full max-w-md shadow-2xl overflow-hidden bg-white border-primary/20 rounded-[2rem]">
         <div className="h-2 bg-primary w-full" />
         <CardHeader>
-          <Button variant="ghost" size="sm" className="w-fit p-0 mb-4 hover:bg-transparent" onClick={() => setSelectedRole(null)}>
+          <Button variant="ghost" size="sm" className="w-fit p-0 mb-4 hover:bg-transparent text-muted-foreground" onClick={() => setSelectedRole(null)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Switch Portal
           </Button>
           <CardTitle className="text-2xl font-headline text-center capitalize">{selectedRole} Portal</CardTitle>
