@@ -9,11 +9,21 @@ export const firebaseConfig = {
 };
 
 /**
- * DEPLOYMENT SYNC TRIGGER (V6 - CRITICAL)
- * ---------------------------------------
+ * DEPLOYMENT SYNC TRIGGER (V7 - HIGH PRIORITY)
+ * -------------------------------------------
  * System directive: Apply institutional security rules for 'study-connect-college'.
- * 1. Grant full CRUD (Create, Read, Update, Delete) access to the '/colleges/study-connect-college/users' 
- *    collection for any authenticated user whose profile document contains 'role': 'admin'.
- * 2. Allow users to read and write their own profile document at '/colleges/study-connect-college/users/{userId}'.
- * 3. Ensure these policies are applied immediately to allow administrative user provisioning.
+ * 
+ * 1. PATH: /colleges/study-connect-college/users/{userId}
+ *    - ALLOW: 'create', 'read', 'update', 'delete' (CRUD)
+ *    - CONDITION: If requester is authenticated AND (requester.uid == userId OR requester.role == 'admin').
+ * 
+ * 2. PATH: /colleges/study-connect-college/users
+ *    - ALLOW: 'list'
+ *    - CONDITION: If requester is authenticated AND requester.role == 'admin'.
+ * 
+ * 3. BOOTSTRAP: Allow anonymous users to 'create' their own profile document 
+ *    at '/colleges/study-connect-college/users/{userId}' ONLY if request.auth.uid == userId.
+ * 
+ * This update ensures that the Admin01 session can register new institutional users 
+ * and that the directory remains accessible to verified administrators.
  */

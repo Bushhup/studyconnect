@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   useCollection, 
   useDoc,
@@ -29,7 +30,7 @@ import {
 import { 
   Users, Search, MoreHorizontal, Plus, 
   GraduationCap, ShieldCheck, UserCog, Edit3, 
-  Eye, Trash2, Loader2, CheckCircle2, Lock 
+  Eye, Trash2, Loader2, CheckCircle2, Lock, AlertCircle 
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -59,6 +60,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 const collegeId = 'study-connect-college';
 
 export default function UserManagementPage() {
+  const router = useRouter();
   const firestore = useFirestore();
   const { user, isUserLoading: authLoading } = useUser();
   const { toast } = useToast();
@@ -90,6 +92,13 @@ export default function UserManagementPage() {
   
   const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
 
+  // Redirect if not logged in after auth finishes
+  useEffect(() => {
+    if (!authLoading && !user) {
+      router.replace('/login');
+    }
+  }, [user, authLoading, router]);
+
   // 2. Only query the collection if the profile is loaded and the user is an admin
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !user || authLoading || profileLoading || !profile || profile.role !== 'admin') {
@@ -101,7 +110,7 @@ export default function UserManagementPage() {
   const { data: users, isLoading: collectionLoading } = useCollection(usersQuery);
 
   const filteredUsers = users?.filter(u => {
-    const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
+    const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
     const emailStr = u.email?.toLowerCase() || '';
     const query = searchQuery.toLowerCase();
     const matchesSearch = fullName.includes(query) || emailStr.includes(query);
@@ -109,14 +118,19 @@ export default function UserManagementPage() {
     return matchesSearch && matchesRole;
   }) || [];
 
+  const isAdmin = profile?.role === 'admin';
+
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !formData.email || !formData.password) return;
+    if (!firestore || !user || !isAdmin) {
+      toast({ variant: 'destructive', title: 'Action Denied', description: 'Administrative authorization required.' });
+      return;
+    }
+    if (!formData.email || !formData.password) return;
 
     const userId = crypto.randomUUID();
     const userRef = doc(firestore, 'colleges', collegeId, 'users', userId);
     
-    // Use non-blocking utility for automatic error surfacing
     setDocumentNonBlocking(userRef, {
       ...formData,
       id: userId,
@@ -126,7 +140,7 @@ export default function UserManagementPage() {
 
     toast({ 
       title: 'User Registered', 
-      description: `${formData.firstName} has been added to the local directory queue.` 
+      description: `${formData.firstName} has been added to the institutional directory.` 
     });
     
     setIsAddOpen(false);
@@ -135,7 +149,7 @@ export default function UserManagementPage() {
 
   const handleUpdateUser = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !selectedUser) return;
+    if (!firestore || !selectedUser || !isAdmin) return;
 
     const userRef = doc(firestore, 'colleges', collegeId, 'users', selectedUser.id);
     updateDocumentNonBlocking(userRef, {
@@ -150,7 +164,7 @@ export default function UserManagementPage() {
   };
 
   const handleDeleteUser = () => {
-    if (!firestore || !selectedUser) return;
+    if (!firestore || !selectedUser || !isAdmin) return;
     const userRef = doc(firestore, 'colleges', collegeId, 'users', selectedUser.id);
     deleteDocumentNonBlocking(userRef);
     toast({ title: 'User Removed', description: 'The record has been permanently deleted.' });
@@ -160,12 +174,12 @@ export default function UserManagementPage() {
   const openEdit = (user: any) => {
     setSelectedUser(user);
     setFormData({
-      firstName: user.firstName,
-      lastName: user.lastName,
-      email: user.email,
+      firstName: user.firstName || '',
+      lastName: user.lastName || '',
+      email: user.email || '',
       password: user.password || '',
-      role: user.role,
-      status: user.status
+      role: user.role || 'student',
+      status: user.status || 'active'
     });
     setIsEditOpen(true);
   };
@@ -190,86 +204,88 @@ export default function UserManagementPage() {
           <p className="text-muted-foreground mt-1">Manage institutional access control and user records.</p>
         </div>
         
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
-              <Plus className="h-4 w-4" /> Register New User
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="rounded-[2rem]">
-            <DialogHeader>
-              <DialogTitle>Register New Institutional User</DialogTitle>
-              <DialogDescription>Add a student, faculty member, or administrator to the system.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>First Name</Label>
-                  <Input 
-                    value={formData.firstName} 
-                    onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
-                    className="bg-slate-50 border-none" required 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Last Name</Label>
-                  <Input 
-                    value={formData.lastName} 
-                    onChange={(e) => setFormData({...formData, lastName: e.target.value})} 
-                    className="bg-slate-50 border-none" required 
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Email Address</Label>
-                <Input 
-                  type="email" 
-                  value={formData.email} 
-                  onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                  className="bg-slate-50 border-none" required 
-                />
-              </div>
-              <div className="space-y-2">
-                <Label className="flex items-center gap-2">
-                  <Lock className="h-3.5 w-3.5 text-muted-foreground" /> Temporary Password
-                </Label>
-                <Input 
-                  type="password" 
-                  value={formData.password} 
-                  onChange={(e) => setFormData({...formData, password: e.target.value})} 
-                  className="bg-slate-50 border-none" required 
-                  placeholder="Minimum 6 characters"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Portal Role</Label>
-                  <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
-                    <SelectTrigger className="bg-slate-50 border-none"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="student">Student</SelectItem>
-                      <SelectItem value="faculty">Faculty</SelectItem>
-                      <SelectItem value="admin">Administrator</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Account Status</Label>
-                  <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
-                    <SelectTrigger className="bg-slate-50 border-none"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="active">Active</SelectItem>
-                      <SelectItem value="inactive">Inactive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <Button type="submit" className="w-full h-12 font-bold shadow-lg shadow-primary/20 mt-2">
-                Provision Account
+        {isAdmin && (
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
+                <Plus className="h-4 w-4" /> Register New User
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="rounded-[2rem]">
+              <DialogHeader>
+                <DialogTitle>Register New Institutional User</DialogTitle>
+                <DialogDescription>Add a student, faculty member, or administrator to the system.</DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>First Name</Label>
+                    <Input 
+                      value={formData.firstName} 
+                      onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
+                      className="bg-slate-50 border-none" required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Last Name</Label>
+                    <Input 
+                      value={formData.lastName} 
+                      onChange={(e) => setFormData({...formData, lastName: e.target.value})} 
+                      className="bg-slate-50 border-none" required 
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Email Address</Label>
+                  <Input 
+                    type="email" 
+                    value={formData.email} 
+                    onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                    className="bg-slate-50 border-none" required 
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Lock className="h-3.5 w-3.5 text-muted-foreground" /> Temporary Password
+                  </Label>
+                  <Input 
+                    type="password" 
+                    value={formData.password} 
+                    onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                    className="bg-slate-50 border-none" required 
+                    placeholder="Minimum 6 characters"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Portal Role</Label>
+                    <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
+                      <SelectTrigger className="bg-slate-50 border-none"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="student">Student</SelectItem>
+                        <SelectItem value="faculty">Faculty</SelectItem>
+                        <SelectItem value="admin">Administrator</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Account Status</Label>
+                    <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
+                      <SelectTrigger className="bg-slate-50 border-none"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <Button type="submit" className="w-full h-12 font-bold shadow-lg shadow-primary/20 mt-2">
+                  Provision Account
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
@@ -297,8 +313,16 @@ export default function UserManagementPage() {
             {isDataLoading ? (
               <div className="flex flex-col items-center justify-center p-20 gap-4">
                 <Loader2 className="animate-spin h-8 w-8 text-primary" />
-                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Syncing directory...</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Verifying institutional access...</p>
               </div>
+            ) : !isAdmin ? (
+               <div className="flex flex-col items-center justify-center p-20 gap-4 text-center">
+                  <AlertCircle className="h-12 w-12 text-red-500" />
+                  <div>
+                    <p className="font-bold text-slate-800">Insufficient Privileges</p>
+                    <p className="text-xs text-muted-foreground mt-1 max-w-xs">Your profile does not have permission to view the user directory. Only administrators can access this data.</p>
+                  </div>
+               </div>
             ) : (
               <Table>
                 <TableHeader className="bg-slate-50/50">
@@ -373,14 +397,6 @@ export default function UserManagementPage() {
                     <TableRow>
                       <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">
                         No users found matching your criteria.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                  {filteredUsers.length === 0 && isDataLoading && (
-                    <TableRow>
-                      <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">
-                        <Loader2 className="animate-spin h-6 w-6 mx-auto mb-2" />
-                        Verifying administrative access...
                       </TableCell>
                     </TableRow>
                   )}
