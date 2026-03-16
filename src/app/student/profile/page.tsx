@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { 
   User, Mail, Phone, MapPin, Building2, 
   GraduationCap, Calendar, Edit3, Lock,
-  Camera, CheckCircle2, UserCircle
+  Camera, CheckCircle2, UserCircle, Clock
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -62,7 +62,7 @@ export default function StudentProfile() {
           <Card className="border-none shadow-sm bg-primary text-white rounded-[2.5rem] p-6 relative overflow-hidden">
             <GraduationCap className="absolute right-[-10px] bottom-[-10px] h-24 w-24 text-white/10 rotate-12" />
             <div className="relative z-10 space-y-4">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/10 rounded-lg">
                   <UserCircle className="h-5 w-5" />
                 </div>
