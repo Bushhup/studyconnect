@@ -1,13 +1,12 @@
-
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   LayoutDashboard, Users, GraduationCap, Building2, 
   BookOpen, Calendar, FileSpreadsheet, ClipboardCheck, 
   BarChart3, FileText, Settings, Bell, Activity, UserCog,
-  Search, LogOut, Menu, X
+  Search, LogOut, Menu, X, GripHorizontal
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -41,21 +40,104 @@ const adminLinks = [
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  const hubRef = useRef<HTMLDivElement>(null);
+  
   const [isOpen, setIsOpen] = useState(false);
   const [rotation, setRotation] = useState(0);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [isRotating, setIsRotating] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [startAngle, setStartAngle] = useState(0);
+  const [startRotation, setStartRotation] = useState(0);
 
-  // Auto-rotate effect for the "loop" feel
+  // Initialize position to bottom center
   useEffect(() => {
-    if (!isOpen) return;
+    setPosition({
+      x: window.innerWidth / 2,
+      y: window.innerHeight - 80
+    });
+  }, []);
+
+  // Auto-rotate effect
+  useEffect(() => {
+    if (!isOpen || isRotating) return;
     const interval = setInterval(() => {
       setRotation(prev => (prev + 0.1) % 360);
     }, 50);
     return () => clearInterval(interval);
-  }, [isOpen]);
+  }, [isOpen, isRotating]);
 
   const handleLogout = () => {
     router.replace('/login');
   };
+
+  // Dragging Hub Logic
+  const startDragging = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    setIsDragging(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setDragOffset({
+      x: clientX - position.x,
+      y: clientY - position.y
+    });
+  };
+
+  // Rotating Wheel Logic
+  const getAngle = (clientX: number, clientY: number) => {
+    const dx = clientX - position.x;
+    const dy = clientY - position.y;
+    return Math.atan2(dy, dx) * (180 / Math.PI);
+  };
+
+  const startRotating = (e: React.MouseEvent | React.TouchEvent) => {
+    if (!isOpen) return;
+    e.stopPropagation();
+    setIsRotating(true);
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
+    setStartAngle(getAngle(clientX, clientY));
+    setStartRotation(rotation);
+  };
+
+  const onMove = useCallback((e: MouseEvent | TouchEvent) => {
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
+
+    if (isDragging) {
+      setPosition({
+        x: clientX - dragOffset.x,
+        y: clientY - dragOffset.y
+      });
+    }
+
+    if (isRotating) {
+      const currentAngle = getAngle(clientX, clientY);
+      const angleDiff = currentAngle - startAngle;
+      setRotation(startRotation + angleDiff);
+    }
+  }, [isDragging, isRotating, dragOffset, position, startAngle, startRotation]);
+
+  const onEnd = useCallback(() => {
+    setIsDragging(false);
+    setIsRotating(false);
+  }, []);
+
+  useEffect(() => {
+    if (isDragging || isRotating) {
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onEnd);
+      window.addEventListener('touchmove', onMove);
+      window.addEventListener('touchend', onEnd);
+    }
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onEnd);
+      window.removeEventListener('touchmove', onMove);
+      window.removeEventListener('touchend', onEnd);
+    };
+  }, [isDragging, isRotating, onMove, onEnd]);
 
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] overflow-hidden relative">
@@ -97,9 +179,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Floating Circular Hub Navigation */}
         <div 
-          className="fixed bottom-10 left-1/2 -translate-x-1/2 z-50 flex items-center justify-center"
+          ref={hubRef}
+          className="fixed z-50 flex items-center justify-center select-none"
+          style={{ 
+            left: `${position.x}px`, 
+            top: `${position.y}px`,
+            transform: 'translate(-50%, -50%)'
+          }}
           onMouseEnter={() => setIsOpen(true)}
-          onMouseLeave={() => setIsOpen(false)}
+          onMouseLeave={() => !isRotating && setIsOpen(false)}
         >
           {/* Circular Menu Items Container */}
           <div 
@@ -112,6 +200,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               height: '450px',
               transform: `rotate(${rotation}deg)` 
             }}
+            onMouseDown={startRotating}
+            onTouchStart={startRotating}
           >
             {adminLinks.map((link, index) => {
               const angle = (index / adminLinks.length) * 360;
@@ -133,6 +223,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 >
                   <Link
                     href={link.href}
+                    draggable={false}
                     className={cn(
                       "flex flex-col items-center justify-center p-3 rounded-full transition-all duration-300 shadow-xl border-2 group",
                       isActive 
@@ -154,12 +245,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
 
           {/* Center Trigger Icon */}
-          <div className={cn(
-            "relative w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center cursor-pointer shadow-2xl transition-all duration-500 border-4",
-            isOpen ? "border-primary scale-110 bg-slate-800" : "border-white"
-          )}>
+          <div 
+            onMouseDown={startDragging}
+            onTouchStart={startDragging}
+            className={cn(
+              "relative w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center cursor-move shadow-2xl transition-all duration-500 border-4",
+              isOpen ? "border-primary scale-110 bg-slate-800" : "border-white",
+              isDragging && "scale-125 shadow-primary/40 ring-4 ring-primary/20"
+            )}
+          >
             <div className="absolute inset-0 bg-primary/20 rounded-full animate-ping opacity-20" />
-            {isOpen ? <X className="w-6 h-6 text-white" /> : <Menu className="w-6 h-6 text-white" />}
+            {isDragging ? <GripHorizontal className="w-6 h-6 text-white" /> : (isOpen ? <X className="w-6 h-6 text-white" /> : <Menu className="w-6 h-6 text-white" />)}
           </div>
         </div>
       </div>
@@ -183,12 +279,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
           background: #CBD5E1;
-        }
-        /* Glow effect for active hub */
-        @keyframes hub-glow {
-          0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
-          70% { box-shadow: 0 0 0 20px rgba(59, 130, 246, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
         }
       `}</style>
     </div>
