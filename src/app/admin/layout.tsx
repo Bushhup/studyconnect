@@ -51,11 +51,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [startAngle, setStartAngle] = useState(0);
   const [startRotation, setStartRotation] = useState(0);
 
-  // Initialize position to bottom center
+  const MARGIN = 80; // Distance from screen edges for corners
+
+  // Initialize position to bottom right corner
   useEffect(() => {
     setPosition({
-      x: window.innerWidth / 2,
-      y: window.innerHeight - 80
+      x: window.innerWidth - MARGIN,
+      y: window.innerHeight - MARGIN
     });
   }, []);
 
@@ -106,10 +108,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
 
     if (isDragging) {
-      setPosition({
-        x: clientX - dragOffset.x,
-        y: clientY - dragOffset.y
-      });
+      // Calculate new position within window bounds
+      const newX = Math.min(Math.max(clientX - dragOffset.x, MARGIN / 2), window.innerWidth - MARGIN / 2);
+      const newY = Math.min(Math.max(clientY - dragOffset.y, MARGIN / 2), window.innerHeight - MARGIN / 2);
+      
+      setPosition({ x: newX, y: newY });
     }
 
     if (isRotating) {
@@ -120,9 +123,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [isDragging, isRotating, dragOffset, position, startAngle, startRotation]);
 
   const onEnd = useCallback(() => {
+    if (isDragging) {
+      // Snap to nearest corner
+      const midX = window.innerWidth / 2;
+      const midY = window.innerHeight / 2;
+      
+      const snapX = position.x < midX ? MARGIN : window.innerWidth - MARGIN;
+      const snapY = position.y < midY ? MARGIN : window.innerHeight - MARGIN;
+      
+      setPosition({ x: snapX, y: snapY });
+    }
     setIsDragging(false);
     setIsRotating(false);
-  }, []);
+  }, [isDragging, position]);
 
   useEffect(() => {
     if (isDragging || isRotating) {
