@@ -24,6 +24,7 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 
 const SEMESTER_RESULTS = [
@@ -148,7 +149,7 @@ export default function StudentResults() {
               </div>
               <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-primary transition-colors" />
             </div>
-          </div >
+          </Card>
         </div>
       </div>
     </div>
