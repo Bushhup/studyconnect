@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button';
 import { 
   Users, Calendar, ClipboardCheck, FileSpreadsheet, 
   TrendingUp, Clock, BookOpen, ChevronRight,
-  Plus, ArrowUpRight, Award, MessageSquare
+  Plus, ArrowUpRight, Award, MessageSquare, Megaphone,
+  CheckCircle2, AlertCircle
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, 
@@ -42,27 +43,27 @@ export default function FacultyDashboard() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Academic Overview</h1>
-          <p className="text-muted-foreground mt-1">Manage your assigned classes and monitor student progression.</p>
+          <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Welcome, Dr. Sarah Smith</h1>
+          <p className="text-muted-foreground mt-1">Department of Engineering & Technology • Academic Year 2024-25</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-full gap-2">
-            <MessageSquare className="h-4 w-4" /> Message Dept
+          <Button variant="outline" className="rounded-full gap-2 border-slate-200">
+            <MessageSquare className="h-4 w-4" /> Department Chat
           </Button>
           <Button className="rounded-full shadow-lg shadow-primary/20 gap-2">
-            <Plus className="h-4 w-4" /> New Material
+            <Plus className="h-4 w-4" /> Quick Action
           </Button>
         </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Total Students', value: '184', icon: Users, color: 'bg-blue-50 text-blue-600' },
-          { label: 'Classes Today', value: '3', icon: Calendar, color: 'bg-purple-50 text-purple-600' },
-          { label: 'Attendance Avg', value: '94.2%', icon: ClipboardCheck, color: 'bg-emerald-50 text-emerald-600' },
-          { label: 'Pending Grades', value: '12', icon: FileSpreadsheet, color: 'bg-amber-50 text-amber-600' },
+          { label: 'Assigned Classes', value: '4', icon: Calendar, color: 'bg-blue-50 text-blue-600' },
+          { label: 'Total Students', value: '184', icon: Users, color: 'bg-purple-50 text-purple-600' },
+          { label: 'Subjects Handled', value: '3', icon: BookOpen, color: 'bg-emerald-50 text-emerald-600' },
+          { label: 'Attendance Avg', value: '94.2%', icon: ClipboardCheck, color: 'bg-amber-50 text-amber-600' },
         ].map((stat) => (
-          <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all">
+          <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</CardTitle>
               <div className={cn("p-2 rounded-xl", stat.color)}>
@@ -73,7 +74,7 @@ export default function FacultyDashboard() {
               <div className="text-3xl font-bold tracking-tighter">{stat.value}</div>
               <div className="flex items-center mt-2 text-[10px] font-bold text-emerald-600">
                 <ArrowUpRight className="h-3 w-3 mr-1" />
-                <span>+2.1% from last sem</span>
+                <span>+2.1% from last month</span>
               </div>
             </CardContent>
           </Card>
@@ -81,30 +82,30 @@ export default function FacultyDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-none shadow-sm bg-white">
+        <Card className="lg:col-span-2 border-none shadow-sm bg-white rounded-2xl overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-headline font-bold">Class Progression</CardTitle>
-              <CardDescription>Academic Year 2024-25 • Semester 5</CardDescription>
+              <CardTitle className="text-lg font-headline font-bold">Performance Analytics</CardTitle>
+              <CardDescription>Academic progression across all assigned sections</CardDescription>
             </div>
             <div className="flex gap-2">
                <Badge variant="outline" className="bg-primary/5 text-primary border-none">Avg Marks</Badge>
-               <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-none">Presence</Badge>
+               <Badge variant="outline" className="bg-emerald-50 text-emerald-600 border-none">Attendance</Badge>
             </div>
           </CardHeader>
-          <CardContent className="h-[300px] pt-4">
+          <CardContent className="h-[350px] pt-4">
             <ChartContainer config={chartConfig}>
               <AreaChart data={performanceData}>
                 <defs>
                   <linearGradient id="colorMarks" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="var(--color-marks)" stopOpacity={0.1}/>
+                    <stop offset="5%" stopColor="var(--color-marks)" stopOpacity={0.15}/>
                     <stop offset="95%" stopColor="var(--color-marks)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 10 }} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} />
                 <YAxis hide />
-                <Tooltip />
+                <ChartTooltip content={<ChartTooltipContent />} />
                 <Area 
                   type="monotone" 
                   dataKey="marks" 
@@ -125,90 +126,99 @@ export default function FacultyDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm bg-white">
-          <CardHeader>
-            <CardTitle className="text-lg font-headline font-bold">Daily Schedule</CardTitle>
-            <CardDescription>Today's assigned sessions</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {schedule.map((item) => (
-              <div key={item.id} className="relative pl-4 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary/20 hover:before:bg-primary transition-all">
-                <div className="flex justify-between items-start">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold text-muted-foreground tracking-widest">{item.time}</p>
-                    <p className="text-sm font-bold text-slate-800">{item.subject}</p>
-                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
-                      <Clock className="h-3 w-3" /> {item.room} • {item.type}
+        <div className="space-y-6">
+          <Card className="border-none shadow-sm bg-white rounded-2xl">
+            <CardHeader>
+              <CardTitle className="text-lg font-headline font-bold">Today's Schedule</CardTitle>
+              <CardDescription>Upcoming assigned sessions</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {schedule.map((item) => (
+                <div key={item.id} className="relative pl-4 before:absolute before:left-0 before:top-0 before:bottom-0 before:w-1 before:bg-primary/20 hover:before:bg-primary transition-all">
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-bold text-muted-foreground tracking-widest">{item.time}</p>
+                      <p className="text-sm font-bold text-slate-800">{item.subject}</p>
+                      <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
+                        <Clock className="h-3 w-3" /> {item.room} • {item.type}
+                      </div>
                     </div>
+                    <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full">
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button size="icon" variant="ghost" className="h-8 w-8 rounded-full">
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
                 </div>
+              ))}
+              <Button asChild variant="outline" className="w-full mt-4 font-bold text-xs rounded-xl h-11 border-dashed">
+                <Link href="/faculty/calendar">View Full Calendar</Link>
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-none shadow-sm bg-slate-900 text-white rounded-2xl overflow-hidden relative">
+            <Megaphone className="absolute right-[-10px] top-[-10px] h-20 w-20 text-white/5 -rotate-12" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-bold uppercase tracking-widest text-white/70">Announcements</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              <div className="space-y-1">
+                <p className="text-xs font-bold">Final Exam Schedule Out</p>
+                <p className="text-[10px] text-white/50">Please review the syllabus update for Sem 5.</p>
               </div>
-            ))}
-            <Button variant="outline" className="w-full mt-4 font-bold text-xs rounded-xl h-11 border-dashed">
-              View Monthly Calendar
-            </Button>
-          </CardContent>
-        </Card>
+              <Button variant="link" className="text-white p-0 h-auto text-xs font-bold" asChild>
+                <Link href="/faculty/announcements">View all updates →</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1 border-none shadow-sm bg-slate-900 text-white overflow-hidden relative rounded-[2rem]">
-          <Award className="absolute right-[-20px] top-[-20px] h-40 w-40 text-white/5 -rotate-12" />
-          <CardHeader>
-            <CardTitle className="text-lg">Student Spotlight</CardTitle>
-            <CardDescription className="text-white/60">Top performer this week</CardDescription>
+        <Card className="lg:col-span-2 border-none shadow-sm bg-white rounded-2xl">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg font-headline font-bold">Quick Management</CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col items-center text-center space-y-4 relative z-10">
-            <Avatar className="h-20 w-20 border-4 border-white/10 ring-2 ring-primary">
-              <AvatarImage src="https://i.pravatar.cc/150?u=12" />
-              <AvatarFallback>JD</AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="text-xl font-bold">James Daniel</p>
-              <p className="text-xs text-white/60">UG • CSE • Semester 5</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4 w-full pt-4">
-               <div className="bg-white/10 p-3 rounded-2xl">
-                 <p className="text-[10px] font-bold text-white/40 uppercase">GPA</p>
-                 <p className="text-lg font-bold">3.94</p>
-               </div>
-               <div className="bg-white/10 p-3 rounded-2xl">
-                 <p className="text-[10px] font-bold text-white/40 uppercase">Rank</p>
-                 <p className="text-lg font-bold">#1</p>
-               </div>
-            </div>
-            <Button className="w-full bg-white text-slate-900 hover:bg-white/90 font-bold">View Profile</Button>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Button asChild variant="secondary" className="h-24 flex-col gap-2 rounded-2xl bg-blue-50 text-blue-700 hover:bg-blue-100 border-none shadow-none">
+              <Link href="/faculty/attendance">
+                <ClipboardCheck className="h-6 w-6" />
+                <span className="text-xs font-bold">Mark Attendance</span>
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" className="h-24 flex-col gap-2 rounded-2xl bg-purple-50 text-purple-700 hover:bg-purple-100 border-none shadow-none">
+              <Link href="/faculty/resources">
+                <FileText className="h-6 w-6" />
+                <span className="text-xs font-bold">Upload Notes</span>
+              </Link>
+            </Button>
+            <Button asChild variant="secondary" className="h-24 flex-col gap-2 rounded-2xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none shadow-none">
+              <Link href="/faculty/marks">
+                <FileSpreadsheet className="h-6 w-6" />
+                <span className="text-xs font-bold">Enter Marks</span>
+              </Link>
+            </Button>
           </CardContent>
         </Card>
 
-        <Card className="lg:col-span-2 border-none shadow-sm bg-white rounded-[2rem]">
+        <Card className="border-none shadow-sm bg-white rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-lg font-headline font-bold">Pending Assessments</CardTitle>
-            <CardDescription>Results required for institutional portal</CardDescription>
+            <CardTitle className="text-lg font-headline font-bold">System Alerts</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {[
-              { subject: 'Machine Learning', count: 42, progress: 85, deadline: '2 days left' },
-              { subject: 'Data Science Lab', count: 18, progress: 40, deadline: '5 days left' },
-              { subject: 'Advanced Algorithms', count: 42, progress: 0, deadline: '8 days left' },
-            ].map((task) => (
-              <div key={task.subject} className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-bold text-slate-800">{task.subject}</span>
-                    <Badge variant="secondary" className="text-[9px] font-bold bg-slate-100">{task.count} Students</Badge>
-                  </div>
-                  <span className="text-[10px] font-bold text-amber-600 uppercase tracking-tight">{task.deadline}</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <Progress value={task.progress} className="h-2 flex-1" />
-                  <span className="text-xs font-bold text-muted-foreground w-8">{task.progress}%</span>
-                </div>
+          <CardContent className="space-y-4">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50 border border-amber-100">
+              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-amber-900">Attendance Pending</p>
+                <p className="text-[10px] text-amber-700">Section A - Advanced Algorithms (Oct 24)</p>
               </div>
-            ))}
+            </div>
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
+              <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-emerald-900">Grades Synced</p>
+                <p className="text-[10px] text-emerald-700">CAT-1 marks for ML have been published.</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>

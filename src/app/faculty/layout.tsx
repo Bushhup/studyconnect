@@ -6,7 +6,8 @@ import {
   LayoutDashboard, Users, GraduationCap, Building2, 
   BookOpen, Calendar, FileSpreadsheet, ClipboardCheck, 
   BarChart3, FileText, Settings, Bell, Activity, UserCog,
-  Search, LogOut, Menu, X, GripHorizontal, BookCopy
+  Search, LogOut, Menu, X, GripHorizontal, BookCopy,
+  Briefcase, Megaphone, Info
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -24,11 +25,18 @@ import { signOut } from 'firebase/auth';
 
 const facultyLinks = [
   { href: '/faculty/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/faculty/classes', label: 'My Classes', icon: Calendar },
+  { href: '/faculty/classes', label: 'My Classes', icon: Building2 },
+  { href: '/faculty/students', label: 'Students', icon: Users },
   { href: '/faculty/attendance', label: 'Attendance', icon: ClipboardCheck },
-  { href: '/faculty/marks', label: 'Grading', icon: FileSpreadsheet },
-  { href: '/faculty/resources', label: 'Materials', icon: FileText },
-  { href: '/profile', label: 'Profile', icon: UserCog },
+  { href: '/faculty/marks', label: 'Grades', icon: FileSpreadsheet },
+  { href: '/faculty/subjects', label: 'Subjects', icon: BookOpen },
+  { href: '/faculty/resources', label: 'Notes', icon: FileText },
+  { href: '/faculty/assignments', label: 'Assignments', icon: Briefcase },
+  { href: '/faculty/announcements', label: 'Announcements', icon: Megaphone },
+  { href: '/faculty/reports', label: 'Performance', icon: BarChart3 },
+  { href: '/faculty/calendar', label: 'Calendar', icon: Calendar },
+  { href: '/faculty/notifications', label: 'Alerts', icon: Bell },
+  { href: '/faculty/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function FacultyLayout({ children }: { children: React.ReactNode }) {
@@ -60,7 +68,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
   useEffect(() => {
     if (!isOpen || isRotating || isDragging) return;
     const interval = setInterval(() => {
-      setRotation(prev => (prev + 0.1) % 360);
+      setRotation(prev => (prev + 0.08) % 360);
     }, 50);
     return () => clearInterval(interval);
   }, [isOpen, isRotating, isDragging]);
@@ -161,13 +169,13 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
           <div className="flex-1 max-w-md hidden md:block">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input placeholder="Search students or materials..." className="pl-10 bg-slate-100/50 border-none h-10 rounded-xl" />
+              <Input placeholder="Search portal modules..." className="pl-10 bg-slate-100/50 border-none h-10 rounded-xl" />
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex flex-col items-end mr-2">
               <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">Faculty Portal</span>
-              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">Academic Management</span>
+              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">Master Management</span>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -207,8 +215,8 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
               isOpen ? "scale-100 opacity-100" : "scale-50 opacity-0"
             )}
             style={{ 
-              width: '400px', 
-              height: '400px',
+              width: '480px', 
+              height: '480px',
               transform: `rotate(${rotation}deg)` 
             }}
             onMouseDown={startRotating}
@@ -216,7 +224,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
           >
             {facultyLinks.map((link, index) => {
               const angle = (index / facultyLinks.length) * 360;
-              const radius = 150;
+              const radius = 190;
               const isActive = pathname === link.href;
 
               return (
@@ -236,16 +244,16 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
                     href={link.href}
                     draggable={false}
                     className={cn(
-                      "flex items-center gap-0 hover:gap-3 px-0 hover:px-4 h-12 rounded-full transition-all duration-500 ease-in-out shadow-2xl border-2 group relative overflow-hidden",
+                      "flex items-center gap-0 hover:gap-3 px-0 hover:px-4 h-12 rounded-full transition-all duration-500 ease-in-out shadow-xl border-2 group relative overflow-hidden",
                       isActive 
-                        ? "bg-primary text-white border-white w-12 hover:w-40 z-10" 
-                        : "bg-slate-950 text-slate-300 border-slate-800 hover:border-primary hover:text-white w-12 hover:w-40"
+                        ? "bg-primary text-white border-white w-12 hover:w-44 z-10" 
+                        : "bg-slate-950 text-slate-300 border-slate-800 hover:border-primary hover:text-white w-12 hover:w-44"
                     )}
                   >
                     <div className="flex items-center justify-center min-w-[3rem] h-full">
                       <link.icon className={cn("w-5 h-5 flex-shrink-0 transition-transform", isActive ? "scale-110" : "group-hover:rotate-12")} />
                     </div>
-                    <span className="opacity-0 group-hover:opacity-100 whitespace-nowrap text-[10px] font-bold uppercase tracking-widest transition-opacity duration-300 delay-100 pr-2">
+                    <span className="opacity-0 group-hover:opacity-100 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider transition-opacity duration-300 delay-100 pr-2">
                       {link.label}
                     </span>
                   </Link>
