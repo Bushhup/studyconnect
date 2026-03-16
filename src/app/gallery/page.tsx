@@ -6,6 +6,7 @@ import { placeholderImages, ImagePlaceholder } from '@/lib/placeholder-images';
 import {
   Dialog,
   DialogContent,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card } from '@/components/ui/card';
@@ -72,6 +73,7 @@ export default function GalleryPage() {
 
       <Dialog open={!!selectedImage} onOpenChange={(isOpen) => !isOpen && setSelectedImage(null)}>
         <DialogContent className="max-w-4xl p-0 border-0">
+          <DialogTitle className="sr-only">Image Preview</DialogTitle>
           {selectedImage && (
             <div className='relative aspect-video'>
               <Image
