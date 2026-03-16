@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
@@ -245,28 +244,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     href={link.href}
                     draggable={false}
                     className={cn(
-                      "flex items-center gap-3 p-3 rounded-full transition-all duration-300 shadow-xl border-2 group relative",
+                      "flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 shadow-xl border-2 group relative",
                       isActive 
                         ? "bg-primary text-white border-white scale-110 z-10" 
                         : "bg-slate-950 text-slate-300 border-slate-800 hover:border-primary hover:text-white"
                     )}
                   >
-                    <link.icon className={cn("w-5 h-5 flex-shrink-0 transition-transform", isActive ? "scale-110" : "group-hover:rotate-12")} />
-                    
-                    <span className={cn(
-                      "whitespace-nowrap text-[10px] font-bold uppercase tracking-tighter transition-all duration-300",
-                      isActive 
-                        ? "opacity-100 text-white" 
-                        : "opacity-0 w-0 overflow-hidden group-hover:opacity-100 group-hover:w-auto text-slate-300"
-                    )}>
-                      {link.label}
-                    </span>
-
-                    {!isActive && (
-                      <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold uppercase tracking-tighter text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {link.label}
-                      </span>
-                    )}
+                    <link.icon className={cn("w-6 h-6 flex-shrink-0 transition-transform", isActive ? "scale-110" : "group-hover:rotate-12")} />
                   </Link>
                 </div>
               );
