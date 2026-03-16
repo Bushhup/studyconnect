@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Users, Calendar, Clock, MapPin, 
   BookOpen, ChevronRight, GraduationCap,
-  MessageCircle, BarChart3
+  MessageCircle, BarChart3, ClipboardCheck, FileSpreadsheet
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
