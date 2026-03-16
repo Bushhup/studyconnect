@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
@@ -104,8 +105,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   const onMove = useCallback((e: MouseEvent | TouchEvent) => {
-    const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
-    const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
+    const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
+    const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
 
     if (isDragging) {
       const padding = 40;
@@ -247,17 +248,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                       "flex flex-col items-center justify-center p-3 rounded-full transition-all duration-300 shadow-xl border-2 group relative",
                       isActive 
                         ? "bg-primary text-white border-white scale-125 z-10" 
-                        : "bg-slate-900 text-slate-300 border-slate-800 hover:border-primary hover:text-white"
+                        : "bg-slate-950 text-slate-300 border-slate-800 hover:border-primary hover:text-white"
                     )}
                   >
                     <link.icon className={cn("w-5 h-5 transition-transform", isActive ? "scale-110" : "group-hover:rotate-12")} />
                     
-                    {/* Label with improved contrast for light background */}
+                    {/* Label with Slate-700 for high readability against light backgrounds */}
                     <span className={cn(
                       "absolute -bottom-9 whitespace-nowrap text-[10px] font-bold uppercase tracking-tighter transition-all duration-300",
                       isActive 
                         ? "opacity-100 translate-y-0 text-primary" 
-                        : "opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 text-slate-800"
+                        : "opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 text-slate-700"
                     )}>
                       {link.label}
                     </span>

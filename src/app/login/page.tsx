@@ -40,6 +40,19 @@ export default function LoginPage() {
     const normalizedUsername = username.trim();
 
     try {
+      // 0. Demo Account Logic
+      // Restrict 'demo' account to only student or faculty roles
+      if (normalizedUsername.toLowerCase() === 'demo' && password === 'demo123') {
+        if (selectedRole === 'admin') {
+          throw new Error('Demo accounts are restricted to Student and Faculty portals only.');
+        }
+        
+        await signInAnonymously(auth);
+        toast({ title: 'Demo Access Granted', description: `Authenticated as a guest ${selectedRole}.` });
+        router.push('/profile');
+        return;
+      }
+
       // 1. Hardcoded Admin Logic
       const adminUser = 'Admin01';
       const adminPass = 'minister123';
@@ -191,7 +204,7 @@ export default function LoginPage() {
                 value={username} 
                 onChange={(e) => setUsername(e.target.value)} 
                 className="h-11 bg-slate-50 border-none" 
-                placeholder="e.g. Admin01 or student_101"
+                placeholder="e.g. demo or Admin01"
               />
             </div>
             <div className="grid gap-2">
@@ -202,6 +215,7 @@ export default function LoginPage() {
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
                 className="h-11 bg-slate-50 border-none" 
+                placeholder="e.g. demo123"
               />
             </div>
           </CardContent>
