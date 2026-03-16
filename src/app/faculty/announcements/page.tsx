@@ -14,6 +14,13 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const MOCK_ANNOUNCEMENTS = [
   { id: '1', title: 'Final Exam Schedule Published', content: 'The comprehensive schedule for Semester 5 Final Examinations is now available in the resources section.', target: 'All Students', date: '2 hours ago', subject: 'General' },
@@ -65,7 +72,9 @@ export default function FacultyAnnouncements() {
                 <div className="space-y-2">
                   <Label className="text-[10px] font-bold uppercase tracking-widest">Target Audience</Label>
                   <Select defaultValue="all">
-                    <SelectTrigger className="bg-slate-50 border-none h-11"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="bg-slate-50 border-none h-11">
+                      <SelectValue placeholder="Select Audience" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Enrolled Students</SelectItem>
                       <SelectItem value="ml-a">ML - Section A</SelectItem>
@@ -76,7 +85,9 @@ export default function FacultyAnnouncements() {
                 <div className="space-y-2">
                   <Label className="text-[10px] font-bold uppercase tracking-widest">Subject (Optional)</Label>
                   <Select defaultValue="general">
-                    <SelectTrigger className="bg-slate-50 border-none h-11"><SelectValue /></SelectTrigger>
+                    <SelectTrigger className="bg-slate-50 border-none h-11">
+                      <SelectValue placeholder="Select Subject" />
+                    </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="general">General Update</SelectItem>
                       <SelectItem value="ml">Machine Learning</SelectItem>
@@ -154,16 +165,6 @@ export default function FacultyAnnouncements() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Select({ children, defaultValue, ...props }: any) {
-  return (
-    <div className="relative">
-      <select {...props} className="w-full bg-slate-50 border-none h-11 px-4 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 appearance-none">
-        {children}
-      </select>
     </div>
   );
 }
