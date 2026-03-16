@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { 
   Search, Users, Filter, Eye, 
   ArrowUpRight, TrendingUp, BookOpen, Clock,
-  MoreVertical, GraduationCap
+  MoreVertical, GraduationCap, Award
 } from 'lucide-react';
 import {
   Select,
