@@ -244,13 +244,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     href={link.href}
                     draggable={false}
                     className={cn(
-                      "flex items-center justify-center w-12 h-12 rounded-full transition-all duration-300 shadow-xl border-2 group relative",
+                      "flex items-center gap-0 hover:gap-3 px-0 hover:px-4 h-12 rounded-full transition-all duration-500 ease-in-out shadow-xl border-2 group relative overflow-hidden",
                       isActive 
-                        ? "bg-primary text-white border-white scale-110 z-10" 
-                        : "bg-slate-950 text-slate-300 border-slate-800 hover:border-primary hover:text-white"
+                        ? "bg-primary text-white border-white w-12 hover:w-44 z-10" 
+                        : "bg-slate-950 text-slate-300 border-slate-800 hover:border-primary hover:text-white w-12 hover:w-44"
                     )}
                   >
-                    <link.icon className={cn("w-6 h-6 flex-shrink-0 transition-transform", isActive ? "scale-110" : "group-hover:rotate-12")} />
+                    <div className="flex items-center justify-center min-w-[3rem] h-full">
+                      <link.icon className={cn("w-5 h-5 flex-shrink-0 transition-transform", isActive ? "scale-110" : "group-hover:rotate-12")} />
+                    </div>
+                    <span className="opacity-0 group-hover:opacity-100 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider transition-opacity duration-300 delay-100 pr-2">
+                      {link.label}
+                    </span>
                   </Link>
                 </div>
               );
