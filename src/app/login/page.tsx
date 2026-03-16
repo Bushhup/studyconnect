@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -57,6 +56,8 @@ export default function LoginPage() {
         
         if (selectedRole === 'faculty') {
           router.push('/faculty/dashboard');
+        } else if (selectedRole === 'student') {
+          router.push('/student/dashboard');
         } else {
           router.push('/profile');
         }
@@ -130,6 +131,8 @@ export default function LoginPage() {
           router.push('/faculty/dashboard');
         } else if (userData.role === 'admin') {
           router.push('/admin/dashboard');
+        } else if (userData.role === 'student') {
+          router.push('/student/dashboard');
         } else {
           router.push('/profile');
         }
@@ -159,6 +162,8 @@ export default function LoginPage() {
             
             if (userData.role === 'faculty') {
               router.push('/faculty/dashboard');
+            } else if (userData.role === 'student') {
+              router.push('/student/dashboard');
             } else {
               router.push('/profile');
             }

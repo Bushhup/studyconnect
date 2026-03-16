@@ -6,8 +6,8 @@ import { Logo } from "./logo";
 export function Footer() {
   const pathname = usePathname();
 
-  // Hide global footer on admin pages to avoid duplication
-  if (pathname?.startsWith('/admin')) {
+  // Hide global footer on portal pages to avoid duplication
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/faculty') || pathname?.startsWith('/student')) {
     return null;
   }
 

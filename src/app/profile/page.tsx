@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -59,7 +58,6 @@ export default function ProfilePage() {
     }
   }, []);
 
-  // Fetch real profile data
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
     return doc(firestore, 'colleges', collegeId, 'users', user.uid);
@@ -67,7 +65,6 @@ export default function ProfilePage() {
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(userDocRef);
 
-  // Form state for editing
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
 
@@ -119,6 +116,8 @@ export default function ProfilePage() {
 
   const isDemo = user?.isAnonymous;
   const isAdminRole = profile?.role === 'admin' || (!profile && !isDemo && !isProfileLoading);
+  const isStudentRole = profile?.role === 'student' || (isDemo && guestRole === 'student');
+  const isFacultyRole = profile?.role === 'faculty' || (isDemo && guestRole === 'faculty');
 
   const displayProfile = profile || {
     firstName: isDemo ? 'Demo' : 'Unknown',
@@ -163,30 +162,33 @@ export default function ProfilePage() {
         </header>
 
         <div className="grid gap-6 md:grid-cols-3">
-          <PortalCard title="My Courses" description="View active courses and grades." icon={BookOpen} link={isDemo && guestRole === 'faculty' ? "/faculty/classes" : "/admin/courses"} />
+          <PortalCard 
+            title="My Curriculum" 
+            description="View active courses and study materials." 
+            icon={BookOpen} 
+            link={isAdminRole ? "/admin/courses" : isFacultyRole ? "/faculty/classes" : "/student/subjects"} 
+          />
           <PortalCard title="Campus Life" description="Check out upcoming events." icon={Calendar} link="/events" />
           <PortalCard title="Achievements" description="View academic awards." icon={Award} link="/achievements" />
         </div>
 
-        {(isAdminRole || isDemo) && (
-          <Card className="border-none shadow-sm bg-primary/5 rounded-[2rem] overflow-hidden">
-             <CardHeader>
-               <CardTitle className="flex items-center gap-2 text-xl font-headline">
-                 <LayoutDashboard className="h-5 w-5 text-primary" /> Institutional Controls
-               </CardTitle>
-               <CardDescription>
-                 {isDemo ? "Explore academic management modules as a guest user." : "Access the management dashboard to oversee academic operations."}
-               </CardDescription>
-             </CardHeader>
-             <CardContent>
-               <Button asChild size="lg" className="w-full md:w-fit font-headline font-bold rounded-xl shadow-lg shadow-primary/20 h-12 px-8">
-                 <Link href={isAdminRole ? "/admin/dashboard" : "/faculty/dashboard"}>
-                   {isAdminRole ? "Launch Admin Portal →" : "Launch Faculty Portal →"}
-                 </Link>
-               </Button>
-             </CardContent>
-           </Card>
-        )}
+        <Card className="border-none shadow-sm bg-primary/5 rounded-[2rem] overflow-hidden">
+           <CardHeader>
+             <CardTitle className="flex items-center gap-2 text-xl font-headline">
+               <LayoutDashboard className="h-5 w-5 text-primary" /> Institutional Controls
+             </CardTitle>
+             <CardDescription>
+               {isDemo ? "Explore academic management modules as a guest user." : "Access the management dashboard to oversee academic operations."}
+             </CardDescription>
+           </CardHeader>
+           <CardContent>
+             <Button asChild size="lg" className="w-full md:w-fit font-headline font-bold rounded-xl shadow-lg shadow-primary/20 h-12 px-8">
+               <Link href={isAdminRole ? "/admin/dashboard" : isFacultyRole ? "/faculty/dashboard" : "/student/dashboard"}>
+                 {isAdminRole ? "Launch Admin Portal →" : isFacultyRole ? "Launch Faculty Portal →" : "Launch Student Portal →"}
+               </Link>
+             </Button>
+           </CardContent>
+         </Card>
 
         <Card className="mt-12 border-none shadow-sm bg-slate-50/50 rounded-[2rem]">
           <CardHeader>

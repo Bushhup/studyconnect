@@ -29,8 +29,8 @@ const navLinks = [
 export function Header() {
   const pathname = usePathname();
 
-  // Hide global header on admin pages AND login page if preferred, but specifically admin portal
-  if (pathname?.startsWith('/admin')) {
+  // Hide global header on admin, faculty, and student pages
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/faculty') || pathname?.startsWith('/student')) {
     return null;
   }
 
@@ -69,9 +69,9 @@ export function Header() {
               </Button>
             </SheetTrigger>
             <SheetContent side="left">
-              <SheetHeader className="sr-only">
-                <SheetTitle>Navigation Menu</SheetTitle>
-                <SheetDescription>Access the main navigation links and your user portal.</SheetDescription>
+              <SheetHeader>
+                <SheetTitle className="sr-only">Navigation Menu</SheetTitle>
+                <SheetDescription className="sr-only">Access the main navigation links and your user portal.</SheetDescription>
               </SheetHeader>
               <div className="flex flex-col h-full">
                 <div className="border-b pb-4">
