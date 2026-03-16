@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -13,33 +14,43 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { useFirebase } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 export function UserNav() {
   const router = useRouter();
+  const { auth, user } = useFirebase();
 
   const handleLogout = () => {
-    router.replace('/');
+    signOut(auth).then(() => {
+      router.replace('/');
+    });
   };
 
-  // Static user for prototype
-  const user = {
-    displayName: 'Demo User',
-    email: 'demo@college.edu'
-  };
+  // If no user, show login button instead
+  if (!user) {
+    return (
+      <Button asChild variant="outline" size="sm" className="rounded-full">
+        <Link href="/login">Portal Login</Link>
+      </Button>
+    );
+  }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full shadow-sm">
           <Avatar className="h-10 w-10">
-            <AvatarFallback className="bg-primary/10 text-primary font-bold">D</AvatarFallback>
+            <AvatarFallback className="bg-primary/10 text-primary font-bold">
+              {user.displayName?.[0] || user.email?.[0] || 'U'}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56 rounded-xl" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-bold leading-none">{user.displayName}</p>
+            <p className="text-sm font-bold leading-none">{user.displayName || 'Institutional User'}</p>
             <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
           </div>
         </DropdownMenuLabel>

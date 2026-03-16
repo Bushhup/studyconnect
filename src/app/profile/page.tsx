@@ -1,15 +1,18 @@
+
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   useUser, 
+  useFirebase,
   useFirestore, 
   useDoc, 
   useMemoFirebase,
   updateDocumentNonBlocking 
 } from '@/firebase';
 import { doc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
@@ -43,7 +46,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const { toast } = useToast();
   const { user, isUserLoading } = useUser();
-  const firestore = useFirestore();
+  const { auth, firestore } = useFirebase();
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -61,7 +64,9 @@ export default function ProfilePage() {
   const [lastName, setLastName] = useState('');
 
   const handleLogout = () => {
-    router.replace('/login');
+    signOut(auth).then(() => {
+      router.replace('/login');
+    });
   };
 
   const handleOpenEdit = () => {

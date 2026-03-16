@@ -20,6 +20,8 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { useFirebase } from '@/firebase';
+import { signOut } from 'firebase/auth';
 
 const adminLinks = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -42,6 +44,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const hubRef = useRef<HTMLDivElement>(null);
+  const { auth } = useFirebase();
   
   const [isOpen, setIsOpen] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -52,9 +55,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [startAngle, setStartAngle] = useState(0);
   const [startRotation, setStartRotation] = useState(0);
 
-  const EDGE_MARGIN = 48; // Snapping distance
+  const EDGE_MARGIN = 48;
 
-  // Initialize position
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setPosition({
@@ -64,7 +66,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
   }, []);
 
-  // Auto-rotate effect when open
   useEffect(() => {
     if (!isOpen || isRotating || isDragging) return;
     const interval = setInterval(() => {
@@ -74,7 +75,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [isOpen, isRotating, isDragging]);
 
   const handleLogout = () => {
-    router.replace('/login');
+    signOut(auth).then(() => {
+      router.replace('/login');
+    });
   };
 
   const startDragging = (e: React.MouseEvent | React.TouchEvent) => {
@@ -120,11 +123,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const angleDiff = currentAngle - startAngle;
       setRotation(startRotation + angleDiff);
     }
-  }, [isDragging, isRotating, dragOffset, position.x, position.y, startAngle, startRotation]);
+  }, [isDragging, isRotating, dragOffset, startAngle, startRotation]);
 
   const onEnd = useCallback(() => {
     if (isDragging) {
-      // Snapping Logic
       const distLeft = position.x;
       const distRight = window.innerWidth - position.x;
       const distTop = position.y;
@@ -197,7 +199,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {children}
         </main>
 
-        {/* Floating Hub Navigation */}
         <div 
           ref={hubRef}
           className="fixed z-50 flex items-center justify-center select-none"
@@ -209,15 +210,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           onMouseEnter={() => !isDragging && setIsOpen(true)}
           onMouseLeave={() => !isRotating && !isDragging && setIsOpen(false)}
         >
-          {/* Circular Menu */}
           <div 
             className={cn(
               "absolute transition-all duration-700 ease-out pointer-events-none perspective-[1200px]",
               isOpen ? "scale-100 opacity-100" : "scale-50 opacity-0"
             )}
             style={{ 
-              width: '400px', 
-              height: '400px',
+              width: '440px', 
+              height: '440px',
               transform: `rotate(${rotation}deg)` 
             }}
             onMouseDown={startRotating}
@@ -225,7 +225,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           >
             {adminLinks.map((link, index) => {
               const angle = (index / adminLinks.length) * 360;
-              const radius = 160;
+              const radius = 170;
               const isActive = pathname === link.href;
 
               return (
@@ -245,30 +245,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     href={link.href}
                     draggable={false}
                     className={cn(
-                      "flex flex-col items-center justify-center p-3 rounded-full transition-all duration-300 shadow-xl border-2 group relative",
+                      "flex items-center gap-3 p-3 rounded-full transition-all duration-300 shadow-xl border-2 group relative",
                       isActive 
-                        ? "bg-primary text-white border-white scale-125 z-10" 
+                        ? "bg-primary text-white border-white scale-110 z-10" 
                         : "bg-slate-950 text-slate-300 border-slate-800 hover:border-primary hover:text-white"
                     )}
                   >
-                    <link.icon className={cn("w-5 h-5 transition-transform", isActive ? "scale-110" : "group-hover:rotate-12")} />
+                    <link.icon className={cn("w-5 h-5 flex-shrink-0 transition-transform", isActive ? "scale-110" : "group-hover:rotate-12")} />
                     
-                    {/* Label with Slate-700 for high readability against light backgrounds */}
                     <span className={cn(
-                      "absolute -bottom-9 whitespace-nowrap text-[10px] font-bold uppercase tracking-tighter transition-all duration-300",
+                      "whitespace-nowrap text-[10px] font-bold uppercase tracking-tighter transition-all duration-300",
                       isActive 
-                        ? "opacity-100 translate-y-0 text-primary" 
-                        : "opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0 text-slate-700"
+                        ? "opacity-100 text-white" 
+                        : "opacity-0 w-0 overflow-hidden group-hover:opacity-100 group-hover:w-auto text-slate-300"
                     )}>
                       {link.label}
                     </span>
+
+                    {!isActive && (
+                      <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold uppercase tracking-tighter text-slate-700 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {link.label}
+                      </span>
+                    )}
                   </Link>
                 </div>
               );
             })}
           </div>
 
-          {/* Hub Trigger Icon */}
           <div 
             onMouseDown={startDragging}
             onTouchStart={startDragging}
