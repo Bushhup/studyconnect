@@ -41,15 +41,25 @@ export default function LoginPage() {
 
     try {
       // 0. Demo Account Logic
-      // Restrict 'demo' account to only student or faculty roles
       if (normalizedUsername.toLowerCase() === 'demo' && password === 'demo123') {
         if (selectedRole === 'admin') {
           throw new Error('Demo accounts are restricted to Student and Faculty portals only.');
         }
         
         await signInAnonymously(auth);
+        
+        // Save guest role preference
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('guest_role', selectedRole || 'student');
+        }
+
         toast({ title: 'Demo Access Granted', description: `Authenticated as a guest ${selectedRole}.` });
-        router.push('/profile');
+        
+        if (selectedRole === 'faculty') {
+          router.push('/faculty/dashboard');
+        } else {
+          router.push('/profile');
+        }
         return;
       }
 
@@ -62,7 +72,6 @@ export default function LoginPage() {
           const userCredential = await signInAnonymously(auth);
           const newUser = userCredential.user;
           
-          // Attempt to provision the admin profile in Firestore
           const adminDocRef = doc(firestore, 'colleges', collegeId, 'users', newUser.uid);
           try {
             await setDoc(adminDocRef, {
@@ -77,7 +86,7 @@ export default function LoginPage() {
               updatedAt: new Date().toISOString()
             }, { merge: true });
           } catch (ruleErr) {
-            console.warn("Silent failure on admin profile write - proceeding with session.", ruleErr);
+            console.warn("Silent failure on admin profile write.", ruleErr);
           }
 
           toast({ title: 'System Access Granted', description: 'Administrative session established.' });
@@ -88,7 +97,7 @@ export default function LoginPage() {
         }
       }
 
-      // 2. Institutional User Login Logic (Username -> Email Resolution)
+      // 2. Institutional User Login Logic
       const usersRef = collection(firestore, 'colleges', collegeId, 'users');
       const q = query(usersRef, where('username', '==', normalizedUsername));
       
@@ -114,16 +123,19 @@ export default function LoginPage() {
       }
 
       try {
-        // Attempt standard Auth sign-in
         await signInWithEmailAndPassword(auth, userEmail, password);
         toast({ title: 'Welcome Back', description: `Authenticated as ${userData.firstName}.` });
-        router.push('/profile');
+        
+        if (userData.role === 'faculty') {
+          router.push('/faculty/dashboard');
+        } else if (userData.role === 'admin') {
+          router.push('/admin/dashboard');
+        } else {
+          router.push('/profile');
+        }
       } catch (authError: any) {
-        // Handle bootstrapping if Auth account doesn't exist yet but Firestore doc does
         if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential' || authError.code === 'auth/wrong-password') {
-          // Verify against provisioned password in Firestore
           if (userData.password === password) {
-            // First-time login: Create Auth account
             const userCredential = await createUserWithEmailAndPassword(auth, userEmail, password);
             const newUser = userCredential.user;
             
@@ -131,7 +143,6 @@ export default function LoginPage() {
             const oldDocId = querySnapshot.docs[0].id;
             const oldDocRef = doc(firestore, 'colleges', collegeId, 'users', oldDocId);
             
-            // Migrate data
             await setDoc(newDocRef, {
               ...userData,
               id: newUser.uid,
@@ -145,7 +156,12 @@ export default function LoginPage() {
             }
 
             toast({ title: 'Account Activated', description: 'Institutional profile linked.' });
-            router.push('/profile');
+            
+            if (userData.role === 'faculty') {
+              router.push('/faculty/dashboard');
+            } else {
+              router.push('/profile');
+            }
           } else {
             throw new Error('Invalid institutional password.');
           }

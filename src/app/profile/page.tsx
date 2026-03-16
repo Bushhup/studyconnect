@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   useUser, 
@@ -50,6 +50,13 @@ export default function ProfilePage() {
 
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [guestRole, setGuestRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setGuestRole(localStorage.getItem('guest_role'));
+    }
+  }, []);
 
   // Fetch real profile data
   const userDocRef = useMemoFirebase(() => {
@@ -65,6 +72,7 @@ export default function ProfilePage() {
 
   const handleLogout = () => {
     signOut(auth).then(() => {
+      localStorage.removeItem('guest_role');
       router.replace('/login');
     });
   };
@@ -108,13 +116,14 @@ export default function ProfilePage() {
     );
   }
 
-  // Handle case where user is the .env admin or has no Firestore record
-  const isAdmin = !profile && !isProfileLoading && !user;
+  const isDemo = user?.isAnonymous;
+  const isAdminRole = profile?.role === 'admin' || (!profile && !isDemo && !isProfileLoading);
+
   const displayProfile = profile || {
-    firstName: isAdmin ? 'System' : 'Unknown',
-    lastName: isAdmin ? 'Administrator' : 'User',
-    email: isAdmin ? process.env.NEXT_PUBLIC_ADMIN_EMAIL : user?.email,
-    role: isAdmin ? 'admin' : 'Guest',
+    firstName: isDemo ? 'Demo' : 'Unknown',
+    lastName: isDemo ? 'User' : 'User',
+    email: isDemo ? 'demo@studyconnect.edu' : user?.email,
+    role: isDemo ? (guestRole || 'Guest') : 'Guest',
     id: user?.uid || 'N/A'
   };
 
@@ -141,7 +150,7 @@ export default function ProfilePage() {
           </div>
           
           <div className="flex gap-2">
-            {!isAdmin && (
+            {!isDemo && (
               <Button onClick={handleOpenEdit} variant="outline" className="gap-2 rounded-full font-headline border-primary/20 hover:bg-primary/5">
                 <Edit3 className="h-4 w-4" /> Edit Profile
               </Button>
@@ -153,24 +162,30 @@ export default function ProfilePage() {
         </header>
 
         <div className="grid gap-6 md:grid-cols-3">
-          <PortalCard title="My Courses" description="View your active courses and grades." icon={BookOpen} link="/admin/courses" />
-          <PortalCard title="Campus Life" description="Check out upcoming events and clubs." icon={Calendar} link="/events" />
-          <PortalCard title="Achievements" description="View your academic awards and honors." icon={Award} link="/achievements" />
+          <PortalCard title="My Courses" description="View active courses and grades." icon={BookOpen} link={isDemo && guestRole === 'faculty' ? "/faculty/classes" : "/admin/courses"} />
+          <PortalCard title="Campus Life" description="Check out upcoming events." icon={Calendar} link="/events" />
+          <PortalCard title="Achievements" description="View academic awards." icon={Award} link="/achievements" />
         </div>
 
-        <Card className="border-none shadow-sm bg-primary/5 rounded-[2rem] overflow-hidden">
-           <CardHeader>
-             <CardTitle className="flex items-center gap-2 text-xl font-headline">
-               <LayoutDashboard className="h-5 w-5 text-primary" /> Institutional Controls
-             </CardTitle>
-             <CardDescription>Access the management dashboard to oversee academic operations.</CardDescription>
-           </CardHeader>
-           <CardContent>
-             <Button asChild size="lg" className="w-full md:w-fit font-headline font-bold rounded-xl shadow-lg shadow-primary/20 h-12 px-8">
-               <Link href="/admin/dashboard">Launch Admin Portal →</Link>
-             </Button>
-           </CardContent>
-         </Card>
+        {(isAdminRole || isDemo) && (
+          <Card className="border-none shadow-sm bg-primary/5 rounded-[2rem] overflow-hidden">
+             <CardHeader>
+               <CardTitle className="flex items-center gap-2 text-xl font-headline">
+                 <LayoutDashboard className="h-5 w-5 text-primary" /> Institutional Controls
+               </CardTitle>
+               <CardDescription>
+                 {isDemo ? "Explore academic management modules as a guest user." : "Access the management dashboard to oversee academic operations."}
+               </CardDescription>
+             </CardHeader>
+             <CardContent>
+               <Button asChild size="lg" className="w-full md:w-fit font-headline font-bold rounded-xl shadow-lg shadow-primary/20 h-12 px-8">
+                 <Link href={isAdminRole ? "/admin/dashboard" : "/faculty/dashboard"}>
+                   {isAdminRole ? "Launch Admin Portal →" : "Launch Faculty Portal →"}
+                 </Link>
+               </Button>
+             </CardContent>
+           </Card>
+        )}
 
         <Card className="mt-12 border-none shadow-sm bg-slate-50/50 rounded-[2rem]">
           <CardHeader>
@@ -193,7 +208,9 @@ export default function ProfilePage() {
             </div>
             <div className="space-y-1">
               <p className="font-bold text-muted-foreground uppercase text-[10px] tracking-widest">Status</p>
-              <p className="text-lg font-bold text-emerald-600 capitalize">Active</p>
+              <p className={cn("text-lg font-bold capitalize", isDemo ? "text-amber-600" : "text-emerald-600")}>
+                {isDemo ? "Demo Session" : "Active"}
+              </p>
             </div>
           </CardContent>
         </Card>
