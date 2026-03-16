@@ -9,7 +9,7 @@ import {
   Search, LogOut, Menu, X, GripHorizontal
 } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@/utils';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
