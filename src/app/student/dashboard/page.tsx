@@ -6,7 +6,7 @@ import {
   BookOpen, ClipboardCheck, Award, Briefcase, 
   TrendingUp, Clock, CheckCircle2, AlertCircle,
   FileText, Calendar, MessageSquare, ArrowUpRight,
-  ChevronRight, Download, Bell, Megaphone
+  ChevronRight, Download, Bell, Megaphone, FileSpreadsheet
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, 
