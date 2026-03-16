@@ -9,7 +9,7 @@ import {
   Search, LogOut, Menu, X, GripHorizontal
 } from 'lucide-react';
 import Link from 'next/link';
-import { cn } from '@/lib/utils';
+import { cn } from '@/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -51,17 +51,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [startAngle, setStartAngle] = useState(0);
   const [startRotation, setStartRotation] = useState(0);
 
-  const MARGIN = 80; // Distance from screen edges for corners
+  const EDGE_MARGIN = 40; // Distance from screen edges when snapped
 
-  // Initialize position to bottom right corner
+  // Initialize position to bottom right edge
   useEffect(() => {
     setPosition({
-      x: window.innerWidth - MARGIN,
-      y: window.innerHeight - MARGIN
+      x: window.innerWidth - EDGE_MARGIN,
+      y: window.innerHeight - 100
     });
   }, []);
 
-  // Auto-rotate effect
+  // Auto-rotate effect when open
   useEffect(() => {
     if (!isOpen || isRotating) return;
     const interval = setInterval(() => {
@@ -108,9 +108,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as MouseEvent).clientY;
 
     if (isDragging) {
-      // Calculate new position within window bounds
-      const newX = Math.min(Math.max(clientX - dragOffset.x, MARGIN / 2), window.innerWidth - MARGIN / 2);
-      const newY = Math.min(Math.max(clientY - dragOffset.y, MARGIN / 2), window.innerHeight - MARGIN / 2);
+      // Calculate new position within window bounds (with padding)
+      const padding = 32;
+      const newX = Math.min(Math.max(clientX - dragOffset.x, padding), window.innerWidth - padding);
+      const newY = Math.min(Math.max(clientY - dragOffset.y, padding), window.innerHeight - padding);
       
       setPosition({ x: newX, y: newY });
     }
@@ -124,13 +125,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const onEnd = useCallback(() => {
     if (isDragging) {
-      // Snap to nearest corner
-      const midX = window.innerWidth / 2;
-      const midY = window.innerHeight / 2;
-      
-      const snapX = position.x < midX ? MARGIN : window.innerWidth - MARGIN;
-      const snapY = position.y < midY ? MARGIN : window.innerHeight - MARGIN;
-      
+      // Snap to nearest edge
+      const distLeft = position.x;
+      const distRight = window.innerWidth - position.x;
+      const distTop = position.y;
+      const distBottom = window.innerHeight - position.y;
+
+      const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+
+      let snapX = position.x;
+      let snapY = position.y;
+
+      if (minDist === distLeft) snapX = EDGE_MARGIN;
+      else if (minDist === distRight) snapX = window.innerWidth - EDGE_MARGIN;
+      else if (minDist === distTop) snapY = EDGE_MARGIN;
+      else if (minDist === distBottom) snapY = window.innerHeight - EDGE_MARGIN;
+
       setPosition({ x: snapX, y: snapY });
     }
     setIsDragging(false);
@@ -186,11 +196,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </header>
 
         {/* Main Content Area */}
-        <main className="flex-1 p-8 overflow-y-auto custom-scrollbar pb-32">
+        <main className="flex-1 p-8 overflow-y-auto custom-scrollbar">
           {children}
         </main>
 
-        {/* Floating Circular Hub Navigation */}
+        {/* Floating Hub Navigation - Dark Theme */}
         <div 
           ref={hubRef}
           className="fixed z-50 flex items-center justify-center select-none"
@@ -238,10 +248,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                     href={link.href}
                     draggable={false}
                     className={cn(
-                      "flex flex-col items-center justify-center p-3 rounded-full transition-all duration-300 shadow-xl border-2 group",
+                      "flex flex-col items-center justify-center p-3 rounded-full transition-all duration-300 shadow-2xl border-2 group",
                       isActive 
                         ? "bg-primary text-white border-white scale-125 z-10" 
-                        : "bg-white text-slate-600 border-slate-100 hover:border-primary hover:text-primary hover:scale-110"
+                        : "bg-slate-900 text-slate-300 border-slate-800 hover:border-primary hover:text-white hover:scale-110"
                     )}
                   >
                     <link.icon className={cn("w-5 h-5 transition-transform", isActive ? "scale-110" : "group-hover:rotate-12")} />
@@ -257,13 +267,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             })}
           </div>
 
-          {/* Center Trigger Icon */}
+          {/* Center Trigger Icon - Dark Theme */}
           <div 
             onMouseDown={startDragging}
             onTouchStart={startDragging}
             className={cn(
               "relative w-16 h-16 rounded-full bg-slate-900 flex items-center justify-center cursor-move shadow-2xl transition-all duration-500 border-4",
-              isOpen ? "border-primary scale-110 bg-slate-800" : "border-white",
+              isOpen ? "border-primary scale-110 bg-slate-800" : "border-slate-800",
               isDragging && "scale-125 shadow-primary/40 ring-4 ring-primary/20"
             )}
           >
