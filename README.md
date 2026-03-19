@@ -86,6 +86,17 @@ An analytical workspace for the modern learner.
    npm run dev
    ```
 
+### 📤 Push to GitHub
+If you are pushing this project to a new repository:
+```bash
+git init
+git add .
+git commit -m "Initial commit"
+git branch -M main
+git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
+git push -u origin main
+```
+
 ### Native Mobile Build
 ```bash
 # Build the web assets
