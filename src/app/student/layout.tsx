@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const studentLinks = [
   { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -43,6 +44,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const pathname = usePathname();
   const hubRef = useRef<HTMLDivElement>(null);
   const { auth } = useFirebase();
+  const isMobile = useIsMobile();
   
   const [isOpen, setIsOpen] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -53,16 +55,16 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const [startAngle, setStartAngle] = useState(0);
   const [startRotation, setStartRotation] = useState(0);
 
-  const EDGE_MARGIN = 48;
+  const EDGE_MARGIN = isMobile ? 40 : 48;
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setPosition({
         x: window.innerWidth - EDGE_MARGIN,
-        y: window.innerHeight - 100
+        y: window.innerHeight - (isMobile ? 80 : 100)
       });
     }
-  }, []);
+  }, [isMobile]);
 
   useEffect(() => {
     if (!isOpen || isRotating || isDragging) return;
@@ -143,13 +145,13 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     }
     setIsDragging(false);
     setIsRotating(false);
-  }, [isDragging, position]);
+  }, [isDragging, position, EDGE_MARGIN]);
 
   useEffect(() => {
     if (isDragging || isRotating) {
       window.addEventListener('mousemove', onMove);
       window.addEventListener('mouseup', onEnd);
-      window.addEventListener('touchmove', onMove);
+      window.addEventListener('touchmove', onMove, { passive: false });
       window.addEventListener('touchend', onEnd);
     }
     return () => {
@@ -160,10 +162,13 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     };
   }, [isDragging, isRotating, onMove, onEnd]);
 
+  const hubDimensions = isMobile ? 320 : 480;
+  const hubRadius = isMobile ? 130 : 190;
+
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] overflow-hidden relative">
       <div className="flex-1 flex flex-col overflow-hidden relative">
-        <header className="h-16 border-b bg-white/80 backdrop-blur-md flex items-center justify-between px-8 sticky top-0 z-30">
+        <header className="h-16 border-b bg-white/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
           <div className="flex-1 max-w-md hidden md:block">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -178,7 +183,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-0 rounded-full border-2 border-transparent hover:border-slate-100">
-                  <Avatar className="h-10 w-10">
+                  <Avatar className="h-9 w-9 md:h-10 md:w-10">
                     <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">ST</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -192,11 +197,10 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           </div>
         </header>
 
-        <main className="flex-1 p-8 overflow-y-auto custom-scrollbar">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar">
           {children}
         </main>
 
-        {/* Dynamic Nav Hub */}
         <div 
           ref={hubRef}
           className="fixed z-50 flex items-center justify-center select-none"
@@ -205,8 +209,9 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             top: `${position.y}px`,
             transform: 'translate(-50%, -50%)'
           }}
-          onMouseEnter={() => !isDragging && setIsOpen(true)}
-          onMouseLeave={() => !isRotating && !isDragging && setIsOpen(false)}
+          onMouseEnter={() => !isDragging && !isMobile && setIsOpen(true)}
+          onMouseLeave={() => !isRotating && !isDragging && !isMobile && setIsOpen(false)}
+          onClick={() => isMobile && setIsOpen(!isOpen)}
         >
           <div 
             className={cn(
@@ -214,8 +219,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               isOpen ? "scale-100 opacity-100" : "scale-50 opacity-0"
             )}
             style={{ 
-              width: '480px', 
-              height: '480px',
+              width: `${hubDimensions}px`, 
+              height: `${hubDimensions}px`,
               transform: `rotate(${rotation}deg)` 
             }}
             onMouseDown={startRotating}
@@ -223,7 +228,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
           >
             {studentLinks.map((link, index) => {
               const angle = (index / studentLinks.length) * 360;
-              const radius = 190;
+              const radius = hubRadius;
               const isActive = pathname === link.href;
 
               return (
@@ -243,16 +248,16 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
                     href={link.href}
                     draggable={false}
                     className={cn(
-                      "flex items-center gap-0 hover:gap-3 px-0 hover:px-4 h-12 rounded-full transition-all duration-500 ease-in-out shadow-xl border-2 group relative overflow-hidden",
+                      "flex items-center gap-0 hover:gap-3 px-0 hover:px-4 h-10 md:h-12 rounded-full transition-all duration-500 ease-in-out shadow-xl border-2 group relative overflow-hidden",
                       isActive 
-                        ? "bg-primary text-white border-white w-12 hover:w-44 z-10" 
-                        : "bg-slate-950 text-slate-300 border-slate-800 hover:border-primary hover:text-white w-12 hover:w-44"
+                        ? "bg-primary text-white border-white w-10 md:w-12 hover:w-44 z-10" 
+                        : "bg-slate-950 text-slate-300 border-slate-800 hover:border-primary hover:text-white w-10 md:w-12 hover:w-44"
                     )}
                   >
-                    <div className="flex items-center justify-center min-w-[3rem] h-full">
-                      <link.icon className={cn("w-5 h-5 flex-shrink-0 transition-transform", isActive ? "scale-110" : "group-hover:rotate-12")} />
+                    <div className="flex items-center justify-center min-w-[2.5rem] md:min-w-[3rem] h-full">
+                      <link.icon className={cn("w-4 h-4 md:w-5 md:h-5 flex-shrink-0 transition-transform", isActive ? "scale-110" : "group-hover:rotate-12")} />
                     </div>
-                    <span className="opacity-0 group-hover:opacity-100 whitespace-nowrap text-[10px] font-bold uppercase tracking-wider transition-opacity duration-300 delay-100 pr-2">
+                    <span className="opacity-0 group-hover:opacity-100 whitespace-nowrap text-[9px] md:text-[10px] font-bold uppercase tracking-wider transition-opacity duration-300 delay-100 pr-2">
                       {link.label}
                     </span>
                   </Link>
@@ -265,7 +270,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             onMouseDown={startDragging}
             onTouchStart={startDragging}
             className={cn(
-              "relative w-14 h-14 rounded-full bg-slate-950 flex items-center justify-center cursor-move shadow-2xl transition-all duration-500 border-4",
+              "relative w-12 h-12 md:w-14 md:h-14 rounded-full bg-slate-950 flex items-center justify-center cursor-move shadow-2xl transition-all duration-500 border-4",
               isOpen ? "border-primary scale-110 bg-slate-900" : "border-slate-800",
               isDragging && "scale-125 shadow-primary/40 ring-4 ring-primary/20"
             )}
