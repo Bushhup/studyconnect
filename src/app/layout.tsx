@@ -11,6 +11,10 @@ export const metadata: Metadata = {
   title: 'StudyConnect',
   description: 'Enterprise Academic Ecosystem. Connecting Minds, Building Futures.',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/logo.png',
+    apple: '/logo.png',
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
