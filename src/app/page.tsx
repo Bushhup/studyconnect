@@ -1,3 +1,4 @@
+
 'use client';
 
 import Image from 'next/image';
@@ -287,7 +288,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.8 }}
                 viewport={{ once: true }}
-                className="relative aspect-[4/3] rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white/5"
+                className="relative aspect-[4/3] rounded-[3rem] overflow-hidden shadow-2xl border-8 border-white/5 bg-slate-800"
               >
                 {aboutImage && (
                   <Image

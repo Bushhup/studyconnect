@@ -3,119 +3,119 @@
     {
       "id": "home-hero",
       "description": "A grand university campus with modern architecture under a clear blue sky.",
-      "imageUrl": "https://images.unsplash.com/photo-1689686610856-3bcf921eb1f0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHx1bml2ZXJzaXR5JTIwY2FtcHVzfGVufDB8fHx8MTc2OTczNDM0Mnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1689686610856-3bcf921eb1f0?auto=format&fit=crop&q=80&w=1080",
       "imageHint": "university campus",
       "category": "Campus"
     },
     {
       "id": "gallery-campus-1",
       "description": "A beautiful view of the main campus building on a sunny day.",
-      "imageUrl": "https://images.unsplash.com/photo-1713721332588-122f666e2525?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxjYW1wdXMlMjBidWlsZGluZ3xlbnwwfHx8fDE3Njk3NjE2OTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1713721332588-122f666e2525?auto=format&fit=crop&q=80&w=1080",
       "imageHint": "campus building",
       "category": "Campus"
     },
     {
       "id": "gallery-campus-2",
       "description": "Students walking through a tree-lined path on campus.",
-      "imageUrl": "https://images.unsplash.com/photo-1620840902480-8cedab87eb7b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzdHVkZW50cyUyMHdhbGtpbmd8ZW58MHx8fHwxNzY5NzYxNjk1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1620840902480-8cedab87eb7b?auto=format&fit=crop&q=80&w=1080",
       "imageHint": "students walking",
       "category": "Campus"
     },
     {
       "id": "gallery-campus-3",
       "description": "The central plaza of the university with a fountain.",
-      "imageUrl": "https://images.unsplash.com/photo-1741637647509-b11596a3928d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHx1bml2ZXJzaXR5JTIwcGxhemF8ZW58MHx8fHwxNzY5NzYxNjk1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1741637647509-b11596a3928d?auto=format&fit=crop&q=80&w=1080",
       "imageHint": "university plaza",
       "category": "Campus"
     },
     {
       "id": "gallery-lab-1",
       "description": "A modern chemistry lab with advanced equipment.",
-      "imageUrl": "https://images.unsplash.com/photo-1554475900-0a0350e3fc7b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjaGVtaXN0cnklMjBsYWJ8ZW58MHx8fHwxNzY5NzAzNzg1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1554475900-0a0350e3fc7b?auto=format&fit=crop&q=80&w=1080",
       "imageHint": "chemistry lab",
       "category": "Labs"
     },
     {
       "id": "gallery-lab-2",
       "description": "Students working in a computer science lab with multiple monitors.",
-      "imageUrl": "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjb21wdXRlciUyMGxhYnxlbnwwfHx8fDE3Njk3NjE2OTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&q=80&w=1080",
       "imageHint": "computer lab",
       "category": "Labs"
     },
     {
       "id": "gallery-lab-3",
       "description": "A robotics lab with various robotic arms and projects.",
-      "imageUrl": "https://images.unsplash.com/photo-1532186773960-85649e5cb70b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxyb2JvdGljcyUyMGxhYnxlbnwwfHx8fDE3Njk3NjE2OTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1532186773960-85649e5cb70b?auto=format&fit=crop&q=80&w=1080",
       "imageHint": "robotics lab",
       "category": "Labs"
     },
     {
       "id": "gallery-library-1",
       "description": "The main reading hall of the library with high ceilings and natural light.",
-      "imageUrl": "https://images.unsplash.com/photo-1568667256549-094345857637?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsaWJyYXJ5JTIwaW50ZXJpb3J8ZW58MHx8fHwxNzY5NjY4Nzg4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&q=80&w=1080",
       "imageHint": "library interior",
       "category": "Library"
     },
     {
       "id": "gallery-library-2",
       "description": "Rows of bookshelves in the university library.",
-      "imageUrl": "https://images.unsplash.com/photo-1700145872464-4beb41df93a3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxsaWJyYXJ5JTIwc2hlbHZlc3xlbnwwfHx8fDE3Njk3NjE2OTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1700145872464-4beb41df93a3?auto=format&fit=crop&q=80&w=1080",
       "imageHint": "library shelves",
       "category": "Library"
     },
     {
       "id": "gallery-library-3",
       "description": "A quiet study area in the library overlooking the campus.",
-      "imageUrl": "https://images.unsplash.com/photo-1568392226616-67710680efd8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzdHVkeSUyMGFyZWF8ZW58MHx8fHwxNzY5NzYxNjk1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1568392226616-67710680efd8?auto=format&fit=crop&q=80&w=1080",
       "imageHint": "study area",
       "category": "Library"
     },
     {
       "id": "gallery-sports-1",
       "description": "The university's outdoor football and track stadium.",
-      "imageUrl": "https://images.unsplash.com/photo-1546608235-3310a2494cdf?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxmb290YmFsbCUyMHN0YWRpdW18ZW58MHx8fHwxNzY5NzI3MjQ3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1546608235-3310a2494cdf?auto=format&fit=crop&q=80&w=1080",
       "imageHint": "football stadium",
       "category": "Sports"
     },
     {
       "id": "gallery-sports-2",
       "description": "The indoor basketball court during a practice session.",
-      "imageUrl": "https://images.unsplash.com/photo-1546519638-68e109498ffc?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxiYXNrZXRiYWxsJTIwY291cnR8ZW58MHx8fHwxNzY5NzYxNjk1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=1080",
       "imageHint": "basketball court",
       "category": "Sports"
     },
     {
       "id": "gallery-sports-3",
       "description": "An Olympic-sized swimming pool in the sports complex.",
-      "imageUrl": "https://images.unsplash.com/photo-1558617320-e695f0d420de?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzd2ltbWluZyUyMHBvb2x8ZW58MHx8fHwxNzY5NzYxNjk1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1558617320-e695f0d420de?auto=format&fit=crop&q=80&w=1080",
       "imageHint": "swimming pool",
       "category": "Sports"
     },
     {
       "id": "about-us-image",
       "description": "A group of diverse students collaborating on a project in a bright, modern classroom.",
-      "imageUrl": "https://images.unsplash.com/photo-1571260898933-9b6264d11277?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzdHVkZW50cyUyMGNvbGxhYm9yYXRpbmd8ZW58MHx8fHwxNzcwMjQwNjM4fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "students collaborating",
+      "imageUrl": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "university students",
       "category": "Campus"
     },
     {
       "id": "testimonial-1",
       "description": "A smiling female student with glasses in a library.",
-      "imageUrl": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxzbWlsaW5nJTIwc3R1ZGVudCUyMHBvcnRyYWl0fGVufDB8fHx8MTcwMjQwNjY4MHww&ixlib=rb-4.1.0&q=80&w=100",
+      "imageUrl": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=100",
       "imageHint": "student portrait",
       "category": "Testimonial"
     },
     {
       "id": "testimonial-2",
       "description": "A smiling male student outdoors on campus.",
-      "imageUrl": "https://images.unsplash.com/photo-1618641986557-1ecd230959aa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzbWlsaW5nJTIwc3R1ZGVudCUyMHBvcnRyYWl0fGVufDB8fHx8MTcwMjQwNjY4MHww&ixlib=rb-4.1.0&q=80&w=100",
+      "imageUrl": "https://images.unsplash.com/photo-1618641986557-1ecd230959aa?auto=format&fit=crop&q=80&w=100",
       "imageHint": "student portrait",
       "category": "Testimonial"
     },
     {
       "id": "testimonial-3",
       "description": "A smiling female student in a classroom.",
-      "imageUrl": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxzbWlsaW5nJTIwc3R1ZGVudCUyMHBvcnRyYWl0fGVufDB8fHx8MTcwMjQwNjY4MHww&ixlib=rb-4.1.0&q=80&w=100",
+      "imageUrl": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=100",
       "imageHint": "student portrait",
       "category": "Testimonial"
     }
