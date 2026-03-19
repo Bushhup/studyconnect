@@ -13,7 +13,7 @@ export async function seedDatabase(db: Firestore) {
   batch.set(collegeRef, {
     id: collegeId,
     name: 'StudyConnect University',
-    logoUrl: 'https://picsum.photos/seed/college/200/200',
+    logoUrl: '/logo.png',
     tagline: 'Connecting Minds, Building Futures'
   });
 

@@ -13,9 +13,9 @@
     "static": "next build"
   },
   "dependencies": {
-    "@capacitor/android": "^7.0.0",
+    "@capacitor/android": "^7.6.0",
     "@capacitor/core": "^7.6.0",
-    "@capacitor/ios": "^7.0.0",
+    "@capacitor/ios": "^7.6.0",
     "@genkit-ai/google-genai": "^1.16.1",
     "@genkit-ai/next": "^1.16.1",
     "@hookform/resolvers": "^4.1.3",
