@@ -95,7 +95,7 @@ export default function StudentResults() {
                       <TableCell className="text-center font-bold text-slate-900">{row.marks}</TableCell>
                       <TableCell className="text-center">
                         <Badge className={cn(
-                          "font-bold border-none px-3",
+                          "font-bold border-none px-3 py-0.5",
                           row.grade === 'O' ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"
                         )}>
                           {row.grade}

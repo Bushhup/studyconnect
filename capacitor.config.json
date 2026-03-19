@@ -1,0 +1,9 @@
+{
+  "appId": "com.studyconnect.app",
+  "appName": "StudyConnect",
+  "webDir": "out",
+  "bundledWebRuntime": false,
+  "server": {
+    "androidScheme": "https"
+  }
+}
