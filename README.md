@@ -1,12 +1,19 @@
 # 🎓 StudyConnect: Enterprise Academic Ecosystem
 
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![Vercel](https://img.shields.io/badge/Vercel-Live-success?style=for-the-badge&logo=vercel)](https://studyconnect-taupe.vercel.app)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
 [![ShadCN UI](https://img.shields.io/badge/ShadCN_UI-Latest-black?style=for-the-badge&logo=shadcnui)](https://ui.shadcn.com/)
 [![Firebase](https://img.shields.io/badge/Firebase-11-FFCA28?style=for-the-badge&logo=firebase)](https://firebase.google.com/)
 [![Capacitor](https://img.shields.io/badge/Capacitor-7-blue?style=for-the-badge&logo=capacitor)](https://capacitorjs.com/)
 
 **StudyConnect** is a state-of-the-art institutional management platform designed to bridge the gap between administrators, faculty, and students. Built with a focus on **Professional UI/UX**, the application provides a seamless, high-performance experience for complex academic workflows across Web, Android, and iOS.
+
+---
+
+## 🔗 Live Production
+The project is deployed and accessible at:  
+**[https://studyconnect-taupe.vercel.app](https://studyconnect-taupe.vercel.app)**
 
 ---
 
@@ -98,7 +105,7 @@ npx cap open ios
 
 The application includes a specialized **Demo Mode** for exploring all portals without manual registration:
 
-- **Portal:** [Login Page](/login)
+- **Portal:** [https://studyconnect-taupe.vercel.app/login](https://studyconnect-taupe.vercel.app/login)
 - **Username:** `demo`
 - **Password:** `demo123`
 

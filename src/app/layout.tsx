@@ -8,6 +8,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://studyconnect-taupe.vercel.app'),
   title: 'StudyConnect',
   description: 'Enterprise Academic Ecosystem. Connecting Minds, Building Futures.',
   manifest: '/manifest.json',
