@@ -1,84 +1,311 @@
-
 {
   "entities": {
-    "College": {
-      "title": "College",
+    "CollegeProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "CollegeProfile",
       "type": "object",
-      "description": "Represents a college or university.",
+      "description": "Stores essential information about the college or institution featured in the app, displayed on the home screen.",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "logoUrl": { "type": "string", "format": "uri" },
-        "tagline": { "type": "string" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the CollegeProfile entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The official name of the college or institution."
+        },
+        "logoUrl": {
+          "type": "string",
+          "description": "URL to the college's official logo image.",
+          "format": "uri"
+        },
+        "tagline": {
+          "type": "string",
+          "description": "A short, descriptive tagline for the college."
+        },
+        "overview": {
+          "type": "string",
+          "description": "A general overview or description of the college's facilities and offerings."
+        },
+        "statisticHighlights": {
+          "type": "array",
+          "description": "An array of key statistical highlights about the college, such as student count or faculty numbers. Each item is a formatted string (e.g., 'Students: 10,000').",
+          "items": {
+            "type": "string"
+          }
+        }
       },
-      "required": ["id", "name"]
+      "required": [
+        "id",
+        "name",
+        "logoUrl",
+        "tagline",
+        "overview",
+        "statisticHighlights"
+      ]
     },
-    "User": {
-      "title": "User",
+    "Achievement": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Achievement",
       "type": "object",
-      "description": "Represents a user (student, faculty, or admin).",
+      "description": "Represents academic, research, or extracurricular accomplishments by the college or its members.",
       "properties": {
-        "id": { "type": "string" },
-        "username": { "type": "string", "description": "Unique institutional username." },
-        "collegeId": { "type": "string" },
-        "email": { "type": "string", "format": "email" },
-        "password": { "type": "string", "description": "Temporary password for first-time provisioning." },
-        "firstName": { "type": "string" },
-        "lastName": { "type": "string" },
-        "role": { "type": "string", "enum": ["student", "faculty", "admin"] },
-        "departmentId": { "type": "string" },
-        "degreeType": { "type": "string", "enum": ["UG", "PG"] },
-        "status": { "type": "string", "enum": ["active", "inactive"] }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Achievement entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title or name of the achievement."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the achievement."
+        },
+        "category": {
+          "type": "string",
+          "description": "The category of the achievement (e.g., 'Academic', 'Research', 'Extracurricular')."
+        },
+        "year": {
+          "type": "number",
+          "description": "The year the achievement was accomplished."
+        },
+        "dateAchieved": {
+          "type": "string",
+          "description": "The specific date the achievement was recognized.",
+          "format": "date"
+        }
       },
-      "required": ["id", "username", "collegeId", "email", "role"]
+      "required": [
+        "id",
+        "title",
+        "description",
+        "category",
+        "year",
+        "dateAchieved"
+      ]
     },
-    "Department": {
-      "title": "Department",
+    "ImageCategory": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ImageCategory",
       "type": "object",
-      "description": "Academic department within a college.",
+      "description": "Defines categories for organizing gallery images, allowing for better navigation and filtering in the Campus Gallery.",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "headOfDept": { "type": "string" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the ImageCategory entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the image category (e.g., 'Labs', 'Library', 'Campus Areas')."
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of what this image category represents."
+        }
       },
-      "required": ["id", "name"]
+      "required": [
+        "id",
+        "name"
+      ]
     },
-    "Course": {
-      "title": "Course",
+    "GalleryImage": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "GalleryImage",
       "type": "object",
-      "description": "A subject or course offered.",
+      "description": "Represents an image to be displayed in the Campus Gallery, including its details and category association.",
       "properties": {
-        "id": { "type": "string" },
-        "code": { "type": "string" },
-        "name": { "type": "string" },
-        "departmentId": { "type": "string" },
-        "credits": { "type": "number" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the GalleryImage entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "A title for the image, often displayed as a caption."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description or alt text for the image."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "The URL to the full-size image in storage (e.g., Firebase Storage) for full-screen preview.",
+          "format": "uri"
+        },
+        "thumbnailUrl": {
+          "type": "string",
+          "description": "The URL to a smaller thumbnail version of the image, optimized for grid layout display.",
+          "format": "uri"
+        },
+        "categoryId": {
+          "type": "string",
+          "description": "Reference to ImageCategory. (Relationship: ImageCategory 1:N GalleryImage)"
+        }
       },
-      "required": ["id", "code", "name"]
+      "required": [
+        "id",
+        "title",
+        "imageUrl",
+        "thumbnailUrl",
+        "categoryId"
+      ]
     },
-    "Class": {
-      "title": "Class",
+    "Event": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Event",
       "type": "object",
-      "description": "A specific section/group of students.",
+      "description": "Details about upcoming and past college events, displayed in the Events Calendar.",
       "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "departmentId": { "type": "string" },
-        "facultyId": { "type": "string" }
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Event entity."
+        },
+        "title": {
+          "type": "string",
+          "description": "The title or name of the event."
+        },
+        "description": {
+          "type": "string",
+          "description": "A detailed description of the event."
+        },
+        "startDateTime": {
+          "type": "string",
+          "description": "The start date and time of the event.",
+          "format": "date-time"
+        },
+        "endDateTime": {
+          "type": "string",
+          "description": "The optional end date and time of the event, for multi-day or duration-specific events.",
+          "format": "date-time"
+        },
+        "location": {
+          "type": "string",
+          "description": "The physical or virtual location where the event will take place."
+        },
+        "eventType": {
+          "type": "string",
+          "description": "The type or category of the event (e.g., 'Academic', 'Cultural', 'Sports')."
+        },
+        "organizer": {
+          "type": "string",
+          "description": "The department, club, or organization responsible for hosting the event."
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "Optional URL for a banner or promotional image associated with the event.",
+          "format": "uri"
+        }
       },
-      "required": ["id", "name"]
+      "required": [
+        "id",
+        "title",
+        "description",
+        "startDateTime",
+        "location",
+        "eventType",
+        "organizer"
+      ]
     }
   },
   "auth": {
-    "providers": ["password", "anonymous"]
+    "providers": [
+      "password",
+      "anonymous"
+    ]
   },
   "firestore": {
     "structure": [
-      { "path": "/colleges/{collegeId}", "definition": { "entityName": "College" } },
-      { "path": "/colleges/{collegeId}/users/{userId}", "definition": { "entityName": "User" } },
-      { "path": "/colleges/{collegeId}/departments/{deptId}", "definition": { "entityName": "Department" } },
-      { "path": "/colleges/{collegeId}/courses/{courseId}", "definition": { "entityName": "Course" } },
-      { "path": "/colleges/{collegeId}/classes/{classId}", "definition": { "entityName": "Class" } }
-    ]
+      {
+        "path": "/collegeProfile/main",
+        "definition": {
+          "entityName": "CollegeProfile",
+          "schema": {
+            "$ref": "#/backend/entities/CollegeProfile"
+          },
+          "description": "Stores the single, central college profile data. This document is publicly readable by all users and writable only by administrators."
+        }
+      },
+      {
+        "path": "/achievements/{achievementId}",
+        "definition": {
+          "entityName": "Achievement",
+          "schema": {
+            "$ref": "#/backend/entities/Achievement"
+          },
+          "description": "Collection for academic, research, and extracurricular achievements. Documents are publicly readable and administrator-writable.",
+          "params": [
+            {
+              "name": "achievementId",
+              "description": "Unique identifier for an achievement document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/imageCategories/{imageCategoryId}",
+        "definition": {
+          "entityName": "ImageCategory",
+          "schema": {
+            "$ref": "#/backend/entities/ImageCategory"
+          },
+          "description": "Collection for defining categories used to organize gallery images. Documents are publicly readable and administrator-writable.",
+          "params": [
+            {
+              "name": "imageCategoryId",
+              "description": "Unique identifier for an image category document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/galleryImages/{galleryImageId}",
+        "definition": {
+          "entityName": "GalleryImage",
+          "schema": {
+            "$ref": "#/backend/entities/GalleryImage"
+          },
+          "description": "Collection for campus gallery images, each linked to an image category via 'categoryId'. Documents are publicly readable and administrator-writable.",
+          "params": [
+            {
+              "name": "galleryImageId",
+              "description": "Unique identifier for a gallery image document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/events/{eventId}",
+        "definition": {
+          "entityName": "Event",
+          "schema": {
+            "$ref": "#/backend/entities/Event"
+          },
+          "description": "Collection for college event details. Documents are publicly readable and administrator-writable.",
+          "params": [
+            {
+              "name": "eventId",
+              "description": "Unique identifier for an event document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/admins/{adminId}",
+        "definition": {
+          "entityName": "Admin",
+          "schema": {
+            "$ref": "#/backend/entities/user"
+          },
+          "description": "A dedicated collection storing UIDs of users designated as administrators. The existence of a document at this path (where adminId is the user's UID) grants administrative write privileges across the application. Only existing admins can add or remove other admins, and an admin can read their own entry.",
+          "params": [
+            {
+              "name": "adminId",
+              "description": "The Firebase Authentication UID of a user with administrator privileges."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The recommended Firestore structure for StudyConnect prioritizes secure, scalable, and debuggable access control, especially concerning the admin portal requirements and public data visibility. All public-facing content (CollegeProfile, Achievements, ImageCategories, GalleryImages, Events) is stored in top-level collections, ensuring a homogeneous security posture: publicly readable by all authenticated and unauthenticated users, but exclusively writable by designated administrators. This approach simplifies security rules significantly.\n\nAuthorization Independence is achieved for the primary content data by having all necessary authorization context (global read access) built into the collection structure itself. There are no subcollections whose authorization relies on fetching attributes from a parent document. For write operations, administrator access is determined by checking the existence of the requesting user's UID in a dedicated `/admins` collection. While this involves a `get()` call within the security rules, it's a `get()` on a static role collection, not a hierarchical data dependency. This adheres to the principle of avoiding complex, data-dependent `get()` calls for authorization, allowing for atomic operations and easier debugging. The admin role itself is managed via DBAC (Database Access Control).\n\nQueryability and Authorization Performance (QAPs) are fully supported. Since all content collections are publicly readable, `list` operations (queries) can be performed without any filtering in the security rules, as all documents within these collections are intended for public consumption. This ensures efficient data retrieval. The segregation into distinct collections based on entity type further aids in clear data management and rule definition. Denormalization for authorization is not explicitly required for the public data in this specific schema because the authorization model is 'public-read, admin-write' for all main content, and not based on individual user ownership of these specific content types (like an individual user's posts or notes)."
   }
 }
