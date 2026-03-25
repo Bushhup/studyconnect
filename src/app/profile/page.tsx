@@ -32,7 +32,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -52,6 +51,10 @@ export default function ProfilePage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [guestRole, setGuestRole] = useState<string | null>(null);
 
+  // Form State
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setGuestRole(localStorage.getItem('guest_role'));
@@ -65,8 +68,11 @@ export default function ProfilePage() {
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(userDocRef);
 
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      router.replace('/login');
+    }
+  }, [user, isUserLoading, router]);
 
   const handleLogout = () => {
     signOut(auth).then(() => {
@@ -115,15 +121,16 @@ export default function ProfilePage() {
   }
 
   const isDemo = user?.isAnonymous;
-  const isAdminRole = profile?.role === 'admin' || (!profile && !isDemo && !isProfileLoading);
-  const isStudentRole = profile?.role === 'student' || (isDemo && guestRole === 'student');
-  const isFacultyRole = profile?.role === 'faculty' || (isDemo && guestRole === 'faculty');
+  const displayRole = profile?.role || (isDemo ? (guestRole || 'student') : 'Guest');
+  const isAdminRole = displayRole === 'admin';
+  const isStudentRole = displayRole === 'student';
+  const isFacultyRole = displayRole === 'faculty';
 
-  const displayProfile = profile || {
-    firstName: isDemo ? 'Demo' : 'Unknown',
-    lastName: isDemo ? 'User' : 'User',
-    email: isDemo ? 'demo@studyconnect.edu' : user?.email,
-    role: isDemo ? (guestRole || 'Guest') : 'Guest',
+  const displayProfile = {
+    firstName: profile?.firstName || (isDemo ? 'Demo' : 'Unknown'),
+    lastName: profile?.lastName || (isDemo ? 'User' : 'User'),
+    email: profile?.email || (isDemo ? 'demo@studyconnect.edu' : user?.email || 'N/A'),
+    role: displayRole,
     id: user?.uid || 'N/A'
   };
 

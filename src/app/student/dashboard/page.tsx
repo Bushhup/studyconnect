@@ -1,12 +1,19 @@
 'use client';
 
+import { 
+  useUser, 
+  useFirestore, 
+  useDoc, 
+  useMemoFirebase 
+} from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   BookOpen, ClipboardCheck, Award, Briefcase, 
   TrendingUp, Clock, CheckCircle2, AlertCircle,
   FileText, Calendar, MessageSquare, ArrowUpRight,
-  ChevronRight, Download, Bell, Megaphone, FileSpreadsheet
+  ChevronRight, Download, Bell, Megaphone, FileSpreadsheet, Loader2
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, 
@@ -36,22 +43,48 @@ const chartConfig = {
   gpa: { label: 'Semester GPA', color: 'hsl(var(--primary))' },
 };
 
+const collegeId = 'study-connect-college';
+
 export default function StudentDashboard() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
+  }, [firestore, user?.uid]);
+
+  const { data: profile, isLoading } = useDoc(userDocRef);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Authenticating your session...</p>
+      </div>
+    );
+  }
+
+  const studentName = profile ? `${profile.firstName} ${profile.lastName}` : 'Alex Johnson';
+  const studentInitials = studentName.split(' ').map(n => n[0]).join('');
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           <Avatar className="h-16 w-16 border-4 border-white shadow-lg ring-1 ring-slate-100">
-            <AvatarImage src="https://i.pravatar.cc/150?u=student" />
-            <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">AJ</AvatarFallback>
+            <AvatarImage src={profile?.photoURL} />
+            <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">{studentInitials}</AvatarFallback>
           </Avatar>
           <div>
-            <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Welcome, Alex Johnson</h1>
-            <p className="text-muted-foreground mt-1">B.Tech Computer Science • Semester 5 • UG Program</p>
+            <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Welcome, {profile?.firstName || 'Alex'}</h1>
+            <p className="text-muted-foreground mt-1">
+              {profile?.departmentId || 'B.Tech Computer Science'} • Semester 5 • UG Program
+            </p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-full gap-2 border-slate-200" asChild>
+          <Button variant="outline" className="rounded-full gap-2 border-slate-200 shadow-sm bg-white" asChild>
             <Link href="/student/notifications">
               <Bell className="h-4 w-4" /> Notifications
             </Link>
@@ -71,7 +104,7 @@ export default function StudentDashboard() {
           { label: 'Enrolled Courses', value: '6', icon: BookOpen, color: 'bg-emerald-50 text-emerald-600', progress: 100 },
           { label: 'Pending Tasks', value: '3', icon: Briefcase, color: 'bg-amber-50 text-amber-600', progress: 40 },
         ].map((stat) => (
-          <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group">
+          <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group bg-white">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</CardTitle>
               <div className={cn("p-2 rounded-xl transition-transform group-hover:rotate-6", stat.color)}>

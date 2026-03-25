@@ -1,12 +1,19 @@
 'use client';
 
+import { 
+  useUser, 
+  useFirestore, 
+  useDoc, 
+  useMemoFirebase 
+} from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
   Users, Calendar, ClipboardCheck, FileSpreadsheet, 
   TrendingUp, Clock, BookOpen, ChevronRight,
   Plus, ArrowUpRight, Award, MessageSquare, Megaphone,
-  CheckCircle2, AlertCircle, FileText
+  CheckCircle2, AlertCircle, FileText, Loader2
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, 
@@ -38,16 +45,42 @@ const chartConfig = {
   attendance: { label: 'Attendance %', color: 'hsl(var(--accent))' },
 };
 
+const collegeId = 'study-connect-college';
+
 export default function FacultyDashboard() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
+  }, [firestore, user?.uid]);
+
+  const { data: profile, isLoading } = useDoc(userDocRef);
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-8rem)] gap-4">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Authenticating faculty access...</p>
+      </div>
+    );
+  }
+
+  const facultyName = profile ? `Dr. ${profile.firstName} ${profile.lastName}` : 'Dr. Sarah Smith';
+  const facultyInitials = facultyName.split(' ').map(n => n[0]).join('');
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Welcome, Dr. Sarah Smith</h1>
-          <p className="text-muted-foreground mt-1">Department of Engineering & Technology • Academic Year 2024-25</p>
+          <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Welcome, {facultyName}</h1>
+          <p className="text-muted-foreground mt-1">
+            {profile?.departmentId || 'Department of Engineering & Technology'} • Academic Year 2024-25
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-full gap-2 border-slate-200">
+          <Button variant="outline" className="rounded-full gap-2 border-slate-200 shadow-sm bg-white">
             <MessageSquare className="h-4 w-4" /> Department Chat
           </Button>
           <Button className="rounded-full shadow-lg shadow-primary/20 gap-2">
@@ -63,7 +96,7 @@ export default function FacultyDashboard() {
           { label: 'Subjects Handled', value: '3', icon: BookOpen, color: 'bg-emerald-50 text-emerald-600' },
           { label: 'Attendance Avg', value: '94.2%', icon: ClipboardCheck, color: 'bg-amber-50 text-amber-600' },
         ].map((stat) => (
-          <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all rounded-2xl">
+          <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all rounded-2xl bg-white">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</CardTitle>
               <div className={cn("p-2 rounded-xl", stat.color)}>
