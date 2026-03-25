@@ -47,7 +47,6 @@ export default function LoginPage() {
         
         await signInAnonymously(auth);
         
-        // Save guest role preference
         if (typeof window !== 'undefined') {
           localStorage.setItem('guest_role', selectedRole || 'student');
         }
@@ -73,9 +72,13 @@ export default function LoginPage() {
           const userCredential = await signInAnonymously(auth);
           const newUser = userCredential.user;
           
+          // Set in institutional users collection
           const adminDocRef = doc(firestore, 'colleges', collegeId, 'users', newUser.uid);
+          // Also set in root admins collection for security rules
+          const rootAdminRef = doc(firestore, 'admins', newUser.uid);
+
           try {
-            await setDoc(adminDocRef, {
+            const adminData = {
               id: newUser.uid,
               uid: newUser.uid,
               username: 'Admin01',
@@ -85,7 +88,9 @@ export default function LoginPage() {
               lastName: 'Administrator',
               status: 'active',
               updatedAt: new Date().toISOString()
-            }, { merge: true });
+            };
+            await setDoc(adminDocRef, adminData, { merge: true });
+            await setDoc(rootAdminRef, { id: newUser.uid }, { merge: true });
           } catch (ruleErr) {
             console.warn("Silent failure on admin profile write.", ruleErr);
           }
@@ -137,7 +142,7 @@ export default function LoginPage() {
           router.push('/profile');
         }
       } catch (authError: any) {
-        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential' || authError.code === 'auth/wrong-password') {
+        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential' || authError.code === 'auth/wrong-password' || authError.code === 'auth/invalid-email') {
           if (userData.password === password) {
             const userCredential = await createUserWithEmailAndPassword(auth, userEmail, password);
             const newUser = userCredential.user;

@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 import { seedDatabase } from '@/lib/seed-data';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,12 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 
-const stats = [
-  { label: 'Total Students', value: '4,850', icon: GraduationCap, trend: '+12.5%', trendUp: true, color: 'from-blue-500 to-blue-600', textColor: 'text-blue-600' },
-  { label: 'Total Faculty', value: '320', icon: Users, trend: '+3.2%', trendUp: true, color: 'from-purple-500 to-purple-600', textColor: 'text-purple-600' },
-  { label: 'Departments', value: '18', icon: Building2, trend: 'Stable', trendUp: null, color: 'from-emerald-500 to-emerald-600', textColor: 'text-emerald-600' },
-  { label: 'Attendance Rate', value: '94.2%', icon: CheckCircle2, trend: '-0.4%', trendUp: false, color: 'from-amber-500 to-amber-600', textColor: 'text-amber-600' },
-];
+const collegeId = 'study-connect-college';
 
 const performanceData = [
   { month: 'Jan', attendance: 92, performance: 78 },
@@ -60,6 +56,24 @@ export default function AdminDashboard() {
   const db = useFirestore();
   const { toast } = useToast();
   const [isSeeding, setIsSeeding] = useState(false);
+
+  // Real-time Data Fetches for Stats
+  const usersQuery = useMemoFirebase(() => collection(db, 'colleges', collegeId, 'users'), [db]);
+  const deptsQuery = useMemoFirebase(() => collection(db, 'colleges', collegeId, 'departments'), [db]);
+  
+  const { data: users } = useCollection(usersQuery);
+  const { data: depts } = useCollection(deptsQuery);
+
+  const studentCount = users?.filter(u => u.role === 'student').length || 0;
+  const facultyCount = users?.filter(u => u.role === 'faculty').length || 0;
+  const deptCount = depts?.length || 0;
+
+  const stats = [
+    { label: 'Total Students', value: studentCount.toString(), icon: GraduationCap, trend: '+12.5%', trendUp: true, color: 'from-blue-500 to-blue-600', textColor: 'text-blue-600' },
+    { label: 'Total Faculty', value: facultyCount.toString(), icon: Users, trend: '+3.2%', trendUp: true, color: 'from-purple-500 to-purple-600', textColor: 'text-purple-600' },
+    { label: 'Departments', value: deptCount.toString(), icon: Building2, trend: 'Stable', trendUp: null, color: 'from-emerald-500 to-emerald-600', textColor: 'text-emerald-600' },
+    { label: 'Attendance Rate', value: '94.2%', icon: CheckCircle2, trend: '-0.4%', trendUp: false, color: 'from-amber-500 to-amber-600', textColor: 'text-amber-600' },
+  ];
 
   const handleSeedData = async () => {
     if (!db) return;
@@ -102,7 +116,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Analytics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
           <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
@@ -137,7 +150,6 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Main Performance Chart */}
         <Card className="lg:col-span-2 border-none shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
@@ -185,7 +197,6 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Distribution Chart */}
         <Card className="border-none shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg font-headline font-bold">Enrollment Share</CardTitle>
@@ -224,7 +235,6 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
         <Card className="lg:col-span-2 border-none shadow-sm">
           <CardHeader className="flex flex-row items-center justify-between">
             <CardTitle className="text-lg font-headline font-bold">Timeline Activity</CardTitle>
@@ -255,7 +265,6 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        {/* Quick Task Widget */}
         <Card className="border-none shadow-sm gradient-blue-purple text-white">
           <CardHeader>
             <CardTitle className="text-lg font-headline font-bold">Pending Reviews</CardTitle>
