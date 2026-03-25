@@ -137,7 +137,7 @@ export default function UserManagementPage() {
       id: userId,
       collegeId,
       createdAt: new Date().toISOString()
-    });
+    }, { merge: true });
 
     toast({ 
       title: 'User Provisioned', 
