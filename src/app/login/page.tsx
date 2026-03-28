@@ -72,28 +72,24 @@ export default function LoginPage() {
           const userCredential = await signInAnonymously(auth);
           const newUser = userCredential.user;
           
+          // Set in root admins collection for security rules
+          const rootAdminRef = doc(firestore, 'admins', newUser.uid);
+          await setDoc(rootAdminRef, { id: newUser.uid }, { merge: true });
+
           // Set in institutional users collection
           const adminDocRef = doc(firestore, 'colleges', collegeId, 'users', newUser.uid);
-          // Also set in root admins collection for security rules
-          const rootAdminRef = doc(firestore, 'admins', newUser.uid);
-
-          try {
-            const adminData = {
-              id: newUser.uid,
-              uid: newUser.uid,
-              username: 'Admin01',
-              email: 'admin-session@college.edu',
-              role: 'admin',
-              firstName: 'System',
-              lastName: 'Administrator',
-              status: 'active',
-              updatedAt: new Date().toISOString()
-            };
-            await setDoc(adminDocRef, adminData, { merge: true });
-            await setDoc(rootAdminRef, { id: newUser.uid }, { merge: true });
-          } catch (ruleErr) {
-            console.warn("Silent failure on admin profile write.", ruleErr);
-          }
+          const adminData = {
+            id: newUser.uid,
+            uid: newUser.uid,
+            username: 'Admin01',
+            email: 'admin-session@college.edu',
+            role: 'admin',
+            firstName: 'System',
+            lastName: 'Administrator',
+            status: 'active',
+            updatedAt: new Date().toISOString()
+          };
+          await setDoc(adminDocRef, adminData, { merge: true });
 
           toast({ title: 'System Access Granted', description: 'Administrative session established.' });
           router.push('/admin/dashboard');
@@ -111,10 +107,11 @@ export default function LoginPage() {
       try {
         querySnapshot = await getDocs(q);
       } catch (err: any) {
+        console.error("Directory lookup failed:", err);
         if (err.message?.includes('permissions')) {
-          throw new Error('Institutional directory is currently locked. Please contact support.');
+          throw new Error('Institutional directory is currently locked. Security rules are preventing access.');
         }
-        throw err;
+        throw new Error('Database connection failed. Please try again.');
       }
 
       if (querySnapshot.empty) {
@@ -142,7 +139,8 @@ export default function LoginPage() {
           router.push('/profile');
         }
       } catch (authError: any) {
-        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential' || authError.code === 'auth/wrong-password' || authError.code === 'auth/invalid-email') {
+        // If user exists in DB but not in Firebase Auth, we attempt to "bootstrap" them
+        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
           if (userData.password === password) {
             const userCredential = await createUserWithEmailAndPassword(auth, userEmail, password);
             const newUser = userCredential.user;
@@ -194,11 +192,11 @@ export default function LoginPage() {
     return (
       <div className="container mx-auto py-12 px-4 flex flex-col items-center justify-center min-h-[calc(100vh-8rem)]">
         <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-headline font-bold mb-4">Institutional Access</h1>
+          <h1 className="text-4xl md:text-5xl font-headline font-bold mb-4 text-slate-900">Institutional Access</h1>
           <p className="text-muted-foreground max-w-md mx-auto">Select your portal to continue.</p>
         </div>
         
-        <div className="bg-card border rounded-[3rem] p-8 md:p-12 shadow-xl max-w-5xl w-full">
+        <div className="bg-white border rounded-[3rem] p-8 md:p-12 shadow-xl max-w-5xl w-full">
           <div className="grid gap-8 md:grid-cols-3">
             <RoleCard role="student" title="Student" description="Grades & Courses" icon={GraduationCap} onClick={() => setSelectedRole('student')} />
             <RoleCard role="faculty" title="Faculty" description="Class Management" icon={BookOpen} onClick={() => setSelectedRole('faculty')} />
@@ -217,31 +215,31 @@ export default function LoginPage() {
           <Button variant="ghost" size="sm" className="w-fit p-0 mb-4 hover:bg-transparent text-muted-foreground" onClick={() => setSelectedRole(null)}>
             <ArrowLeft className="mr-2 h-4 w-4" /> Switch Portal
           </Button>
-          <CardTitle className="text-2xl font-headline text-center capitalize">{selectedRole} Portal</CardTitle>
+          <CardTitle className="text-2xl font-headline text-center capitalize text-slate-900">{selectedRole} Portal</CardTitle>
           <CardDescription className="text-center">Enter your institutional username.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
             <div className="grid gap-2">
-              <Label>Username</Label>
+              <Label className="text-slate-700">Institutional Username</Label>
               <Input 
                 type="text" 
                 required 
                 value={username} 
                 onChange={(e) => setUsername(e.target.value)} 
-                className="h-11 bg-slate-50 border-none" 
-                placeholder="e.g. demo or Admin01"
+                className="h-11 bg-slate-50 border-none text-slate-900 placeholder:text-slate-400" 
+                placeholder="e.g. Admin01 or demo"
               />
             </div>
             <div className="grid gap-2">
-              <Label>Password</Label>
+              <Label className="text-slate-700">Security Password</Label>
               <Input 
                 type="password" 
                 required 
                 value={password} 
                 onChange={(e) => setPassword(e.target.value)} 
-                className="h-11 bg-slate-50 border-none" 
-                placeholder="e.g. demo123"
+                className="h-11 bg-slate-50 border-none text-slate-900 placeholder:text-slate-400" 
+                placeholder="Enter password"
               />
             </div>
           </CardContent>
@@ -258,12 +256,12 @@ export default function LoginPage() {
 
 function RoleCard({ title, description, icon: Icon, onClick }: any) {
   return (
-    <Card className="cursor-pointer transition-all hover:bg-accent/5 hover:-translate-y-1 flex flex-col items-center text-center p-8 border-none shadow-sm bg-white rounded-[2.5rem]" onClick={onClick}>
-      <div className="w-16 h-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-4">
+    <Card className="cursor-pointer transition-all hover:bg-primary/5 hover:-translate-y-1 flex flex-col items-center text-center p-8 border-none shadow-sm bg-slate-50/50 rounded-[2.5rem]" onClick={onClick}>
+      <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-4">
         <Icon className="w-8 h-8 text-primary" />
       </div>
-      <CardTitle className="font-headline text-xl mb-1">{title}</CardTitle>
-      <CardDescription>{description}</CardDescription>
+      <CardTitle className="font-headline text-xl mb-1 text-slate-900">{title}</CardTitle>
+      <CardDescription className="text-slate-500">{description}</CardDescription>
     </Card>
   );
 }
