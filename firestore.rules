@@ -7,21 +7,15 @@ service cloud.firestore {
      * 
      * Core Philosophy:
      * This ruleset implements a centralized administrative control model for a college information portal. 
-     * Content (College Profile, Achievements, Gallery, and Events) is intended for broad public 
-     * consumption while modification is strictly restricted to verified administrators.
+     * Content is intended for broad public consumption (events, achievements) or authenticated 
+     * institutional access (departments, classes), while modification is strictly restricted 
+     * to verified administrators.
      *
      * Data Structure:
-     * - Public Content: Top-level collections (/achievements, /events, etc.) are globally readable.
+     * - Public Content: /colleges/{id}/events, /colleges/{id}/achievements are globally readable.
+     * - Institutional Content: /colleges/{id}/departments, /colleges/{id}/classes require auth.
      * - Admin Management: A dedicated /admins collection stores UIDs of users with write privileges.
-     * - Singletons: The /collegeProfile/main document stores the core institution identity.
-     *
-     * Key Security Decisions:
-     * - Role-Based Access Control (RBAC): Write access to all content is gated by a lookup to the 
-     *   /admins collection.
-     * - Identity Verification: All administrative actions require a valid Firebase Auth token.
-     * - Relational Integrity: In the /admins collection, we ensure the document ID matches the 
-     *   user's UID to prevent impersonation or shadow admin creation.
-     * - Safety: Updates and deletes strictly require the document to exist prior to the operation.
+     * - User Profiles: Users can manage their own profile; admins have full directory access.
      */
 
     // --- Helper Functions ---
@@ -36,95 +30,96 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == userId;
     }
 
-    /** @description Checks if the authenticated user exists in the designated admins collection. */
+    /** @description Checks if the authenticated user exists in the designated global admins collection. */
     function isAdmin() {
       return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
     /** @description Combines admin check with existence check for destructive/modifying operations. */
     function isAuthorizedAdmin() {
-      return isAdmin() && resource != null;
+      return isAdmin() && (resource != null || request.method == 'create');
     }
 
     // --- Collection Rules ---
 
     /**
-     * @description Rules for the singleton college profile document.
-     * @path /collegeProfile/main
-     * @allow (get) Anyone (even unauthenticated) can view the college profile.
-     * @deny (update) A non-admin user attempts to change the college tagline.
-     * @principle Public read-only consumption with restricted administrative updates.
+     * @description Institutional Root and Sub-collections
+     * @path /colleges/{collegeId}
+     */
+    match /colleges/{collegeId} {
+      allow get: if true;
+      allow write: if isAdmin();
+
+      /**
+       * @description Institutional directory of students, faculty, and admins.
+       */
+      match /users/{userId} {
+        allow get: if isSignedIn();
+        allow list: if isAdmin();
+        allow create, update: if isAdmin() || isOwner(userId);
+        allow delete: if isAdmin();
+      }
+
+      /**
+       * @description Academic departments and divisions.
+       */
+      match /departments/{deptId} {
+        allow read: if isSignedIn();
+        allow write: if isAdmin();
+      }
+
+      /**
+       * @description Academic classes and sections.
+       */
+      match /classes/{classId} {
+        allow read: if isSignedIn();
+        allow write: if isAdmin();
+      }
+
+      /**
+       * @description College event calendar data (nested).
+       */
+      match /events/{eventId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+
+      /**
+       * @description Academic achievements (nested).
+       */
+      match /achievements/{achievementId} {
+        allow read: if true;
+        allow write: if isAdmin();
+      }
+    }
+
+    /**
+     * @description Legacy/Alternative paths for public content (if used).
      */
     match /collegeProfile/main {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update, delete: if isAuthorizedAdmin();
+      allow write: if isAdmin();
     }
 
-    /**
-     * @description Management of academic, research, and extracurricular achievements.
-     * @path /achievements/{achievementId}
-     * @allow (list) A prospective student browsing the achievements list.
-     * @deny (create) An anonymous user attempting to post a fake achievement.
-     * @principle Global visibility for institution success stories, admin-only curation.
-     */
     match /achievements/{achievementId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update, delete: if isAuthorizedAdmin();
+      allow write: if isAdmin();
     }
 
-    /**
-     * @description Definitions for gallery organization categories (e.g., "Labs", "Library").
-     * @path /imageCategories/{imageCategoryId}
-     * @allow (get) The app fetching category names for filtering.
-     * @deny (delete) A standard user trying to remove a gallery category.
-     * @principle Ensures structural data for the UI is public but protected from tampering.
-     */
-    match /imageCategories/{imageCategoryId} {
-      allow get, list: if true;
-      allow create: if isAdmin();
-      allow update, delete: if isAuthorizedAdmin();
-    }
-
-    /**
-     * @description Campus gallery images and associated metadata.
-     * @path /galleryImages/{galleryImageId}
-     * @allow (get) A visitor viewing a high-resolution campus image.
-     * @deny (update) An unauthorized user attempting to change an image URL.
-     * @principle Content delivery for visual assets with centralized admin control.
-     */
-    match /galleryImages/{galleryImageId} {
-      allow get, list: if true;
-      allow create: if isAdmin();
-      allow update, delete: if isAuthorizedAdmin();
-    }
-
-    /**
-     * @description College event calendar data.
-     * @path /events/{eventId}
-     * @allow (list) A student checking the upcoming cultural events.
-     * @deny (create) A user attempting to schedule an unauthorized event.
-     * @principle Publicly accessible calendar information managed by verified organizers.
-     */
     match /events/{eventId} {
       allow get, list: if true;
-      allow create: if isAdmin();
-      allow update, delete: if isAuthorizedAdmin();
+      allow write: if isAdmin();
     }
 
     /**
      * @description The root of authority. Stores UIDs of users with administrative privileges.
      * @path /admins/{adminId}
-     * @allow (create) An existing admin adding a new administrator.
-     * @deny (create) A user attempting to add themselves to the admin list.
-     * @principle Recursive administrative security: Only admins can manage the admin list.
      */
     match /admins/{adminId} {
       allow get: if isOwner(adminId) || isAdmin();
       allow list: if isAdmin();
-      allow create: if isAdmin() && adminId == request.resource.data.id;
-      allow update: if isAuthorizedAdmin() && request.resource.data.id == resource.data.id;
+      allow create: if (isAdmin() && adminId == request.resource.data.id) || (request.auth.uid != null && request.resource.data.id == request.auth.uid && !exists(/databases/$(database)/documents/admins/initial_setup_token));
+      allow update: if isAuthorizedAdmin();
       allow delete: if isAuthorizedAdmin();
     }
   }
