@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState } from 'react';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { seedDatabase } from '@/lib/seed-data';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -10,7 +11,7 @@ import {
   Users, GraduationCap, Building2, BookOpen, 
   TrendingUp, TrendingDown, Clock, CheckCircle2,
   Calendar, Award, ArrowUpRight, ArrowDownRight,
-  Database, Loader2
+  Database, Loader2, AlertCircle
 } from 'lucide-react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
@@ -54,15 +55,32 @@ const chartConfig = {
 
 export default function AdminDashboard() {
   const db = useFirestore();
+  const { user, isUserLoading: authLoading } = useUser();
   const { toast } = useToast();
   const [isSeeding, setIsSeeding] = useState(false);
 
-  // Real-time Data Fetches for Stats
-  const usersQuery = useMemoFirebase(() => collection(db, 'colleges', collegeId, 'users'), [db]);
-  const deptsQuery = useMemoFirebase(() => collection(db, 'colleges', collegeId, 'departments'), [db]);
+  // Fetch Admin Profile to gate sensitive data
+  const userProfileRef = useMemoFirebase(() => {
+    if (!db || !user?.uid) return null;
+    return doc(db, 'colleges', collegeId, 'users', user.uid);
+  }, [db, user?.uid]);
   
-  const { data: users } = useCollection(usersQuery);
-  const { data: depts } = useCollection(deptsQuery);
+  const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
+  const isAdmin = profile?.role === 'admin';
+
+  // Real-time Data Fetches - Gated by Admin Role
+  const usersQuery = useMemoFirebase(() => {
+    if (!db || !isAdmin) return null;
+    return collection(db, 'colleges', collegeId, 'users');
+  }, [db, isAdmin]);
+
+  const deptsQuery = useMemoFirebase(() => {
+    if (!db || !isAdmin) return null;
+    return collection(db, 'colleges', collegeId, 'departments');
+  }, [db, isAdmin]);
+  
+  const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
+  const { data: depts, isLoading: deptsLoading } = useCollection(deptsQuery);
 
   const studentCount = users?.filter(u => u.role === 'student').length || 0;
   const facultyCount = users?.filter(u => u.role === 'faculty').length || 0;
@@ -76,7 +94,7 @@ export default function AdminDashboard() {
   ];
 
   const handleSeedData = async () => {
-    if (!db) return;
+    if (!db || !isAdmin) return;
     setIsSeeding(true);
     try {
       await seedDatabase(db);
@@ -94,6 +112,30 @@ export default function AdminDashboard() {
       setIsSeeding(false);
     }
   };
+
+  if (authLoading || profileLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 gap-4">
+        <Loader2 className="animate-spin h-10 w-10 text-primary" />
+        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Synchronizing credentials...</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 gap-4 text-center">
+        <AlertCircle className="h-12 w-12 text-red-500" />
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Unauthorized Access</h2>
+          <p className="text-sm text-muted-foreground mt-1 max-w-sm">This dashboard contains restricted institutional data. Access is limited to verified system administrators.</p>
+        </div>
+        <Button variant="outline" asChild className="mt-4 rounded-xl">
+          <a href="/profile">Return to Profile</a>
+        </Button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-12">

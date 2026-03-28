@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -10,15 +11,15 @@ import { Label } from '@/components/ui/label';
 import { 
   Search, Plus, Mail, BookOpen, 
   MessageSquare, Edit3, MoreHorizontal, 
-  Briefcase, CheckCircle2, Loader2 
+  Briefcase, CheckCircle2, Loader2, AlertCircle 
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
 const collegeId = 'study-connect-college';
 
@@ -37,9 +38,26 @@ export default function FacultyManagementPage() {
   const [selectedFaculty, setSelectedFaculty] = useState<any>(null);
   
   const firestore = useFirestore();
+  const { user, isUserLoading: authLoading } = useUser();
 
-  const usersQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'users'), [firestore]);
-  const deptsQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'departments'), [firestore]);
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
+  }, [firestore, user?.uid]);
+  
+  const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
+  const isAdmin = profile?.role === 'admin';
+
+  // Role-gated queries
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore || !isAdmin) return null;
+    return collection(firestore, 'colleges', collegeId, 'users');
+  }, [firestore, isAdmin]);
+
+  const deptsQuery = useMemoFirebase(() => {
+    if (!firestore || !isAdmin) return null;
+    return collection(firestore, 'colleges', collegeId, 'departments');
+  }, [firestore, isAdmin]);
 
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
   const { data: departments } = useCollection(deptsQuery);
@@ -50,6 +68,27 @@ export default function FacultyManagementPage() {
     `${f.firstName} ${f.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
     f.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (authLoading || profileLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 gap-4">
+        <Loader2 className="animate-spin h-8 w-8 text-primary" />
+        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Authenticating session...</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 gap-4 text-center">
+        <AlertCircle className="h-12 w-12 text-red-500" />
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Unauthorized</h2>
+          <p className="text-sm text-muted-foreground mt-1 max-w-sm">The faculty directory is a protected administrative module. Only verified admins can manage staff assignments.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-12">

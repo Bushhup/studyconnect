@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -12,7 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { 
   Search, 
@@ -22,7 +23,8 @@ import {
   TrendingUp,
   Clock,
   BookOpen,
-  Loader2
+  Loader2,
+  AlertCircle
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,21 +34,30 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
 const collegeId = 'study-connect-college';
 
 export default function StudentManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const firestore = useFirestore();
+  const { user, isUserLoading: authLoading } = useUser();
+
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
+  }, [firestore, user?.uid]);
+  
+  const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
+  const isAdmin = profile?.role === 'admin';
 
   const studentsQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
+    if (!firestore || !isAdmin) return null;
     return collection(firestore, 'colleges', collegeId, 'users');
-  }, [firestore]);
+  }, [firestore, isAdmin]);
 
-  const { data: users, isLoading } = useCollection(studentsQuery);
+  const { data: users, isLoading: collectionLoading } = useCollection(studentsQuery);
   const students = users?.filter(u => u.role === 'student') || [];
 
   const filteredStudents = students.filter(s => 
@@ -54,6 +65,27 @@ export default function StudentManagementPage() {
     s.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (authLoading || profileLoading) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 gap-4">
+        <Loader2 className="animate-spin h-10 w-10 text-primary" />
+        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Authenticating session...</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center p-20 gap-4 text-center">
+        <AlertCircle className="h-12 w-12 text-red-500" />
+        <div>
+          <h2 className="text-xl font-bold text-slate-800">Access Restricted</h2>
+          <p className="text-sm text-muted-foreground mt-1 max-w-sm">The student directory contains private academic records and is only accessible to verified administrators.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8 pb-12">
@@ -107,7 +139,7 @@ export default function StudentManagementPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {isLoading ? (
+          {collectionLoading ? (
             <div className="flex flex-col items-center justify-center p-20 gap-4">
               <Loader2 className="animate-spin h-8 w-8 text-primary" />
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Syncing records...</p>
