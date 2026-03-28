@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -6,7 +5,7 @@ import Link from 'next/link';
 import { 
   ArrowRight, BookOpen, FlaskConical, Library, 
   Medal, Users, Dumbbell, Quote, Cpu, Palette, 
-  Briefcase 
+  Briefcase, Loader2 
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
@@ -14,8 +13,10 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { placeholderImages } from '@/lib/placeholder-images';
 import { motion } from 'framer-motion';
+import { useFirestore, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
-const stats = [
+const DEFAULT_STATS = [
   { value: '100+', label: 'Programs', icon: BookOpen },
   { value: '5000+', label: 'Students', icon: Users },
   { value: '50+', label: 'Research Labs', icon: FlaskConical },
@@ -98,9 +99,24 @@ const staggerContainer = {
   viewport: { once: true }
 };
 
+const collegeId = 'study-connect-college';
+
 export default function Home() {
+  const firestore = useFirestore();
+  const profileRef = useMemoFirebase(() => doc(firestore, 'colleges', collegeId), [firestore]);
+  const { data: profile, isLoading } = useDoc(profileRef);
+
   const heroImage = placeholderImages.find(p => p.id === 'home-hero');
   const aboutImage = placeholderImages.find(p => p.id === 'about-us-image');
+
+  // Parse stats from cloud or use defaults
+  const displayStats = profile?.statisticHighlights?.length 
+    ? profile.statisticHighlights.map((s: string, i: number) => ({
+        value: s.split(' ')[0],
+        label: s.split(' ').slice(1).join(' '),
+        icon: DEFAULT_STATS[i % DEFAULT_STATS.length].icon
+      }))
+    : DEFAULT_STATS;
 
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] overflow-hidden">
@@ -132,10 +148,10 @@ export default function Home() {
               transition={{ duration: 0.8, delay: 0.2 }}
             >
               <h1 className="text-5xl md:text-8xl font-headline font-bold tracking-tight mb-6">
-                StudyConnect
+                {profile?.name || 'StudyConnect'}
               </h1>
               <p className="mt-4 max-w-3xl mx-auto text-xl md:text-2xl font-body opacity-90 leading-relaxed">
-                Connecting Minds, Building Futures. Discover a place where innovation and tradition meet to create the leaders of tomorrow.
+                {profile?.tagline || 'Connecting Minds, Building Futures. Discover a place where innovation and tradition meet to create the leaders of tomorrow.'}
               </p>
               <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-6">
                 <Button asChild size="lg" className="font-headline h-14 px-10 text-lg rounded-full shadow-2xl shadow-primary/20">
@@ -160,7 +176,7 @@ export default function Home() {
               viewport={{ once: true }}
               className="grid grid-cols-2 md:grid-cols-4 gap-8"
             >
-              {stats.map((stat) => (
+              {displayStats.map((stat: any) => (
                 <motion.div key={stat.label} variants={fadeInUp} className="text-center group">
                   <div className="mx-auto h-16 w-16 bg-primary/5 rounded-2xl flex items-center justify-center group-hover:bg-primary transition-colors duration-500">
                     <stat.icon className="h-8 w-8 text-primary group-hover:text-white transition-colors duration-500" strokeWidth={1.5} />
@@ -316,7 +332,7 @@ export default function Home() {
                     Founded on the principles of innovation and community, StudyConnect has been a beacon of higher learning for over a century. We are dedicated to nurturing the next generation of global leaders.
                   </p>
                   <p>
-                    Our vibrant campus life and world-class faculty create an environment where students thrive academically and professionally. We believe in "learning by doing," providing ample opportunities for hands-on research and world-class problem-solving.
+                    {profile?.overview || 'Our vibrant campus life and world-class faculty create an environment where students thrive academically and professionally. We believe in "learning by doing," providing ample opportunities for hands-on research and world-class problem-solving.'}
                   </p>
                 </div>
                 <div className="mt-10">
