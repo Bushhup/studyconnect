@@ -23,18 +23,21 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { useAppTheme } from '@/components/theme-provider';
+import { useAppTheme, type Theme } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 
 const collegeId = 'study-connect-college';
 
-const themes = [
+const themes: { id: Theme; name: string; color: string }[] = [
   { id: 'default', name: 'Ocean Blue', color: 'bg-blue-500' },
   { id: 'emerald', name: 'Forest Green', color: 'bg-emerald-500' },
-  { id: 'midnight', name: 'Midnight Indigo', color: 'bg-indigo-600' },
-  { id: 'sunset', name: 'Golden Sunset', color: 'bg-amber-500' },
+  { id: 'midnight', name: 'Midnight Deep', color: 'bg-indigo-600' },
+  { id: 'sunset', name: 'Golden Sun', color: 'bg-amber-500' },
   { id: 'rose', name: 'Velvet Rose', color: 'bg-rose-500' },
-] as const;
+  { id: 'white', name: 'Paper White', color: 'bg-white border' },
+  { id: 'black', name: 'Stellar Black', color: 'bg-slate-950' },
+  { id: 'navy', name: 'Deep Navy', color: 'bg-blue-900' },
+];
 
 export default function FacultySettings() {
   const { toast } = useToast();
@@ -99,10 +102,10 @@ export default function FacultySettings() {
            <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
               <CardHeader>
                  <CardTitle className="text-lg">Select Portal Theme</CardTitle>
-                 <CardDescription>Personalize your teaching workspace with a custom color palette.</CardDescription>
+                 <CardDescription>Personalize your teaching workspace with a custom color palette and background.</CardDescription>
               </CardHeader>
               <CardContent>
-                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                     {themes.map((t) => (
                       <button
                         key={t.id}
