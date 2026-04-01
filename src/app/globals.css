@@ -30,6 +30,35 @@
     --chart-4: 38 92% 50%;
     --chart-5: 0 84% 60%;
   }
+
+  [data-theme='emerald'] {
+    --primary: 160 84% 39%;
+    --ring: 160 84% 39%;
+    --secondary: 142 71% 45%;
+    --accent: 190 90% 40%;
+  }
+
+  [data-theme='midnight'] {
+    --primary: 262 83% 58%;
+    --ring: 262 83% 58%;
+    --secondary: 221 83% 53%;
+    --accent: 280 80% 50%;
+  }
+
+  [data-theme='sunset'] {
+    --primary: 38 92% 50%;
+    --ring: 38 92% 50%;
+    --secondary: 25 95% 53%;
+    --accent: 45 90% 45%;
+  }
+
+  [data-theme='rose'] {
+    --primary: 346 84% 61%;
+    --ring: 346 84% 61%;
+    --secondary: 322 81% 55%;
+    --accent: 10 80% 50%;
+  }
+
   .dark {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
@@ -58,12 +87,12 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground selection:bg-primary/20;
+    @apply bg-background text-foreground selection:bg-primary/20 transition-colors duration-300;
   }
 }
 
 .gradient-blue-purple {
-  background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
+  background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--secondary)) 100%);
 }
 
 .gradient-purple-pink {

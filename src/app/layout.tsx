@@ -6,6 +6,7 @@ import { Header } from '@/components/header';
 import { Footer } from '@/components/footer';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { ThemeProvider } from '@/components/theme-provider';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://studyconnect-taupe.vercel.app'),
@@ -53,11 +54,13 @@ export default function RootLayout({
         )}
       >
         <FirebaseClientProvider>
-          <FirebaseErrorListener />
-          <Header />
-          <main className="flex-grow">{children}</main>
-          <Footer />
-          <Toaster />
+          <ThemeProvider>
+            <FirebaseErrorListener />
+            <Header />
+            <main className="flex-grow">{children}</main>
+            <Footer />
+            <Toaster />
+          </ThemeProvider>
         </FirebaseClientProvider>
       </body>
     </html>

@@ -15,7 +15,7 @@ import { Separator } from '@/components/ui/separator';
 import { 
   UserCircle, Mail, Building2, Bell, 
   Shield, Key, Globe, LogOut, 
-  Camera, CheckCircle2, ChevronRight, Loader2
+  Camera, CheckCircle2, ChevronRight, Loader2, Palette, Check
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,14 +23,25 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
+import { useAppTheme } from '@/components/theme-provider';
+import { cn } from '@/lib/utils';
 
 const collegeId = 'study-connect-college';
+
+const themes = [
+  { id: 'default', name: 'Ocean Blue', color: 'bg-blue-500' },
+  { id: 'emerald', name: 'Forest Green', color: 'bg-emerald-500' },
+  { id: 'midnight', name: 'Midnight Indigo', color: 'bg-indigo-600' },
+  { id: 'sunset', name: 'Golden Sunset', color: 'bg-amber-500' },
+  { id: 'rose', name: 'Velvet Rose', color: 'bg-rose-500' },
+] as const;
 
 export default function FacultySettings() {
   const { toast } = useToast();
   const router = useRouter();
   const { auth, user } = useFirebase();
   const firestore = useFirestore();
+  const { theme, setTheme } = useAppTheme();
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -70,14 +81,14 @@ export default function FacultySettings() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="space-y-1">
-           <Button variant="secondary" className="w-full justify-start gap-3 bg-primary/10 text-primary font-bold rounded-xl h-11">
+           <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground rounded-xl h-11">
               <UserCircle className="h-4 w-4" /> Professional Profile
+           </Button>
+           <Button variant="secondary" className="w-full justify-start gap-3 bg-primary/10 text-primary font-bold rounded-xl h-11">
+              <Palette className="h-4 w-4" /> Visual Theme
            </Button>
            <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground rounded-xl h-11">
               <Bell className="h-4 w-4" /> Notification Rules
-           </Button>
-           <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground rounded-xl h-11">
-              <Shield className="h-4 w-4" /> Security & Privacy
            </Button>
            <Button variant="ghost" className="w-full justify-start gap-3 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-11" onClick={handleLogout}>
               <LogOut className="h-4 w-4" /> Logout Session
@@ -85,6 +96,37 @@ export default function FacultySettings() {
         </div>
 
         <div className="lg:col-span-3 space-y-6">
+           <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
+              <CardHeader>
+                 <CardTitle className="text-lg">Select Portal Theme</CardTitle>
+                 <CardDescription>Personalize your teaching workspace with a custom color palette.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    {themes.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => setTheme(t.id)}
+                        className={cn(
+                          "group relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all",
+                          theme === t.id ? "border-primary bg-primary/5" : "border-slate-100 hover:border-slate-200 bg-white"
+                        )}
+                      >
+                        <div className={cn("h-10 w-10 rounded-full shadow-inner", t.color)} />
+                        <span className={cn("text-[10px] font-bold uppercase tracking-tight", theme === t.id ? "text-primary" : "text-slate-500")}>
+                          {t.name}
+                        </span>
+                        {theme === t.id && (
+                          <div className="absolute -top-2 -right-1 bg-primary text-white p-1 rounded-full shadow-lg">
+                            <Check className="h-3 w-3" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                 </div>
+              </CardContent>
+           </Card>
+
            <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
               <CardHeader className="pb-6 border-b border-slate-50">
                  <CardTitle className="text-lg">Faculty Identity</CardTitle>
@@ -112,14 +154,6 @@ export default function FacultySettings() {
                           <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Email Address</Label>
                           <Input defaultValue={facultyEmail} readOnly className="bg-slate-50 border-none h-11 rounded-xl text-muted-foreground" />
                        </div>
-                       <div className="space-y-2">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Department</Label>
-                          <Input defaultValue={profile?.departmentId || "Engineering & Technology"} readOnly className="bg-slate-50 border-none h-11 rounded-xl text-muted-foreground" />
-                       </div>
-                       <div className="space-y-2">
-                          <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Staff ID</Label>
-                          <Input defaultValue={profile?.id?.slice(0, 8).toUpperCase() || "F-2024-882"} readOnly className="bg-slate-50 border-none h-11 rounded-xl text-muted-foreground" />
-                       </div>
                     </div>
                  </div>
               </CardContent>
@@ -146,39 +180,11 @@ export default function FacultySettings() {
                     </div>
                     <Switch defaultChecked />
                  </div>
-                 <Separator className="bg-slate-50" />
-                 <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                       <Label className="text-sm font-bold">Show Student Performance Badges</Label>
-                       <p className="text-xs text-muted-foreground">Display performance indicators in the student directory.</p>
-                    </div>
-                    <Switch defaultChecked />
-                 </div>
               </CardContent>
               <CardContent className="pt-0 flex justify-end">
                  <Button onClick={handleSave} className="gap-2 rounded-xl shadow-lg shadow-primary/20 font-bold uppercase tracking-tight h-11 px-8">
                     <CheckCircle2 className="h-4 w-4" /> Save Preferences
                  </Button>
-              </CardContent>
-           </Card>
-
-           <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
-              <CardHeader>
-                 <CardTitle className="text-lg">Security & Access</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                 <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-primary/20 transition-all cursor-pointer">
-                    <div className="flex items-center gap-4">
-                       <div className="p-2 bg-white rounded-xl shadow-sm">
-                          <Key className="h-5 w-5 text-slate-400" />
-                       </div>
-                       <div>
-                          <p className="text-sm font-bold text-slate-800">Change Portal Password</p>
-                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Last changed 3 months ago</p>
-                       </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-primary" />
-                 </div>
               </CardContent>
            </Card>
         </div>

@@ -8,7 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { 
   UserCircle, Bell, Shield, Key, 
   Globe, LogOut, Camera, CheckCircle2, 
-  ChevronRight, Smartphone, Eye
+  ChevronRight, Smartphone, Eye, Palette, Check
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,11 +16,22 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
+import { useAppTheme } from '@/components/theme-provider';
+import { cn } from '@/lib/utils';
+
+const themes = [
+  { id: 'default', name: 'Ocean Blue', color: 'bg-blue-500' },
+  { id: 'emerald', name: 'Forest Green', color: 'bg-emerald-500' },
+  { id: 'midnight', name: 'Midnight Indigo', color: 'bg-indigo-600' },
+  { id: 'sunset', name: 'Golden Sunset', color: 'bg-amber-500' },
+  { id: 'rose', name: 'Velvet Rose', color: 'bg-rose-500' },
+] as const;
 
 export default function StudentSettings() {
   const { toast } = useToast();
   const router = useRouter();
   const { auth } = useFirebase();
+  const { theme, setTheme } = useAppTheme();
 
   const handleSave = () => {
     toast({ title: 'Preferences Synchronized', description: 'Your portal settings have been updated globally.' });
@@ -41,14 +52,14 @@ export default function StudentSettings() {
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
         <div className="space-y-1">
-           <Button variant="secondary" className="w-full justify-start gap-3 bg-primary/10 text-primary font-bold rounded-xl h-11">
+           <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground rounded-xl h-11">
               <UserCircle className="h-4 w-4" /> Portal Profile
+           </Button>
+           <Button variant="secondary" className="w-full justify-start gap-3 bg-primary/10 text-primary font-bold rounded-xl h-11">
+              <Palette className="h-4 w-4" /> Experience Theme
            </Button>
            <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground rounded-xl h-11">
               <Bell className="h-4 w-4" /> Alerts & Rules
-           </Button>
-           <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground rounded-xl h-11">
-              <Shield className="h-4 w-4" /> Privacy Controls
            </Button>
            <Button variant="ghost" className="w-full justify-start gap-3 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-11" onClick={handleLogout}>
               <LogOut className="h-4 w-4" /> Exit Portal
@@ -56,6 +67,37 @@ export default function StudentSettings() {
         </div>
 
         <div className="lg:col-span-3 space-y-6">
+           <Card className="border-none shadow-sm bg-white rounded-[2.5rem] overflow-hidden">
+              <CardHeader>
+                 <CardTitle className="text-lg font-headline font-bold">Personalize Experience</CardTitle>
+                 <CardDescription>Select a color theme that suits your style. This will reflect across your entire student workspace.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                    {themes.map((t) => (
+                      <button
+                        key={t.id}
+                        onClick={() => setTheme(t.id)}
+                        className={cn(
+                          "group relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all",
+                          theme === t.id ? "border-primary bg-primary/5" : "border-slate-100 hover:border-slate-200 bg-white"
+                        )}
+                      >
+                        <div className={cn("h-10 w-10 rounded-full shadow-inner", t.color)} />
+                        <span className={cn("text-[10px] font-bold uppercase tracking-tight", theme === t.id ? "text-primary" : "text-slate-500")}>
+                          {t.name}
+                        </span>
+                        {theme === t.id && (
+                          <div className="absolute -top-2 -right-1 bg-primary text-white p-1 rounded-full shadow-lg">
+                            <Check className="h-3 w-3" />
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                 </div>
+              </CardContent>
+           </Card>
+
            <Card className="border-none shadow-sm bg-white rounded-[2.5rem] overflow-hidden">
               <CardHeader className="pb-6 border-b border-slate-50">
                  <CardTitle className="text-lg font-headline font-bold">Personal Identity</CardTitle>
@@ -107,39 +149,11 @@ export default function StudentSettings() {
                     </div>
                     <Switch defaultChecked />
                  </div>
-                 <Separator className="bg-slate-50" />
-                 <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                       <Label className="text-sm font-bold">Attendance Low Warning</Label>
-                       <p className="text-xs text-muted-foreground">Receive critical alerts if attendance falls below 75%.</p>
-                    </div>
-                    <Switch defaultChecked />
-                 </div>
               </CardContent>
               <CardContent className="pt-0 flex justify-end">
                  <Button onClick={handleSave} className="gap-2 rounded-xl shadow-lg shadow-primary/20 font-bold uppercase tracking-tight h-11 px-8">
                     <CheckCircle2 className="h-4 w-4" /> Save Preferences
                  </Button>
-              </CardContent>
-           </Card>
-
-           <Card className="border-none shadow-sm bg-white rounded-[2.5rem] overflow-hidden">
-              <CardHeader>
-                 <CardTitle className="text-lg font-headline font-bold">App & Device</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                 <div className="flex items-center justify-between p-4 rounded-2xl bg-slate-50 border border-slate-100 group hover:border-primary/20 transition-all cursor-pointer">
-                    <div className="flex items-center gap-4">
-                       <div className="p-2 bg-white rounded-xl shadow-sm">
-                          <Smartphone className="h-5 w-5 text-slate-400" />
-                       </div>
-                       <div>
-                          <p className="text-sm font-bold text-slate-800">Mobile Sync</p>
-                          <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">Connected to iPhone 15 Pro</p>
-                       </div>
-                    </div>
-                    <ChevronRight className="h-4 w-4 text-slate-300 group-hover:text-primary" />
-                 </div>
               </CardContent>
            </Card>
         </div>
