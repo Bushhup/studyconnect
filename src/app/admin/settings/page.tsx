@@ -5,30 +5,45 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Shield, Bell, Globe, Database, UserCog, Mail, Key, Palette, Check } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  Shield, Bell, Database, Palette, Check, 
+  Layout, Type, Sparkles, Monitor
+} from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useAppTheme, type Theme } from '@/components/theme-provider';
+import { useAppTheme, type BackgroundTheme, type PrimaryTheme, type TextTheme } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 
-const themes: { id: Theme; name: string; color: string }[] = [
-  { id: 'default', name: 'Ocean Blue', color: 'bg-blue-500' },
-  { id: 'emerald', name: 'Forest Green', color: 'bg-emerald-500' },
-  { id: 'midnight', name: 'Midnight Deep', color: 'bg-indigo-600' },
-  { id: 'sunset', name: 'Golden Sun', color: 'bg-amber-500' },
-  { id: 'rose', name: 'Velvet Rose', color: 'bg-rose-500' },
+const bgThemes: { id: BackgroundTheme; name: string; color: string }[] = [
+  { id: 'default', name: 'Cloud Gray', color: 'bg-[#F1F5F9]' },
   { id: 'white', name: 'Paper White', color: 'bg-white border' },
-  { id: 'black', name: 'Stellar Black', color: 'bg-slate-950' },
-  { id: 'navy', name: 'Deep Navy', color: 'bg-blue-900' },
+  { id: 'navy', name: 'Midnight Blue', color: 'bg-[#0F172A]' },
+  { id: 'black', name: 'Absolute Black', color: 'bg-black' },
+  { id: 'slate', name: 'Dark Slate', color: 'bg-[#334155]' },
+];
+
+const primaryThemes: { id: PrimaryTheme; name: string; color: string }[] = [
+  { id: 'blue', name: 'Ocean Blue', color: 'bg-blue-500' },
+  { id: 'emerald', name: 'Forest Green', color: 'bg-emerald-500' },
+  { id: 'violet', name: 'Deep Purple', color: 'bg-violet-600' },
+  { id: 'amber', name: 'Golden Sun', color: 'bg-amber-500' },
+  { id: 'rose', name: 'Velvet Rose', color: 'bg-rose-500' },
+];
+
+const textThemes: { id: TextTheme; name: string; desc: string }[] = [
+  { id: 'soft', name: 'Soft Gray', desc: 'Gentle on the eyes for long reading sessions.' },
+  { id: 'standard', name: 'Modern Sans', desc: 'Balanced contrast for daily management.' },
+  { id: 'vivid', name: 'High Contrast', desc: 'Maximum readability for data-heavy views.' },
 ];
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useAppTheme();
+  const { theme, setBg, setPrimary, setText } = useAppTheme();
 
   return (
     <div className="space-y-8 pb-12">
       <div>
         <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">System Configuration</h1>
-        <p className="text-muted-foreground mt-1">Control institutional parameters, security policies, and portal features.</p>
+        <p className="text-muted-foreground mt-1">Control institutional parameters, modular themes, and portal features.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -37,84 +52,132 @@ export default function SettingsPage() {
               <Shield className="h-4 w-4" /> Security & Privacy
            </Button>
            <Button variant="secondary" className="w-full justify-start gap-3 bg-primary/10 text-primary font-bold rounded-xl">
-              <Palette className="h-4 w-4" /> Portal Personalization
+              <Palette className="h-4 w-4" /> Visual Builder
            </Button>
            <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground rounded-xl">
-              <Bell className="h-4 w-4" /> Notification Rules
+              <Bell className="h-4 w-4" /> Notifications
            </Button>
            <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground rounded-xl">
-              <Database className="h-4 w-4" /> Data Management
+              <Database className="h-4 w-4" /> Data & Sync
            </Button>
         </div>
 
         <div className="lg:col-span-3 space-y-6">
-           <Card className="border-none shadow-sm bg-white rounded-[2rem]">
-              <CardHeader>
-                 <CardTitle className="text-lg">Visual Identity</CardTitle>
-                 <CardDescription>Customize the interface colors and background across all administrative portals.</CardDescription>
+           <Card className="border-none shadow-sm bg-white rounded-[2rem] overflow-hidden">
+              <CardHeader className="pb-0">
+                 <CardTitle className="text-xl flex items-center gap-2">
+                   <Sparkles className="h-5 w-5 text-primary" /> Visual Identity Builder
+                 </CardTitle>
+                 <CardDescription>Mix and match visual parameters to create your custom workspace environment.</CardDescription>
               </CardHeader>
-              <CardContent>
-                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {themes.map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() => setTheme(t.id)}
-                        className={cn(
-                          "group relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all",
-                          theme === t.id ? "border-primary bg-primary/5" : "border-slate-100 hover:border-slate-200 bg-white"
-                        )}
-                      >
-                        <div className={cn("h-10 w-10 rounded-full shadow-inner", t.color)} />
-                        <span className={cn("text-[10px] font-bold uppercase tracking-tight", theme === t.id ? "text-primary" : "text-slate-500")}>
-                          {t.name}
-                        </span>
-                        {theme === t.id && (
-                          <div className="absolute -top-2 -right-1 bg-primary text-white p-1 rounded-full shadow-lg">
-                            <Check className="h-3 w-3" />
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                 </div>
+              <CardContent className="pt-6">
+                 <Tabs defaultValue="background" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 h-12 bg-slate-50 p-1 rounded-xl mb-8">
+                       <TabsTrigger value="background" className="gap-2 rounded-lg">
+                         <Monitor className="h-4 w-4" /> 1. Background
+                       </TabsTrigger>
+                       <TabsTrigger value="common" className="gap-2 rounded-lg">
+                         <Type className="h-4 w-4" /> 2. Common Text
+                       </TabsTrigger>
+                       <TabsTrigger value="special" className="gap-2 rounded-lg">
+                         <Layout className="h-4 w-4" /> 3. Special Accents
+                       </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="background" className="space-y-6 animate-in fade-in-50 duration-500">
+                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                          {bgThemes.map((t) => (
+                            <button
+                              key={t.id}
+                              onClick={() => setBg(t.id)}
+                              className={cn(
+                                "group relative flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all",
+                                theme.bg === t.id ? "border-primary bg-primary/5" : "border-slate-100 hover:border-slate-200 bg-white"
+                              )}
+                            >
+                              <div className={cn("h-12 w-12 rounded-full shadow-inner ring-4 ring-offset-2 ring-transparent group-hover:ring-primary/10", t.color)} />
+                              <span className={cn("text-[10px] font-bold uppercase tracking-widest", theme.bg === t.id ? "text-primary" : "text-slate-500")}>
+                                {t.name}
+                              </span>
+                              {theme.bg === t.id && (
+                                <div className="absolute top-2 right-2 bg-primary text-white p-1 rounded-full shadow-lg">
+                                  <Check className="h-3 w-3" />
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                       </div>
+                    </TabsContent>
+
+                    <TabsContent value="common" className="space-y-6 animate-in fade-in-50 duration-500">
+                       <div className="grid gap-4">
+                          {textThemes.map((t) => (
+                            <button
+                              key={t.id}
+                              onClick={() => setText(t.id)}
+                              className={cn(
+                                "flex items-center justify-between p-5 rounded-2xl border-2 transition-all text-left",
+                                theme.text === t.id ? "border-primary bg-primary/5" : "border-slate-100 hover:border-slate-200 bg-white"
+                              )}
+                            >
+                              <div className="space-y-1">
+                                <p className={cn("text-base font-bold", theme.text === t.id ? "text-primary" : "text-slate-800")}>{t.name}</p>
+                                <p className="text-xs text-muted-foreground">{t.desc}</p>
+                              </div>
+                              {theme.text === t.id && <Check className="h-5 w-5 text-primary" />}
+                            </button>
+                          ))}
+                       </div>
+                    </TabsContent>
+
+                    <TabsContent value="special" className="space-y-6 animate-in fade-in-50 duration-500">
+                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4">
+                          {primaryThemes.map((t) => (
+                            <button
+                              key={t.id}
+                              onClick={() => setPrimary(t.id)}
+                              className={cn(
+                                "group relative flex flex-col items-center gap-3 p-6 rounded-2xl border-2 transition-all",
+                                theme.primary === t.id ? "border-primary bg-primary/5" : "border-slate-100 hover:border-slate-200 bg-white"
+                              )}
+                            >
+                              <div className={cn("h-12 w-12 rounded-xl shadow-lg rotate-3 group-hover:rotate-0 transition-transform", t.color)} />
+                              <span className={cn("text-[10px] font-bold uppercase tracking-widest", theme.primary === t.id ? "text-primary" : "text-slate-500")}>
+                                {t.name}
+                              </span>
+                              {theme.primary === t.id && (
+                                <div className="absolute top-2 right-2 bg-primary text-white p-1 rounded-full shadow-lg">
+                                  <Check className="h-3 w-3" />
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                       </div>
+                    </TabsContent>
+                 </Tabs>
               </CardContent>
            </Card>
 
            <Card className="border-none shadow-sm bg-white rounded-[2rem]">
               <CardHeader>
-                 <CardTitle className="text-lg">Security Controls</CardTitle>
-                 <CardDescription>Configure global authentication and session policies.</CardDescription>
+                 <CardTitle className="text-lg">Global Parameters</CardTitle>
+                 <CardDescription>System-wide security and accessibility settings.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                  <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                       <Label className="text-sm font-bold">Two-Factor Authentication (2FA)</Label>
-                       <p className="text-xs text-muted-foreground">Require additional verification for administrative access.</p>
+                       <Label className="text-sm font-bold">2FA Authorization</Label>
+                       <p className="text-xs text-muted-foreground">Require mobile verification for admin changes.</p>
                     </div>
                     <Switch defaultChecked />
                  </div>
                  <Separator />
                  <div className="flex items-center justify-between">
                     <div className="space-y-0.5">
-                       <Label className="text-sm font-bold">Public Student Registration</Label>
-                       <p className="text-xs text-muted-foreground">Allow students to create accounts without manual provisioning.</p>
+                       <Label className="text-sm font-bold">Public Student Directory</Label>
+                       <p className="text-xs text-muted-foreground">Allow searching student records via public homepage.</p>
                     </div>
                     <Switch />
-                 </div>
-              </CardContent>
-           </Card>
-
-           <Card className="border-none shadow-sm bg-white rounded-[2rem]">
-              <CardHeader>
-                 <CardTitle className="text-lg">Integration Keys</CardTitle>
-                 <CardDescription>API endpoints and external service connection strings.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                 <div className="space-y-2">
-                    <Label className="text-xs font-bold uppercase text-muted-foreground tracking-widest">SMTP Service Key</Label>
-                    <div className="flex gap-2">
-                       <Input type="password" value="********************************" readOnly className="bg-slate-50 border-none font-mono h-11" />
-                       <Button variant="outline" size="sm" className="font-bold h-11 rounded-xl">Reveal</Button>
-                    </div>
                  </div>
               </CardContent>
               <CardContent className="pt-0 flex justify-end">

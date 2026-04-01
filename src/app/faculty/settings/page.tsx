@@ -12,10 +12,12 @@ import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   UserCircle, Mail, Building2, Bell, 
-  Shield, Key, Globe, LogOut, 
-  Camera, CheckCircle2, ChevronRight, Loader2, Palette, Check
+  Shield, Key, Globe, LogOut, Palette,
+  Camera, CheckCircle2, Loader2, Check,
+  Layout, Type, Monitor
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,20 +25,23 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { useAppTheme, type Theme } from '@/components/theme-provider';
+import { useAppTheme, type BackgroundTheme, type PrimaryTheme, type TextTheme } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 
 const collegeId = 'study-connect-college';
 
-const themes: { id: Theme; name: string; color: string }[] = [
-  { id: 'default', name: 'Ocean Blue', color: 'bg-blue-500' },
-  { id: 'emerald', name: 'Forest Green', color: 'bg-emerald-500' },
-  { id: 'midnight', name: 'Midnight Deep', color: 'bg-indigo-600' },
-  { id: 'sunset', name: 'Golden Sun', color: 'bg-amber-500' },
-  { id: 'rose', name: 'Velvet Rose', color: 'bg-rose-500' },
+const bgThemes: { id: BackgroundTheme; name: string; color: string }[] = [
+  { id: 'default', name: 'Cloud Gray', color: 'bg-[#F1F5F9]' },
   { id: 'white', name: 'Paper White', color: 'bg-white border' },
-  { id: 'black', name: 'Stellar Black', color: 'bg-slate-950' },
-  { id: 'navy', name: 'Deep Navy', color: 'bg-blue-900' },
+  { id: 'navy', name: 'Midnight Blue', color: 'bg-[#0F172A]' },
+  { id: 'black', name: 'Absolute Black', color: 'bg-black' },
+];
+
+const primaryThemes: { id: PrimaryTheme; name: string; color: string }[] = [
+  { id: 'blue', name: 'Ocean Blue', color: 'bg-blue-500' },
+  { id: 'emerald', name: 'Forest Green', color: 'bg-emerald-500' },
+  { id: 'violet', name: 'Deep Purple', color: 'bg-violet-600' },
+  { id: 'amber', name: 'Golden Sun', color: 'bg-amber-500' },
 ];
 
 export default function FacultySettings() {
@@ -44,7 +49,7 @@ export default function FacultySettings() {
   const router = useRouter();
   const { auth, user } = useFirebase();
   const firestore = useFirestore();
-  const { theme, setTheme } = useAppTheme();
+  const { theme, setBg, setPrimary, setText } = useAppTheme();
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -52,10 +57,6 @@ export default function FacultySettings() {
   }, [firestore, user?.uid]);
 
   const { data: profile, isLoading } = useDoc(userDocRef);
-
-  const handleSave = () => {
-    toast({ title: 'Preferences Updated', description: 'Your portal settings have been synchronized.' });
-  };
 
   const handleLogout = () => {
     signOut(auth).then(() => {
@@ -73,13 +74,12 @@ export default function FacultySettings() {
   }
 
   const facultyName = profile ? `Dr. ${profile.firstName} ${profile.lastName}` : 'Dr. Sarah Smith';
-  const facultyEmail = profile?.email || 'sarah.smith@college.edu';
 
   return (
     <div className="space-y-8 pb-12">
       <div>
         <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Portal Configuration</h1>
-        <p className="text-muted-foreground mt-1">Manage your professional profile and application preferences.</p>
+        <p className="text-muted-foreground mt-1">Personalize your teaching workspace and professional profile.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -88,10 +88,10 @@ export default function FacultySettings() {
               <UserCircle className="h-4 w-4" /> Professional Profile
            </Button>
            <Button variant="secondary" className="w-full justify-start gap-3 bg-primary/10 text-primary font-bold rounded-xl h-11">
-              <Palette className="h-4 w-4" /> Visual Theme
+              <Palette className="h-4 w-4" /> Modular Theming
            </Button>
            <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground rounded-xl h-11">
-              <Bell className="h-4 w-4" /> Notification Rules
+              <Bell className="h-4 w-4" /> Notifications
            </Button>
            <Button variant="ghost" className="w-full justify-start gap-3 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-xl h-11" onClick={handleLogout}>
               <LogOut className="h-4 w-4" /> Logout Session
@@ -101,32 +101,73 @@ export default function FacultySettings() {
         <div className="lg:col-span-3 space-y-6">
            <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
               <CardHeader>
-                 <CardTitle className="text-lg">Select Portal Theme</CardTitle>
-                 <CardDescription>Personalize your teaching workspace with a custom color palette and background.</CardDescription>
+                 <CardTitle className="text-lg">Experience Builder</CardTitle>
+                 <CardDescription>Independently configure each aspect of your portal's visual presentation.</CardDescription>
               </CardHeader>
               <CardContent>
-                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                    {themes.map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() => setTheme(t.id)}
-                        className={cn(
-                          "group relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 transition-all",
-                          theme === t.id ? "border-primary bg-primary/5" : "border-slate-100 hover:border-slate-200 bg-white"
-                        )}
-                      >
-                        <div className={cn("h-10 w-10 rounded-full shadow-inner", t.color)} />
-                        <span className={cn("text-[10px] font-bold uppercase tracking-tight", theme === t.id ? "text-primary" : "text-slate-500")}>
-                          {t.name}
-                        </span>
-                        {theme === t.id && (
-                          <div className="absolute -top-2 -right-1 bg-primary text-white p-1 rounded-full shadow-lg">
-                            <Check className="h-3 w-3" />
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                 </div>
+                 <Tabs defaultValue="background" className="w-full">
+                    <TabsList className="grid w-full grid-cols-3 h-11 bg-slate-50 p-1 rounded-xl mb-6">
+                       <TabsTrigger value="background" className="gap-2 rounded-lg text-xs">
+                         <Monitor className="h-3.5 w-3.5" /> Background
+                       </TabsTrigger>
+                       <TabsTrigger value="common" className="gap-2 rounded-lg text-xs">
+                         <Type className="h-3.5 w-3.5" /> Text Contrast
+                       </TabsTrigger>
+                       <TabsTrigger value="special" className="gap-2 rounded-lg text-xs">
+                         <Layout className="h-3.5 w-3.5" /> Special Colors
+                       </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="background" className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-in fade-in-50">
+                       {bgThemes.map((t) => (
+                          <button
+                            key={t.id}
+                            onClick={() => setBg(t.id)}
+                            className={cn(
+                              "group relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                              theme.bg === t.id ? "border-primary bg-primary/5" : "border-slate-50 hover:border-slate-100 bg-white"
+                            )}
+                          >
+                            <div className={cn("h-10 w-10 rounded-full shadow-inner", t.color)} />
+                            <span className="text-[9px] font-bold uppercase tracking-tighter text-slate-500">{t.name}</span>
+                            {theme.bg === t.id && <div className="absolute top-1 right-1 bg-primary text-white p-0.5 rounded-full"><Check className="h-2 w-2" /></div>}
+                          </button>
+                       ))}
+                    </TabsContent>
+
+                    <TabsContent value="common" className="space-y-3 animate-in fade-in-50">
+                       {['soft', 'standard', 'vivid'].map((mode) => (
+                          <button
+                            key={mode}
+                            onClick={() => setText(mode as any)}
+                            className={cn(
+                              "w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all",
+                              theme.text === mode ? "border-primary bg-primary/5" : "border-slate-50 bg-white"
+                            )}
+                          >
+                            <p className="text-sm font-bold capitalize">{mode} Intensity</p>
+                            {theme.text === mode && <Check className="h-4 w-4 text-primary" />}
+                          </button>
+                       ))}
+                    </TabsContent>
+
+                    <TabsContent value="special" className="grid grid-cols-2 sm:grid-cols-4 gap-4 animate-in fade-in-50">
+                       {primaryThemes.map((t) => (
+                          <button
+                            key={t.id}
+                            onClick={() => setPrimary(t.id)}
+                            className={cn(
+                              "group relative flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all",
+                              theme.primary === t.id ? "border-primary bg-primary/5" : "border-slate-50 hover:border-slate-100 bg-white"
+                            )}
+                          >
+                            <div className={cn("h-10 w-10 rounded-lg shadow-md", t.color)} />
+                            <span className="text-[9px] font-bold uppercase tracking-tighter text-slate-500">{t.name}</span>
+                            {theme.primary === t.id && <div className="absolute top-1 right-1 bg-primary text-white p-0.5 rounded-full"><Check className="h-2 w-2" /></div>}
+                          </button>
+                       ))}
+                    </TabsContent>
+                 </Tabs>
               </CardContent>
            </Card>
 
@@ -155,39 +196,10 @@ export default function FacultySettings() {
                        </div>
                        <div className="space-y-2">
                           <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Email Address</Label>
-                          <Input defaultValue={facultyEmail} readOnly className="bg-slate-50 border-none h-11 rounded-xl text-muted-foreground" />
+                          <Input value={profile?.email || ''} readOnly className="bg-slate-50 border-none h-11 rounded-xl text-muted-foreground" />
                        </div>
                     </div>
                  </div>
-              </CardContent>
-           </Card>
-
-           <Card className="border-none shadow-sm bg-white rounded-2xl">
-              <CardHeader>
-                 <CardTitle className="text-lg">Application Settings</CardTitle>
-                 <CardDescription>Control alerts and regional portal preferences.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                 <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                       <Label className="text-sm font-bold">Email Notifications</Label>
-                       <p className="text-xs text-muted-foreground">Receive daily summaries of student submissions.</p>
-                    </div>
-                    <Switch defaultChecked />
-                 </div>
-                 <Separator className="bg-slate-50" />
-                 <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                       <Label className="text-sm font-bold">Automatic Attendance Summary</Label>
-                       <p className="text-xs text-muted-foreground">Generate weekly attendance reports for assigned classes.</p>
-                    </div>
-                    <Switch defaultChecked />
-                 </div>
-              </CardContent>
-              <CardContent className="pt-0 flex justify-end">
-                 <Button onClick={handleSave} className="gap-2 rounded-xl shadow-lg shadow-primary/20 font-bold uppercase tracking-tight h-11 px-8">
-                    <CheckCircle2 className="h-4 w-4" /> Save Preferences
-                 </Button>
               </CardContent>
            </Card>
         </div>

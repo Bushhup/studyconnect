@@ -4,6 +4,7 @@
 
 @layer base {
   :root {
+    /* Base Neutral Variables */
     --background: 210 20% 96%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
@@ -12,17 +13,17 @@
     --popover-foreground: 222 47% 11%;
     --primary: 221 83% 53%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 262 83% 65%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 160 84% 39%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 84% 60%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222 47% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222 47% 11.2%;
+    --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 221 83% 53%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
     --radius: 0.75rem;
     --chart-1: 221 83% 53%;
     --chart-2: 262 83% 65%;
@@ -31,91 +32,93 @@
     --chart-5: 0 84% 60%;
   }
 
-  [data-theme='emerald'] {
-    --primary: 160 84% 39%;
-    --ring: 160 84% 39%;
-    --secondary: 142 71% 45%;
-    --accent: 190 90% 40%;
-  }
-
-  [data-theme='midnight'] {
-    --primary: 262 83% 58%;
-    --ring: 262 83% 58%;
-    --secondary: 221 83% 53%;
-    --accent: 280 80% 50%;
-  }
-
-  [data-theme='sunset'] {
-    --primary: 38 92% 50%;
-    --ring: 38 92% 50%;
-    --secondary: 25 95% 53%;
-    --accent: 45 90% 45%;
-  }
-
-  [data-theme='rose'] {
-    --primary: 346 84% 61%;
-    --ring: 346 84% 61%;
-    --secondary: 322 81% 55%;
-    --accent: 10 80% 50%;
-  }
-
-  [data-theme='white'] {
+  /* 1. WORKSPACE BACKGROUNDS */
+  [data-bg='white'] {
     --background: 0 0% 100%;
+    --card: 0 0% 100%;
     --muted: 210 40% 98%;
     --border: 214 32% 91%;
   }
 
-  [data-theme='black'] {
+  [data-bg='black'] {
     --background: 0 0% 0%;
     --foreground: 210 40% 98%;
     --card: 0 0% 5%;
     --card-foreground: 210 40% 98%;
     --popover: 0 0% 5%;
     --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --secondary: 262 83% 75%;
     --muted: 0 0% 10%;
     --muted-foreground: 215 20% 65%;
     --border: 0 0% 15%;
     --input: 0 0% 15%;
   }
 
-  [data-theme='navy'] {
+  [data-bg='navy'] {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
     --card: 222 47% 13%;
     --card-foreground: 210 40% 98%;
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217 91% 60%;
     --muted: 217 33% 17%;
     --muted-foreground: 215 20% 65%;
     --border: 217 33% 17%;
     --input: 217 33% 17%;
   }
 
-  .dark {
-    --background: 222 47% 11%;
+  [data-bg='slate'] {
+    --background: 215 25% 27%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 13%;
+    --card: 215 25% 30%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217 91% 60%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 262 83% 75%;
-    --secondary-foreground: 222 47% 11%;
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 160 84% 45%;
-    --accent-foreground: 222 47% 11%;
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 224 76% 48%;
+    --muted: 215 25% 20%;
+    --border: 215 25% 35%;
+  }
+
+  /* 2. SPECIAL TEXT (ACCENT COLORS) */
+  [data-primary='blue'] {
+    --primary: 221 83% 53%;
+    --ring: 221 83% 53%;
+    --chart-1: 221 83% 53%;
+  }
+
+  [data-primary='emerald'] {
+    --primary: 160 84% 39%;
+    --ring: 160 84% 39%;
+    --chart-1: 160 84% 39%;
+  }
+
+  [data-primary='violet'] {
+    --primary: 262 83% 58%;
+    --ring: 262 83% 58%;
+    --chart-1: 262 83% 58%;
+  }
+
+  [data-primary='amber'] {
+    --primary: 38 92% 50%;
+    --ring: 38 92% 50%;
+    --chart-1: 38 92% 50%;
+  }
+
+  [data-primary='rose'] {
+    --primary: 346 84% 61%;
+    --ring: 346 84% 61%;
+    --chart-1: 346 84% 61%;
+  }
+
+  /* 3. COMMON TEXT CONTRAST */
+  [data-text='soft'] {
+    --foreground: 215 16% 47%;
+  }
+  [data-text='standard'] {
+    /* No override, uses default */
+  }
+  [data-text='vivid'] {
+    --foreground: 222 47% 11%;
+  }
+  [data-bg='black'][data-text='vivid'], 
+  [data-bg='navy'][data-text='vivid'] {
+    --foreground: 0 0% 100%;
   }
 }
 

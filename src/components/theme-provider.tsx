@@ -2,34 +2,70 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 
-export type Theme = 'default' | 'emerald' | 'midnight' | 'sunset' | 'rose' | 'white' | 'black' | 'navy';
+export type BackgroundTheme = 'default' | 'white' | 'black' | 'navy' | 'slate';
+export type PrimaryTheme = 'blue' | 'emerald' | 'violet' | 'amber' | 'rose';
+export type TextTheme = 'standard' | 'soft' | 'vivid';
+
+interface ThemeConfig {
+  bg: BackgroundTheme;
+  primary: PrimaryTheme;
+  text: TextTheme;
+}
 
 interface ThemeContextType {
-  theme: Theme;
-  setTheme: (theme: Theme) => void;
+  theme: ThemeConfig;
+  setBg: (bg: BackgroundTheme) => void;
+  setPrimary: (p: PrimaryTheme) => void;
+  setText: (t: TextTheme) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('default');
+  const [theme, setThemeState] = useState<ThemeConfig>({
+    bg: 'default',
+    primary: 'blue',
+    text: 'standard'
+  });
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem('app-theme') as Theme;
-    if (savedTheme) {
-      setThemeState(savedTheme);
-      document.body.setAttribute('data-theme', savedTheme);
+    const saved = localStorage.getItem('app-modular-theme');
+    if (saved) {
+      const parsed = JSON.parse(saved) as ThemeConfig;
+      setThemeState(parsed);
+      applyTheme(parsed);
     }
   }, []);
 
-  const setTheme = (newTheme: Theme) => {
+  const applyTheme = (config: ThemeConfig) => {
+    document.body.setAttribute('data-bg', config.bg);
+    document.body.setAttribute('data-primary', config.primary);
+    document.body.setAttribute('data-text', config.text);
+  };
+
+  const setBg = (bg: BackgroundTheme) => {
+    const newTheme = { ...theme, bg };
     setThemeState(newTheme);
-    localStorage.setItem('app-theme', newTheme);
-    document.body.setAttribute('data-theme', newTheme);
+    localStorage.setItem('app-modular-theme', JSON.stringify(newTheme));
+    applyTheme(newTheme);
+  };
+
+  const setPrimary = (primary: PrimaryTheme) => {
+    const newTheme = { ...theme, primary };
+    setThemeState(newTheme);
+    localStorage.setItem('app-modular-theme', JSON.stringify(newTheme));
+    applyTheme(newTheme);
+  };
+
+  const setText = (text: TextTheme) => {
+    const newTheme = { ...theme, text };
+    setThemeState(newTheme);
+    localStorage.setItem('app-modular-theme', JSON.stringify(newTheme));
+    applyTheme(newTheme);
   };
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, setBg, setPrimary, setText }}>
       {children}
     </ThemeContext.Provider>
   );
