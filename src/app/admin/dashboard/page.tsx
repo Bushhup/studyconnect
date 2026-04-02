@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -141,13 +140,13 @@ export default function AdminDashboard() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">System Overview</h1>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">System Overview</h1>
           <p className="text-muted-foreground mt-1">Detailed performance and demographic analytics for the current semester.</p>
         </div>
         <div className="flex gap-2">
           <Button 
             variant="outline" 
-            className="gap-2 bg-white shadow-sm font-medium"
+            className="gap-2 bg-card shadow-sm font-medium border-border"
             onClick={handleSeedData}
             disabled={isSeeding}
           >
@@ -160,7 +159,7 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat) => (
-          <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden">
+          <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all duration-300 group overflow-hidden bg-card">
             <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
               <CardTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{stat.label}</CardTitle>
               <div className={cn("p-2 rounded-xl bg-opacity-10", stat.textColor.replace('text-', 'bg-'))}>
@@ -168,22 +167,22 @@ export default function AdminDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold tracking-tight">{stat.value}</div>
+              <div className="text-3xl font-bold tracking-tight text-card-foreground">{stat.value}</div>
               <div className="flex items-center mt-2 gap-1.5">
                 {stat.trendUp !== null ? (
                   <div className={cn(
                     "flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-bold",
-                    stat.trendUp ? "bg-emerald-50 text-emerald-600" : "bg-red-50 text-red-600"
+                    stat.trendUp ? "bg-emerald-500/10 text-emerald-500" : "bg-red-500/10 text-red-500"
                   )}>
                     {stat.trendUp ? <ArrowUpRight className="h-3 w-3 mr-0.5" /> : <ArrowDownRight className="h-3 w-3 mr-0.5" />}
                     {stat.trend}
                   </div>
                 ) : (
-                  <div className="px-1.5 py-0.5 rounded-full bg-slate-50 text-slate-600 text-[10px] font-bold">Stable</div>
+                  <div className="px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground text-[10px] font-bold">Stable</div>
                 )}
                 <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">vs last month</span>
               </div>
-              <div className="mt-4 h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+              <div className="mt-4 h-1.5 w-full bg-muted rounded-full overflow-hidden">
                 <div className={cn("h-full rounded-full transition-all duration-1000 bg-gradient-to-r", stat.color)} style={{ width: stat.trendUp ? '75%' : '45%' }} />
               </div>
             </CardContent>
@@ -192,15 +191,15 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-none shadow-sm">
+        <Card className="lg:col-span-2 border-none shadow-sm bg-card">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-headline font-bold">Performance & Attendance</CardTitle>
+              <CardTitle className="text-lg font-headline font-bold text-card-foreground">Performance & Attendance</CardTitle>
               <CardDescription>Monthly growth trends across all departments.</CardDescription>
             </div>
             <div className="flex gap-2">
-                <Badge variant="outline" className="bg-primary/5 text-primary border-primary/10">Attendance</Badge>
-                <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-100">Grades</Badge>
+                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20">Attendance</Badge>
+                <Badge variant="outline" className="bg-purple-500/10 text-purple-500 border-purple-500/20">Grades</Badge>
             </div>
           </CardHeader>
           <CardContent className="h-[350px] pt-4">
@@ -216,9 +215,9 @@ export default function AdminDashboard() {
                     <stop offset="95%" stopColor="var(--color-performance)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} dy={10} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Area 
                   type="monotone" 
@@ -239,9 +238,9 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm">
+        <Card className="border-none shadow-sm bg-card">
           <CardHeader>
-            <CardTitle className="text-lg font-headline font-bold">Enrollment Share</CardTitle>
+            <CardTitle className="text-lg font-headline font-bold text-card-foreground">Enrollment Share</CardTitle>
             <CardDescription>Department-wise student distribution.</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px] flex flex-col items-center justify-center">
@@ -268,7 +267,7 @@ export default function AdminDashboard() {
                  <div key={item.name} className="flex items-center gap-2">
                     <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                     <span className="text-xs font-medium text-muted-foreground truncate">{item.name}</span>
-                    <span className="text-xs font-bold ml-auto">{item.value}%</span>
+                    <span className="text-xs font-bold ml-auto text-card-foreground">{item.value}%</span>
                  </div>
                ))}
             </div>
@@ -277,29 +276,29 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-none shadow-sm">
+        <Card className="lg:col-span-2 border-none shadow-sm bg-card">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg font-headline font-bold">Timeline Activity</CardTitle>
-            <Button variant="ghost" size="sm" className="text-primary font-bold">View History</Button>
+            <CardTitle className="text-lg font-headline font-bold text-card-foreground">Timeline Activity</CardTitle>
+            <Button variant="ghost" size="sm" className="text-primary font-bold hover:bg-primary/10">View History</Button>
           </CardHeader>
           <CardContent>
-            <div className="space-y-6 relative before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-100">
+            <div className="space-y-6 relative before:absolute before:left-[19px] before:top-2 before:bottom-2 before:w-[2px] before:bg-muted">
               {recentActivities.map((activity) => (
                 <div key={activity.id} className="flex gap-4 relative">
                   <div className="flex-shrink-0 z-10">
-                    <Avatar className="h-10 w-10 border-4 border-white shadow-sm ring-1 ring-slate-100">
+                    <Avatar className="h-10 w-10 border-4 border-card shadow-sm ring-1 ring-border">
                       <AvatarImage src={activity.avatar} />
-                      <AvatarFallback className="bg-slate-50 text-slate-400 font-bold">
+                      <AvatarFallback className="bg-muted text-muted-foreground font-bold">
                         {activity.user === 'System' ? 'S' : activity.user[0]}
                       </AvatarFallback>
                     </Avatar>
                   </div>
                   <div className="flex-grow pt-0.5">
                     <div className="flex items-center justify-between mb-0.5">
-                      <h4 className="text-sm font-bold text-slate-800">{activity.user}</h4>
+                      <h4 className="text-sm font-bold text-card-foreground">{activity.user}</h4>
                       <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">{activity.time}</span>
                     </div>
-                    <p className="text-sm text-slate-600 leading-snug">{activity.action}</p>
+                    <p className="text-sm text-muted-foreground leading-snug">{activity.action}</p>
                   </div>
                 </div>
               ))}
@@ -325,10 +324,10 @@ export default function AdminDashboard() {
                   </div>
                   <span className="text-sm font-semibold">{task.label}</span>
                 </div>
-                <Badge variant="secondary" className="bg-white text-primary font-bold">{task.count}</Badge>
+                <Badge variant="secondary" className="bg-white text-primary font-bold border-none">{task.count}</Badge>
               </div>
             ))}
-            <Button className="w-full mt-2 bg-white text-primary hover:bg-white/90 font-bold py-6">
+            <Button className="w-full mt-2 bg-white text-primary hover:bg-white/90 font-bold py-6 rounded-xl">
               Go to Action Center
             </Button>
           </CardContent>

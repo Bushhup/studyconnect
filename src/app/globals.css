@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Base Neutral Variables */
+    /* Base Neutral Variables (Default: Cloud Gray) */
     --background: 210 20% 96%;
     --foreground: 222 47% 11%;
     --card: 0 0% 100%;
@@ -15,7 +15,7 @@
     --primary-foreground: 210 40% 98%;
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222 47% 11.2%;
-    --muted: 210 40% 96.1%;
+    --muted: 210 40% 92%;
     --muted-foreground: 215.4 16.3% 46.9%;
     --accent: 210 40% 96.1%;
     --accent-foreground: 222 47% 11.2%;
@@ -38,41 +38,49 @@
     --card: 0 0% 100%;
     --muted: 210 40% 98%;
     --border: 214 32% 91%;
+    --foreground: 222 47% 11%;
   }
 
   [data-bg='black'] {
     --background: 0 0% 0%;
     --foreground: 210 40% 98%;
-    --card: 0 0% 5%;
+    --card: 0 0% 10%; /* Dark Grey for cards */
     --card-foreground: 210 40% 98%;
-    --popover: 0 0% 5%;
+    --popover: 0 0% 12%;
     --popover-foreground: 210 40% 98%;
-    --muted: 0 0% 10%;
+    --muted: 0 0% 15%;
     --muted-foreground: 215 20% 65%;
-    --border: 0 0% 15%;
-    --input: 0 0% 15%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 210 40% 98%;
   }
 
   [data-bg='navy'] {
     --background: 222 47% 11%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 13%;
+    --card: 222 47% 16%; /* Dark Blue for cards */
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
+    --popover: 222 47% 14%;
     --popover-foreground: 210 40% 98%;
-    --muted: 217 33% 17%;
+    --muted: 217 33% 20%;
     --muted-foreground: 215 20% 65%;
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
+    --border: 217 33% 25%;
+    --input: 217 33% 25%;
+    --secondary: 217 33% 20%;
+    --secondary-foreground: 210 40% 98%;
   }
 
   [data-bg='slate'] {
-    --background: 215 25% 27%;
+    --background: 215 25% 20%;
     --foreground: 210 40% 98%;
-    --card: 215 25% 30%;
+    --card: 215 25% 25%; /* Lighter Slate for cards */
     --card-foreground: 210 40% 98%;
-    --muted: 215 25% 20%;
-    --border: 215 25% 35%;
+    --muted: 215 25% 15%;
+    --border: 215 25% 30%;
+    --input: 215 25% 30%;
+    --secondary: 215 25% 15%;
+    --secondary-foreground: 210 40% 98%;
   }
 
   /* 2. SPECIAL TEXT (ACCENT COLORS) */
@@ -117,8 +125,14 @@
     --foreground: 222 47% 11%;
   }
   [data-bg='black'][data-text='vivid'], 
-  [data-bg='navy'][data-text='vivid'] {
+  [data-bg='navy'][data-text='vivid'],
+  [data-bg='slate'][data-text='vivid'] {
     --foreground: 0 0% 100%;
+  }
+  [data-bg='black'][data-text='standard'], 
+  [data-bg='navy'][data-text='standard'],
+  [data-bg='slate'][data-text='standard'] {
+    --foreground: 210 40% 98%;
   }
 }
 

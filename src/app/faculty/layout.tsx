@@ -168,7 +168,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
   const hubRadius = isMobile ? 130 : 190;
 
   return (
-    <div className="flex min-h-screen bg-background overflow-hidden relative">
+    <div className="flex min-h-screen bg-background text-foreground overflow-hidden relative">
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <header className="h-16 border-b bg-card/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
           <div className="flex-1 max-w-md hidden md:block">
@@ -190,8 +190,8 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="rounded-xl w-48">
-                <DropdownMenuItem onClick={handleLogout} className="text-red-500 font-bold cursor-pointer gap-2">
+              <DropdownMenuContent align="end" className="rounded-xl w-48 bg-card border-border shadow-xl">
+                <DropdownMenuItem onClick={handleLogout} className="text-red-500 font-bold cursor-pointer gap-2 focus:bg-destructive/10">
                   <LogOut className="h-4 w-4" /> Logout
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -199,7 +199,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
           </div>
         </header>
 
-        <main className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar">
+        <main className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar bg-background">
           {children}
         </main>
 
@@ -257,7 +257,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
                     )}
                   >
                     <div className="flex items-center justify-center min-w-[2.5rem] md:min-w-[3rem] h-full">
-                      <link.icon className={cn("w-4 h-4 md:w-5 md:h-5 flex-shrink-0 transition-transform", isActive ? "scale-110" : "group-hover:rotate-12")} />
+                      <link.icon className={cn("w-4 h-4 md:size-5 flex-shrink-0 transition-transform", isActive ? "scale-110" : "group-hover:rotate-12")} />
                     </div>
                     <span className="opacity-0 group-hover:opacity-100 whitespace-nowrap text-[9px] md:text-[10px] font-bold uppercase tracking-wider transition-opacity duration-300 delay-100 pr-2">
                       {link.label}
@@ -291,11 +291,11 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
           background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #E2E8F0;
+          background: hsl(var(--border));
           border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #CBD5E1;
+          background: hsl(var(--muted-foreground) / 0.5);
         }
       `}</style>
     </div>
