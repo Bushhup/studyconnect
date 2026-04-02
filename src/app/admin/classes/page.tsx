@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Plus, Users, Clock, MapPin, Loader2, 
-  Calendar, BookOpen, UserCheck, X 
+  BookOpen, UserCheck
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -102,7 +101,7 @@ export default function ClassManagementPage() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Sections & Classes</h1>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Sections & Classes</h1>
           <p className="text-muted-foreground mt-1">Manage class schedules, instructor assignments, and room allocations.</p>
         </div>
 
@@ -112,7 +111,7 @@ export default function ClassManagementPage() {
               <Plus className="h-4 w-4" /> Create New Class
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="bg-card border-none shadow-xl rounded-2xl">
             <DialogHeader>
               <DialogTitle>Provision New Academic Section</DialogTitle>
               <DialogDescription>
@@ -127,17 +126,17 @@ export default function ClassManagementPage() {
                   value={newClassName}
                   onChange={(e) => setNewClassName(e.target.value)}
                   required
-                  className="bg-slate-50 border-none"
+                  className="bg-muted border-none shadow-none"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Department</Label>
                 <Select onValueChange={setSelectedDept} value={selectedDept}>
-                  <SelectTrigger className="bg-slate-50 border-none">
+                  <SelectTrigger className="bg-muted border-none shadow-none">
                     <SelectValue placeholder="Select Academic Department" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-card">
                     {departments?.map((dept) => (
                       <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
                     ))}
@@ -148,10 +147,10 @@ export default function ClassManagementPage() {
               <div className="space-y-2">
                 <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Assigned Instructor (Optional)</Label>
                 <Select onValueChange={(val) => setSelectedFaculty(val)} value={selectedFaculty}>
-                  <SelectTrigger className="bg-slate-50 border-none">
+                  <SelectTrigger className="bg-muted border-none shadow-none">
                     <SelectValue placeholder="Assign a Faculty Member" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-card">
                     {facultyMembers.map((member) => (
                       <SelectItem key={member.id} value={member.id}>
                         Dr. {member.firstName} {member.lastName}
@@ -182,18 +181,15 @@ export default function ClassManagementPage() {
             const instructor = users?.find(u => u.id === item.facultyId);
             
             return (
-              <Card key={item.id} className="hover:shadow-md transition-all border-none shadow-sm group overflow-hidden bg-white">
+              <Card key={item.id} className="hover:shadow-md transition-all border-none shadow-sm group overflow-hidden bg-card rounded-2xl">
                 <div className="h-1.5 w-full bg-primary/10 group-hover:bg-primary transition-colors" />
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-start">
-                    <Badge variant="secondary" className="bg-primary/5 text-primary border-none text-[10px] font-bold uppercase tracking-widest">
+                    <Badge variant="secondary" className="bg-primary/10 text-primary border-none text-[10px] font-bold uppercase tracking-widest px-2">
                       {dept?.name || 'General Academic'}
                     </Badge>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 -mt-2 -mr-2 text-slate-300 hover:text-primary">
-                      <Calendar className="h-4 w-4" />
-                    </Button>
                   </div>
-                  <CardTitle className="text-xl font-headline mt-2">{item.name}</CardTitle>
+                  <CardTitle className="text-xl font-headline mt-2 text-foreground">{item.name}</CardTitle>
                   <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
                     <BookOpen className="h-3 w-3" />
                     <span>Subject Area: {dept?.name || 'Not Specified'}</span>
@@ -201,38 +197,38 @@ export default function ClassManagementPage() {
                 </CardHeader>
                 <CardContent className="space-y-5">
                   <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <div className="p-1.5 bg-blue-50 rounded-lg">
-                        <Users className="h-3.5 w-3.5 text-blue-500" />
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="p-1.5 bg-primary/10 rounded-lg">
+                        <Users className="h-3.5 w-3.5 text-primary" />
                       </div>
-                      <span className="font-semibold text-xs">45 Students</span>
+                      <span className="font-semibold text-xs text-foreground">45 Students</span>
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-600">
-                      <div className="p-1.5 bg-emerald-50 rounded-lg">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div className="p-1.5 bg-emerald-500/10 rounded-lg">
                         <MapPin className="h-3.5 w-3.5 text-emerald-500" />
                       </div>
-                      <span className="text-xs">Lab 302</span>
+                      <span className="text-xs text-foreground">Lab 302</span>
                     </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 text-sm text-slate-600 bg-slate-50 p-2.5 rounded-xl border border-slate-100">
-                    <Clock className="h-3.5 w-3.5 text-slate-400" />
-                    <span className="text-xs font-medium">Mon, Wed • 09:00 AM - 11:00 AM</span>
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted p-2.5 rounded-xl border border-border">
+                    <Clock className="h-3.5 w-3.5 opacity-40" />
+                    <span className="text-xs font-medium text-foreground">Mon, Wed • 09:00 AM - 11:00 AM</span>
                   </div>
 
-                  <div className="pt-4 border-t border-dashed">
+                  <div className="pt-4 border-t border-dashed border-border">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3 flex items-center gap-1.5">
                       <UserCheck className="h-3 w-3" /> Handling Instructor
                     </p>
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                      <Avatar className="h-10 w-10 border-2 border-background shadow-sm ring-1 ring-border">
                         <AvatarImage src={instructor?.photoURL} />
                         <AvatarFallback className="bg-primary/5 text-primary font-bold">
                           {instructor?.firstName?.[0] || 'F'}{instructor?.lastName?.[0] || 'M'}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="text-sm font-bold text-slate-800">
+                        <span className="text-sm font-bold text-foreground">
                           {instructor ? `Dr. ${instructor.firstName} ${instructor.lastName}` : 'TBD'}
                         </span>
                         <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">
@@ -242,7 +238,7 @@ export default function ClassManagementPage() {
                     </div>
                   </div>
                   
-                  <Button variant="outline" className="w-full mt-2 font-bold text-xs h-10 rounded-xl group-hover:bg-primary group-hover:text-white transition-all">
+                  <Button variant="outline" className="w-full mt-2 font-bold text-xs h-10 rounded-xl group-hover:bg-primary group-hover:text-white transition-all border-border bg-transparent">
                     View Full Roster
                   </Button>
                 </CardContent>
@@ -251,9 +247,9 @@ export default function ClassManagementPage() {
           })}
           
           {classes?.length === 0 && !isLoading && (
-            <div className="col-span-full py-24 text-center border-2 border-dashed rounded-[2rem] bg-slate-50/50">
-              <BookOpen className="h-12 w-12 mx-auto mb-4 text-slate-200" />
-              <p className="font-bold text-slate-800">No classes scheduled yet</p>
+            <div className="col-span-full py-24 text-center border-2 border-dashed rounded-[2rem] bg-muted/20">
+              <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground/20" />
+              <p className="font-bold text-foreground">No classes scheduled yet</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
                 Begin by creating a new section and assigning it to a faculty member.
               </p>

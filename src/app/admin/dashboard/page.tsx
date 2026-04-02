@@ -8,13 +8,12 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
   Users, GraduationCap, Building2, BookOpen, 
-  TrendingUp, TrendingDown, Clock, CheckCircle2,
-  Calendar, Award, ArrowUpRight, ArrowDownRight,
-  Database, Loader2, AlertCircle
+  TrendingUp, Clock, CheckCircle2,
+  Database, Loader2, AlertCircle, ArrowUpRight, ArrowDownRight
 } from 'lucide-react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell
+  XAxis, YAxis, CartesianGrid, 
+  ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, Tooltip
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Badge } from '@/components/ui/badge';
@@ -126,7 +125,7 @@ export default function AdminDashboard() {
       <div className="flex flex-col items-center justify-center p-20 gap-4 text-center">
         <AlertCircle className="h-12 w-12 text-red-500" />
         <div>
-          <h2 className="text-xl font-bold text-slate-800">Unauthorized Access</h2>
+          <h2 className="text-xl font-bold text-foreground">Unauthorized Access</h2>
           <p className="text-sm text-muted-foreground mt-1 max-w-sm">This dashboard contains restricted institutional data. Access is limited to verified system administrators.</p>
         </div>
         <Button variant="outline" asChild className="mt-4 rounded-xl">
@@ -313,9 +312,9 @@ export default function AdminDashboard() {
           </CardHeader>
           <CardContent className="space-y-4">
             {[
-              { label: 'Grade Approvals', count: 12, icon: Award },
+              { label: 'Grade Approvals', count: 12, icon: BookOpen },
               { label: 'New Faculty Requests', count: 4, icon: Users },
-              { label: 'System Reports', count: 2, icon: Award },
+              { label: 'System Reports', count: 2, icon: TrendingUp },
             ].map((task) => (
               <div key={task.label} className="flex items-center justify-between p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all cursor-pointer">
                 <div className="flex items-center gap-3">

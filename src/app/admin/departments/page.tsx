@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState } from 'react';
 import { useCollection, useMemoFirebase, useFirestore, useUser } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -49,61 +48,61 @@ export default function DepartmentManagement() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-headline font-bold">Department Management</h1>
+        <h1 className="text-3xl font-headline font-bold text-foreground">Department Management</h1>
         <p className="text-muted-foreground">Manage academic divisions and faculty assignments.</p>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
-        <Card className="h-fit">
+        <Card className="h-fit bg-card border-none shadow-sm rounded-2xl">
           <CardHeader>
-            <CardTitle>Add New Department</CardTitle>
+            <CardTitle className="text-lg">Add New Department</CardTitle>
           </CardHeader>
           <form onSubmit={handleCreate}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="deptName">Department Name</Label>
-                <Input id="deptName" value={name} onChange={(e) => setName(e.target.value)} required />
+                <Input id="deptName" value={name} onChange={(e) => setName(e.target.value)} required className="bg-muted border-none shadow-none" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="hod">Head of Department</Label>
-                <Input id="hod" value={hod} onChange={(e) => setHod(e.target.value)} placeholder="e.g., Dr. James Wilson" />
+                <Input id="hod" value={hod} onChange={(e) => setHod(e.target.value)} placeholder="e.g., Dr. James Wilson" className="bg-muted border-none shadow-none" />
               </div>
-              <Button type="submit" className="w-full">
+              <Button type="submit" className="w-full h-11 font-bold">
                 <Plus className="mr-2 h-4 w-4" /> Create Department
               </Button>
             </CardContent>
           </form>
         </Card>
 
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 bg-card border-none shadow-sm rounded-2xl overflow-hidden">
           <CardHeader>
-            <CardTitle>Academic Departments</CardTitle>
+            <CardTitle className="text-lg">Academic Departments</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {isLoading ? (
-              <div className="p-8 text-center"><Loader2 className="animate-spin mx-auto" /></div>
+              <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div>
             ) : (
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>H.O.D</TableHead>
-                    <TableHead className="text-right">Action</TableHead>
+                <TableHeader className="bg-muted/50">
+                  <TableRow className="border-none">
+                    <TableHead className="pl-6 font-bold text-foreground">Name</TableHead>
+                    <TableHead className="font-bold text-foreground">H.O.D</TableHead>
+                    <TableHead className="text-right pr-6 font-bold text-foreground">Action</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {departments?.map((dept) => (
-                    <TableRow key={dept.id}>
-                      <TableCell className="font-medium">{dept.name}</TableCell>
-                      <TableCell>{dept.headOfDept || 'Not Assigned'}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">Edit</Button>
+                    <TableRow key={dept.id} className="border-border hover:bg-muted/30">
+                      <TableCell className="pl-6 font-bold text-foreground">{dept.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{dept.headOfDept || 'Not Assigned'}</TableCell>
+                      <TableCell className="text-right pr-6">
+                        <Button variant="ghost" size="sm" className="text-primary font-bold">Edit</Button>
                       </TableCell>
                     </TableRow>
                   ))}
                   {departments?.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">No departments found.</TableCell>
+                      <TableCell colSpan={3} className="text-center py-20 text-muted-foreground">No departments found.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>

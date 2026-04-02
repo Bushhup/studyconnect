@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -100,7 +99,6 @@ export default function UserManagementPage() {
   }, [user, authLoading, router]);
 
   const usersQuery = useMemoFirebase(() => {
-    // Only fetch directory once administrative profile is fully verified
     if (!firestore || !user || authLoading || profileLoading || !profile || profile.role !== 'admin') {
       return null;
     }
@@ -203,7 +201,7 @@ export default function UserManagementPage() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Institutional Directory</h1>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Institutional Directory</h1>
           <p className="text-muted-foreground mt-1">Manage institutional access control and user records via usernames.</p>
         </div>
         
@@ -214,7 +212,7 @@ export default function UserManagementPage() {
                 <Plus className="h-4 w-4" /> Register New User
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-[2rem]">
+            <DialogContent className="rounded-[2rem] bg-card border-none">
               <DialogHeader>
                 <DialogTitle>Register Institutional Identity</DialogTitle>
                 <DialogDescription>Assign a unique username and temporary credentials.</DialogDescription>
@@ -228,7 +226,7 @@ export default function UserManagementPage() {
                     placeholder="e.g. student_2024_01"
                     value={formData.username} 
                     onChange={(e) => setFormData({...formData, username: e.target.value})} 
-                    className="bg-slate-50 border-none" required 
+                    className="bg-muted border-none" required 
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -237,7 +235,7 @@ export default function UserManagementPage() {
                     <Input 
                       value={formData.firstName} 
                       onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
-                      className="bg-slate-50 border-none" required 
+                      className="bg-muted border-none" required 
                     />
                   </div>
                   <div className="space-y-2">
@@ -245,7 +243,7 @@ export default function UserManagementPage() {
                     <Input 
                       value={formData.lastName} 
                       onChange={(e) => setFormData({...formData, lastName: e.target.value})} 
-                      className="bg-slate-50 border-none" required 
+                      className="bg-muted border-none" required 
                     />
                   </div>
                 </div>
@@ -255,7 +253,7 @@ export default function UserManagementPage() {
                     type="email" 
                     value={formData.email} 
                     onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                    className="bg-slate-50 border-none" required 
+                    className="bg-muted border-none" required 
                   />
                 </div>
                 <div className="space-y-2">
@@ -266,7 +264,7 @@ export default function UserManagementPage() {
                     type="password" 
                     value={formData.password} 
                     onChange={(e) => setFormData({...formData, password: e.target.value})} 
-                    className="bg-slate-50 border-none" required 
+                    className="bg-muted border-none" required 
                     placeholder="Min 6 characters"
                   />
                 </div>
@@ -274,7 +272,7 @@ export default function UserManagementPage() {
                   <div className="space-y-2">
                     <Label>Portal Role</Label>
                     <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
-                      <SelectTrigger className="bg-slate-50 border-none"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="bg-muted border-none shadow-none"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="student">Student</SelectItem>
                         <SelectItem value="faculty">Faculty</SelectItem>
@@ -285,7 +283,7 @@ export default function UserManagementPage() {
                   <div className="space-y-2">
                     <Label>Status</Label>
                     <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
-                      <SelectTrigger className="bg-slate-50 border-none"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="bg-muted border-none shadow-none"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="active">Active</SelectItem>
                         <SelectItem value="inactive">Inactive</SelectItem>
@@ -304,7 +302,7 @@ export default function UserManagementPage() {
 
       <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
-          <TabsList className="bg-white border shadow-sm h-11 p-1 rounded-xl">
+          <TabsList className="bg-card border h-11 p-1 rounded-xl">
             <TabsTrigger value="all" className="gap-2 px-4 rounded-lg"><Users className="h-4 w-4" /> All</TabsTrigger>
             <TabsTrigger value="student" className="gap-2 px-4 rounded-lg"><GraduationCap className="h-4 w-4" /> Students</TabsTrigger>
             <TabsTrigger value="faculty" className="gap-2 px-4 rounded-lg"><UserCog className="h-4 w-4" /> Faculty</TabsTrigger>
@@ -315,14 +313,14 @@ export default function UserManagementPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder="Search by name or username..." 
-              className="pl-10 bg-white border-none shadow-sm h-11 rounded-xl"
+              className="pl-10 bg-card border shadow-sm h-11 rounded-xl"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>
 
-        <Card className="border-none shadow-sm overflow-hidden bg-white rounded-[2rem]">
+        <Card className="border-none shadow-sm overflow-hidden bg-card rounded-[2rem]">
           <CardContent className="p-0">
             {isDataLoading ? (
               <div className="flex flex-col items-center justify-center p-20 gap-4">
@@ -333,32 +331,32 @@ export default function UserManagementPage() {
                <div className="flex flex-col items-center justify-center p-20 gap-4 text-center">
                   <AlertCircle className="h-12 w-12 text-red-500" />
                   <div>
-                    <p className="font-bold text-slate-800">Authorization Denied</p>
+                    <p className="font-bold text-foreground">Authorization Denied</p>
                     <p className="text-xs text-muted-foreground mt-1 max-w-xs">Only verified administrators can access the institutional directory.</p>
                   </div>
                </div>
             ) : (
               <Table>
-                <TableHeader className="bg-slate-50/50">
+                <TableHeader className="bg-muted/50">
                   <TableRow className="hover:bg-transparent border-none">
-                    <TableHead className="w-[300px] font-bold text-slate-900 py-4 pl-6">Institutional Identity</TableHead>
-                    <TableHead className="font-bold text-slate-900">Portal Role</TableHead>
-                    <TableHead className="font-bold text-slate-900">Status</TableHead>
-                    <TableHead className="text-right font-bold text-slate-900 pr-6">Management</TableHead>
+                    <TableHead className="w-[300px] font-bold text-foreground py-4 pl-6">Institutional Identity</TableHead>
+                    <TableHead className="font-bold text-foreground">Portal Role</TableHead>
+                    <TableHead className="font-bold text-foreground">Status</TableHead>
+                    <TableHead className="text-right font-bold text-foreground pr-6">Management</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredUsers.map((u) => (
-                    <TableRow key={u.id} className="group transition-colors hover:bg-slate-50/50 border-slate-100">
+                    <TableRow key={u.id} className="group transition-colors hover:bg-muted/50 border-border">
                       <TableCell className="py-4 pl-6">
                         <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                          <Avatar className="h-10 w-10 border-2 border-background shadow-sm ring-1 ring-border">
                             <AvatarFallback className="bg-primary/5 text-primary font-bold">
                               {u.firstName?.[0]}{u.lastName?.[0]}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col">
-                            <span className="font-bold text-slate-800 leading-tight">{u.firstName} {u.lastName}</span>
+                            <span className="font-bold text-foreground leading-tight">{u.firstName} {u.lastName}</span>
                             <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">@{u.username}</span>
                           </div>
                         </div>
@@ -368,9 +366,9 @@ export default function UserManagementPage() {
                           variant="secondary" 
                           className={cn(
                             "font-bold uppercase tracking-widest text-[9px] px-2 py-0.5 border-none",
-                            u.role === 'admin' ? "bg-blue-50 text-blue-600" :
-                            u.role === 'faculty' ? "bg-purple-50 text-purple-600" :
-                            "bg-emerald-50 text-emerald-600"
+                            u.role === 'admin' ? "bg-blue-500/10 text-blue-500" :
+                            u.role === 'faculty' ? "bg-purple-500/10 text-purple-500" :
+                            "bg-emerald-500/10 text-emerald-500"
                           )}
                         >
                           {u.role}
@@ -378,18 +376,18 @@ export default function UserManagementPage() {
                       </TableCell>
                       <TableCell>
                          <div className="flex items-center gap-1.5">
-                            <div className={cn("w-1.5 h-1.5 rounded-full", u.status === 'inactive' ? 'bg-slate-300' : 'bg-emerald-500')} />
-                            <span className="text-xs font-semibold text-slate-600 capitalize">{u.status}</span>
+                            <div className={cn("w-1.5 h-1.5 rounded-full", u.status === 'inactive' ? 'bg-muted-foreground/30' : 'bg-emerald-500')} />
+                            <span className="text-xs font-semibold text-muted-foreground capitalize">{u.status}</span>
                          </div>
                       </TableCell>
                       <TableCell className="text-right pr-6">
                         <DropdownMenu modal={false}>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="hover:bg-slate-100 rounded-full h-8 w-8">
+                            <Button variant="ghost" size="icon" className="hover:bg-muted rounded-full h-8 w-8">
                               <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl bg-card border-border shadow-xl">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem className="cursor-pointer gap-2" onClick={() => openView(u)}>
@@ -399,7 +397,7 @@ export default function UserManagementPage() {
                               <Edit3 className="h-4 w-4" /> Edit Record
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem className="cursor-pointer gap-2 text-red-600" onClick={() => openDelete(u)}>
+                            <DropdownMenuItem className="cursor-pointer gap-2 text-red-600 focus:bg-destructive/10" onClick={() => openDelete(u)}>
                               <Trash2 className="h-4 w-4" /> Remove User
                             </DropdownMenuItem>
                           </DropdownMenuContent>
@@ -423,7 +421,7 @@ export default function UserManagementPage() {
 
       {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent className="rounded-[2rem]">
+        <DialogContent className="rounded-[2rem] bg-card border-none">
           <DialogHeader>
             <DialogTitle>Update Institutional Record</DialogTitle>
             <DialogDescription>Synchronizing permissions for @{selectedUser?.username}.</DialogDescription>
@@ -434,25 +432,25 @@ export default function UserManagementPage() {
               <Input 
                 value={formData.username} 
                 onChange={(e) => setFormData({...formData, username: e.target.value})} 
-                className="bg-slate-50 border-none font-bold text-primary" 
+                className="bg-muted border-none font-bold text-primary" 
                 required 
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>First Name</Label>
-                <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-slate-50 border-none" required />
+                <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none" required />
               </div>
               <div className="space-y-2">
                 <Label>Last Name</Label>
-                <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-slate-50 border-none" required />
+                <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none" required />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Portal Role</Label>
                 <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
-                  <SelectTrigger className="bg-slate-50 border-none"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="bg-muted border-none shadow-none"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="student">Student</SelectItem>
                     <SelectItem value="faculty">Faculty</SelectItem>
@@ -463,7 +461,7 @@ export default function UserManagementPage() {
               <div className="space-y-2">
                 <Label>Status</Label>
                 <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
-                  <SelectTrigger className="bg-slate-50 border-none"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="bg-muted border-none shadow-none"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
@@ -480,19 +478,19 @@ export default function UserManagementPage() {
 
       {/* View Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-        <DialogContent className="rounded-[2rem]">
+        <DialogContent className="rounded-[2rem] bg-card border-none">
           <DialogHeader>
             <DialogTitle>Institutional Identity Card</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 pt-4">
-            <div className="flex items-center gap-4 p-4 bg-slate-50 rounded-2xl border border-slate-100">
+            <div className="flex items-center gap-4 p-4 bg-muted rounded-2xl border border-border">
               <Avatar className="h-16 w-16">
                 <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
                   {selectedUser?.firstName?.[0]}{selectedUser?.lastName?.[0]}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="text-xl font-bold">{selectedUser?.firstName} {selectedUser?.lastName}</h3>
+                <h3 className="text-xl font-bold text-foreground">{selectedUser?.firstName} {selectedUser?.lastName}</h3>
                 <p className="text-xs font-bold text-primary uppercase">@{selectedUser?.username}</p>
                 <p className="text-xs text-muted-foreground">{selectedUser?.email}</p>
               </div>
@@ -500,11 +498,11 @@ export default function UserManagementPage() {
             <div className="grid grid-cols-2 gap-4 text-sm font-medium">
               <div className="space-y-1">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Portal Access</p>
-                <p className="capitalize">{selectedUser?.role}</p>
+                <p className="capitalize text-foreground">{selectedUser?.role}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Status</p>
-                <Badge className={cn(selectedUser?.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-slate-100 text-slate-500', "border-none")}>
+                <Badge className={cn(selectedUser?.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-muted text-muted-foreground', "border-none")}>
                   {selectedUser?.status}
                 </Badge>
               </div>
@@ -516,7 +514,7 @@ export default function UserManagementPage() {
 
       {/* Delete Confirmation */}
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-        <AlertDialogContent className="rounded-[2rem]">
+        <AlertDialogContent className="rounded-[2rem] bg-card border-none">
           <AlertDialogHeader>
             <AlertDialogTitle>Institutional De-provisioning</AlertDialogTitle>
             <AlertDialogDescription>
