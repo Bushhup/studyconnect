@@ -64,7 +64,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         y: window.innerHeight - (isMobile ? 80 : 100)
       });
     }
-  }, [isMobile]);
+  }, [isMobile, EDGE_MARGIN]);
 
   useEffect(() => {
     if (!isOpen || isRotating || isDragging) return;
@@ -166,23 +166,23 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const hubRadius = isMobile ? 130 : 190;
 
   return (
-    <div className="flex min-h-screen bg-[#F8FAFC] overflow-hidden relative">
+    <div className="flex min-h-screen bg-background overflow-hidden relative">
       <div className="flex-1 flex flex-col overflow-hidden relative">
-        <header className="h-16 border-b bg-white/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
+        <header className="h-16 border-b bg-card/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
           <div className="flex-1 max-w-md hidden md:block">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input placeholder="Search your modules..." className="pl-10 bg-slate-100/50 border-none h-10 rounded-xl" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search your modules..." className="pl-10 bg-muted/50 border-none h-10 rounded-xl" />
             </div>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex flex-col items-end mr-2">
-              <span className="text-xs font-bold text-slate-800 uppercase tracking-tight">Student Portal</span>
+              <span className="text-xs font-bold text-foreground uppercase tracking-tight">Student Portal</span>
               <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">Academic Workspace</span>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="p-0 rounded-full border-2 border-transparent hover:border-slate-100">
+                <Button variant="ghost" className="p-0 rounded-full border-2 border-transparent hover:border-border">
                   <Avatar className="h-9 w-9 md:h-10 md:w-10">
                     <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">ST</AvatarFallback>
                   </Avatar>
