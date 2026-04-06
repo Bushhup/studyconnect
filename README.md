@@ -12,158 +12,129 @@
 **StudyConnect: A Unified Multi-Portal Academic Management System**
 
 ## 2. Abstract
-**StudyConnect** is a comprehensive enterprise academic management ecosystem designed to bridge the digital divide between institutional administrators, faculty, and students. By leveraging real-time cloud synchronization via Firebase and a unified identity management system, it streamlines complex academic workflows—such as attendance tracking, grading, and institutional broadcasting—into a seamless, high-performance experience across web and mobile platforms. The system prioritizes data integrity and granular access control to foster a collaborative and data-driven learning environment.
+**StudyConnect** is a comprehensive enterprise academic management ecosystem designed to bridge the digital divide between institutional administrators, faculty, and students. By leveraging real-time cloud synchronization via Firebase and a unified identity management system, it streamlines complex academic workflows—such as attendance tracking, grading, and institutional broadcasting—into a seamless, high-performance experience across web and mobile platforms.
 
 ## 3. Introduction
-In the rapidly evolving landscape of modern education, the need for a centralized "source of truth" for academic data is paramount. StudyConnect serves as a digital nervous system for educational institutions, replacing fragmented communication channels with a unified platform. It empowers administrators with oversight, faculty with efficient management tools, and students with analytical self-tracking capabilities.
+In the rapidly evolving landscape of modern education, the need for a centralized "source of truth" for academic data is paramount. StudyConnect serves as a digital nervous system for educational institutions, replacing fragmented communication channels with a unified platform.
 
 ## 4. Existing System
-Current academic management in many institutions relies on:
-- Paper-based attendance ledgers and grade books.
-- Fragmented digital tools (Excel sheets, WhatsApp groups, emails).
-- Disconnected silos of data where student records are not synced across departments.
-- Manual notification systems for campus announcements.
+Current academic management in many institutions relies on paper-based attendance ledgers, fragmented digital tools (Excel, WhatsApp), and disconnected silos of data.
 
 ## 5. Drawbacks of Existing System
-- **Data Redundancy & Inconsistency:** Manual entry leads to human error and duplicate records.
-- **Latency:** Information takes days to reach the relevant stakeholders (e.g., parents or students).
-- **Security Risks:** Physical records are prone to loss or unauthorized access.
-- **Lack of Analytics:** Hard to track long-term performance trends or attendance compliance manually.
-- **Poor Accessibility:** Students cannot access their records on the go.
+- **Data Redundancy:** Manual entry leads to human error.
+- **Latency:** Information takes days to reach stakeholders.
+- **Security Risks:** Physical records are prone to loss.
+- **Lack of Analytics:** Hard to track long-term performance trends.
 
 ## 6. Proposed System
-**StudyConnect** proposes a cloud-native, real-time platform featuring:
-- **Unified Backend:** A single Firestore database for all institutional data.
-- **Role-Based Access Control (RBAC):** Specialized portals for Admins, Faculty, and Students.
-- **Cross-Platform Delivery:** A native-feel mobile app (via Capacitor) and a high-fidelity web portal.
-- **Automated Workflows:** Digital attendance syncing and instant grade publishing.
+**StudyConnect** proposes a cloud-native, real-time platform featuring a unified backend (Firestore), Role-Based Access Control (RBAC), and cross-platform delivery via web and native mobile apps.
 
 ## 7. Advantages of Proposed System
-- **Real-Time Synchronization:** Updates are reflected across all portals instantly.
-- **Data Integrity:** Centralized storage prevents record duplication and ensures accuracy.
-- **Automated Analytics:** Integrated charts provide visual insights into GPA and attendance trends.
-- **Enhanced Communication:** Secure institutional broadcasting replaces unorganized messaging apps.
-- **Scalability:** Built on serverless architecture to support thousands of users.
+- **Real-Time Sync:** Updates reflect across all portals instantly.
+- **Data Integrity:** Centralized storage prevents record duplication.
+- **Automated Analytics:** Integrated charts provide visual insights into GPA and attendance.
+- **Modular Theming:** Users can customize their workspace environment.
 
 ## 8. Front End and Back End Details
-- **Front End:** 
-  - **Framework:** Next.js 15 (App Router)
-  - **Library:** React 19
-  - **Styling:** Tailwind CSS & ShadCN UI
-  - **Animations:** Framer Motion
-  - **Mobile Bridge:** Capacitor 7
-- **Back End:**
-  - **Database:** Firebase Firestore (NoSQL)
-  - **Authentication:** Firebase Auth
-  - **Storage:** Firebase Storage (for academic resources)
-  - **AI Layer:** Genkit (for intelligent insights)
+- **Front End:** Next.js 15, Tailwind CSS, ShadCN UI.
+- **Back End:** Firebase Firestore, Firebase Auth.
+- **Mobile:** Capacitor 7 (iOS/Android Support).
 
 ## 9. Feasibility Study
-### Technical Feasibility
-The project uses industry-standard frameworks (Next.js, Firebase) that are well-documented and highly stable. The use of Capacitor ensures that a single codebase can be deployed to web, Android, and iOS, making it technically sound for multi-platform distribution.
-
-### Economical Feasibility
-By utilizing a serverless architecture (Firebase), the institution avoids the high costs of maintaining physical servers. The "pay-as-you-go" model is cost-effective, scaling only with the number of active users.
-
-### Operational Feasibility
-The UI is designed with a "mobile-first" philosophy, featuring intuitive navigation (the 3D Hub) that requires minimal training for faculty and students. It aligns perfectly with existing academic workflows.
+- **Technical:** Uses industry-standard frameworks (Next.js, Firebase) with high stability.
+- **Economical:** Serverless architecture reduces physical infrastructure costs.
+- **Operational:** Intuitive mobile-first UI requires minimal training.
 
 ## 10. List of Modules
-1. **Administrative Command Center**
-2. **Faculty Management Suite**
-3. **Student Success Portal**
-4. **Institutional Identity Module**
-5. **Real-Time Notification System**
-6. **Campus Content Management**
+1. Admin Command Center
+2. Faculty Management Suite
+3. Student Success Portal
+4. Institutional Identity Module
+5. Content Management System
 
 ## 11. Modules Definition
-- **Admin Command Center:** High-level dashboard for system config, user provisioning, and institutional analytics.
-- **Faculty Suite:** Toolkit for managing class loads, recording attendance, and publishing grades.
-- **Student Portal:** Personal workspace for tracking GPA, attendance, and accessing study materials.
-- **Identity Module:** Manages unique institutional usernames and secure authentication sessions.
-- **Notification System:** Handles campus-wide broadcasts and personalized academic alerts.
-- **Content Management:** Module for publishing campus events and documenting milestones.
+- **Admin Portal:** High-level dashboard for user provisioning and institutional analytics.
+- **Faculty Suite:** Toolkit for managing class loads, attendance, and grading.
+- **Student Portal:** Personal workspace for tracking academic progress and materials.
 
 ## 12. Literature Survey
-A study of existing Learning Management Systems (LMS) like Moodle and Canvas reveals a gap in lightweight, institutional ERPs that combine both academic management and real-time social/campus engagement. StudyConnect bridges this by integrating administrative tasks with a modern UI inspired by social SaaS platforms.
+A study of existing LMS like Moodle/Canvas reveals a gap in lightweight ERPs that combine academic management with real-time campus engagement.
 
 ## 13. Architecture Diagram
-```text
-[ User Clients ] <---> [ Next.js App Router ] <---> [ Firebase SDK ]
-      |                       |                         |
-(Web / iOS / Android)   (Front-end UI Logic)      (Auth / Firestore / Storage)
-```
+`[ User Clients ] <---> [ Next.js App Router ] <---> [ Firebase SDK ]`
 
 ## 14. UML Diagrams
-### Use Case Diagram
-- **Admin:** Manage Users, Configure System, View Analytics.
-- **Faculty:** Record Attendance, Grade Students, Upload Resources.
-- **Student:** View Results, Track Attendance, Download Notes.
-
-### Class Diagram (Entity-Relationship)
-- **User:** {id, role, username, email}
-- **Class:** {id, name, departmentId, facultyId}
-- **Course:** {id, code, name, credits}
-- **Attendance:** {id, studentId, date, status}
-
-### Sequence Diagram (Grading Workflow)
-Faculty -> Marks Portal: Input Grade -> Firestore: Write Record -> Student Portal: Read/Notify.
+Detailed diagrams including Use Case, Class, Sequence, Activity, and State Chart representations are documented in the system design specifications.
 
 ## 15. Detailed Description of Modules
-*(Please refer to the "Description" section below for full portal breakdowns)*
+- **User Management:** Full CRUD operations for institutional accounts.
+- **Grading Portal:** Real-time mark entry and SGPA calculation.
+- **Workspace Builder:** Modular theming for background and accent customization.
 
 ## 16. Algorithms / Techniques Used
-- **Optimistic UI:** Local state updates before server confirmation for a zero-latency feel.
-- **Memoized References:** Using `useMemoFirebase` to prevent infinite re-renders during real-time data fetching.
-- **RBAC Middleware:** Logic to ensure users only access routes matching their institutional role.
+- **Optimistic UI:** Local state updates for zero-latency interactions.
+- **Modular Theming Engine:** HSL-based CSS variable swapping.
+- **RBAC Middleware:** Logic ensuring role-restricted route access.
 
 ## 17. Complete Screenshots
-*(Screenshots are simulated in the Demo Mode at https://studyconnect-taupe.vercel.app/login)*
+*(Simulated in Demo Mode at the live URL)*
 
 ## 18. Conclusion
-StudyConnect represents a significant step forward in digitizing the academic experience. By centralizing data and providing a premium user interface, it eliminates the inefficiencies of legacy systems and empowers institutions with actionable intelligence.
+StudyConnect centralizes institutional data and provides a premium user interface to eliminate the inefficiencies of legacy systems.
 
 ## 19. Future Enhancement
-- **AI-Driven Predictive Grading:** Using Genkit to predict student outcomes based on attendance and CAT scores.
-- **Automated Timetable Generation:** Algorithmic scheduling to prevent classroom conflicts.
-- **Biometric Integration:** Mobile-based facial recognition for automated attendance.
+- **AI Predictive Grading:** Using Genkit to predict student outcomes.
+- **Biometric Attendance:** Mobile-based facial recognition integration.
 
 ## 20. References
-- *Next.js Documentation (Vercel)*
-- *Firebase Cloud Firestore Security Models (Google)*
-- *Tailwind CSS Design Systems (Adam Wathan)*
-- *Modern LMS Design Principles (Academic Press)*
+- *Next.js Documentation*
+- *Firebase Firestore Security Models*
+- *Tailwind CSS Design Systems*
 
 ---
 
-## 🔗 Live Production
-The project is deployed and accessible at:  
-**[https://studyconnect-taupe.vercel.app](https://studyconnect-taupe.vercel.app)**
+## 🛠️ Mobile Setup & Troubleshooting
 
----
+### Fixing `ERR_SDK_NOT_FOUND`
+If you encounter the error `ERR_SDK_NOT_FOUND: No valid Android SDK root found`, it means Capacitor cannot find your Android development tools. Follow these steps to resolve it:
 
-## ✨ Design Philosophy
-The project features a signature **3D-Rotating Floating Navigation Hub** with "Expanding Pill" animations that adapt to mobile and desktop viewports.
+#### 1. Identify your SDK Path
+- Open **Android Studio**.
+- Go to **Settings** (or **Preferences** on macOS).
+- Navigate to **Languages & Frameworks > Android SDK**.
+- Copy the path shown under **Android SDK Location** (e.g., `C:\Users\Name\AppData\Local\Android\Sdk` or `/Users/Name/Library/Android/sdk`).
+
+#### 2. Configure Environment Variables
+
+**For Windows:**
+1. Open the **Start Menu**, search for "Edit the system environment variables", and open it.
+2. Click **Environment Variables**.
+3. Under **User variables**, click **New**:
+   - Variable name: `ANDROID_HOME`
+   - Variable value: [Paste your SDK path here]
+4. Find the `Path` variable, click **Edit**, and then **New**. Add these two entries:
+   - `%ANDROID_HOME%\platform-tools`
+   - `%ANDROID_HOME%\emulator`
+5. Restart your terminal or command prompt.
+
+**For macOS / Linux:**
+1. Open your shell profile file (e.g., `~/.zshrc` or `~/.bash_profile`).
+2. Add the following lines:
+   ```bash
+   export ANDROID_HOME=$HOME/Library/Android/sdk
+   export PATH=$PATH:$ANDROID_HOME/emulator
+   export PATH=$PATH:$ANDROID_HOME/platform-tools
+   ```
+3. Save and run `source ~/.zshrc` (or your respective file).
+
+#### 3. Verify and Run
+Run `npx cap doctor`. Once Android shows a green checkmark, you can run the build:
+```bash
+npm run static && npx cap sync android && npx cap run android
+```
 
 ---
 
 ## 🔑 Demonstration Access
-The application includes a specialized **Demo Mode**:
 - **Portal:** [https://studyconnect-taupe.vercel.app/login](https://studyconnect-taupe.vercel.app/login)
-- **Username:** `demo`
-- **Password:** `demo123`
-
----
-
-## 🛠️ Getting Started
-### Push to GitHub
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin YOUR_REPO_URL
-git push -u origin main
-```
-
-Developed with ❤️ for the future of education.
+- **Username:** `demo` | **Password:** `demo123`

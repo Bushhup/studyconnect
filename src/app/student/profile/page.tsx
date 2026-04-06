@@ -12,7 +12,8 @@ import { Button } from '@/components/ui/button';
 import { 
   User, Mail, Phone, MapPin, Building2, 
   GraduationCap, Calendar, Edit3, Lock,
-  Camera, UserCircle, Clock, Loader2
+  Camera, UserCircle, Clock, Loader2,
+  CheckCircle2
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
