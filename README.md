@@ -40,98 +40,45 @@ Current academic management in many institutions relies on paper-based attendanc
 - **Back End:** Firebase Firestore, Firebase Auth.
 - **Mobile:** Capacitor 7 (iOS/Android Support).
 
-## 9. Feasibility Study
-- **Technical:** Uses industry-standard frameworks (Next.js, Firebase) with high stability.
-- **Economical:** Serverless architecture reduces physical infrastructure costs.
-- **Operational:** Intuitive mobile-first UI requires minimal training.
-
-## 10. List of Modules
-1. Admin Command Center
-2. Faculty Management Suite
-3. Student Success Portal
-4. Institutional Identity Module
-5. Content Management System
-
-## 11. Modules Definition
-- **Admin Portal:** High-level dashboard for user provisioning and institutional analytics.
-- **Faculty Suite:** Toolkit for managing class loads, attendance, and grading.
-- **Student Portal:** Personal workspace for tracking academic progress and materials.
-
-## 12. Literature Survey
-A study of existing LMS like Moodle/Canvas reveals a gap in lightweight ERPs that combine academic management with real-time campus engagement.
-
-## 13. Architecture Diagram
-`[ User Clients ] <---> [ Next.js App Router ] <---> [ Firebase SDK ]`
-
-## 14. UML Diagrams
-Detailed diagrams including Use Case, Class, Sequence, Activity, and State Chart representations are documented in the system design specifications.
-
-## 15. Detailed Description of Modules
-- **User Management:** Full CRUD operations for institutional accounts.
-- **Grading Portal:** Real-time mark entry and SGPA calculation.
-- **Workspace Builder:** Modular theming for background and accent customization.
-
-## 16. Algorithms / Techniques Used
-- **Optimistic UI:** Local state updates for zero-latency interactions.
-- **Modular Theming Engine:** HSL-based CSS variable swapping.
-- **RBAC Middleware:** Logic ensuring role-restricted route access.
-
-## 17. Complete Screenshots
-*(Simulated in Demo Mode at the live URL)*
-
-## 18. Conclusion
-StudyConnect centralizes institutional data and provides a premium user interface to eliminate the inefficiencies of legacy systems.
-
-## 19. Future Enhancement
-- **AI Predictive Grading:** Using Genkit to predict student outcomes.
-- **Biometric Attendance:** Mobile-based facial recognition integration.
-
-## 20. References
-- *Next.js Documentation*
-- *Firebase Firestore Security Models*
-- *Tailwind CSS Design Systems*
-
 ---
 
 ## 🛠️ Mobile Setup & Troubleshooting
 
 ### Fixing `ERR_SDK_NOT_FOUND`
-If you encounter the error `ERR_SDK_NOT_FOUND: No valid Android SDK root found`, it means Capacitor cannot find your Android development tools. Follow these steps to resolve it:
+If you encounter the error `ERR_SDK_NOT_FOUND: No valid Android SDK root found`, follow these steps:
 
 #### 1. Identify your SDK Path
 - Open **Android Studio**.
 - Go to **Settings** (or **Preferences** on macOS).
 - Navigate to **Languages & Frameworks > Android SDK**.
-- Copy the path shown under **Android SDK Location** (e.g., `C:\Users\Name\AppData\Local\Android\Sdk` or `/Users/Name/Library/Android/sdk`).
+- Copy the **Android SDK Location** path.
 
 #### 2. Configure Environment Variables
 
 **For Windows:**
-1. Open the **Start Menu**, search for "Edit the system environment variables", and open it.
+1. Open the **Start Menu**, search for "Edit the system environment variables".
 2. Click **Environment Variables**.
 3. Under **User variables**, click **New**:
    - Variable name: `ANDROID_HOME`
    - Variable value: [Paste your SDK path here]
-4. Find the `Path` variable, click **Edit**, and then **New**. Add these two entries:
+4. Find the `Path` variable in the same list, click **Edit**, and then **New**. Add these two:
    - `%ANDROID_HOME%\platform-tools`
    - `%ANDROID_HOME%\emulator`
-5. Restart your terminal or command prompt.
+5. Restart your terminal.
 
 **For macOS / Linux:**
-1. Open your shell profile file (e.g., `~/.zshrc` or `~/.bash_profile`).
-2. Add the following lines:
-   ```bash
-   export ANDROID_HOME=$HOME/Library/Android/sdk
-   export PATH=$PATH:$ANDROID_HOME/emulator
-   export PATH=$PATH:$ANDROID_HOME/platform-tools
-   ```
-3. Save and run `source ~/.zshrc` (or your respective file).
-
-#### 3. Verify and Run
-Run `npx cap doctor`. Once Android shows a green checkmark, you can run the build:
+Add these lines to your `~/.zshrc` or `~/.bash_profile`:
 ```bash
-npm run static && npx cap sync android && npx cap run android
+export ANDROID_HOME=$HOME/Library/Android/sdk
+export PATH=$PATH:$ANDROID_HOME/emulator
+export PATH=$PATH:$ANDROID_HOME/platform-tools
 ```
+Run `source ~/.zshrc` to apply.
+
+#### 💡 Why these variables?
+- **ANDROID_HOME**: This is the root folder. Capacitor uses this to find the general Android build tools.
+- **platform-tools**: This contains `adb` (Android Debug Bridge). It is the "bridge" that lets your computer talk to your phone to install the app.
+- **emulator**: This contains the software that runs the virtual phone. Adding it to your Path lets you start emulators directly from the command line.
 
 ---
 
