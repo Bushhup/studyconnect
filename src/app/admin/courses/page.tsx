@@ -28,7 +28,7 @@ export default function CourseManagementPage() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Curriculum Management</h1>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Curriculum Management</h1>
           <p className="text-muted-foreground mt-1">Define courses, credits, and degree requirements (Static Prototype).</p>
         </div>
         <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
@@ -41,21 +41,21 @@ export default function CourseManagementPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder="Search courses by name or code..." 
-            className="pl-10 bg-white border-none shadow-sm h-11 rounded-xl"
+            className="pl-10 bg-card border-none shadow-sm h-11 rounded-xl"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
         <div className="flex gap-2">
-           <Button variant="outline" size="sm" className="gap-2 rounded-full"><Filter className="h-4 w-4" /> Department</Button>
-           <Button variant="outline" size="sm" className="gap-2 rounded-full"><GraduationCap className="h-4 w-4" /> Semester</Button>
+           <Button variant="outline" size="sm" className="gap-2 rounded-full bg-card"><Filter className="h-4 w-4" /> Department</Button>
+           <Button variant="outline" size="sm" className="gap-2 rounded-full bg-card"><GraduationCap className="h-4 w-4" /> Semester</Button>
         </div>
       </div>
 
-      <Card className="border-none shadow-sm bg-white overflow-hidden rounded-[2rem]">
+      <Card className="border-none shadow-sm bg-card overflow-hidden rounded-[2rem]">
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-slate-50/50">
+            <TableHeader className="bg-muted/50">
               <TableRow className="hover:bg-transparent border-none">
                 <TableHead className="font-bold py-4 pl-6">Course Code</TableHead>
                 <TableHead className="font-bold">Course Title</TableHead>
@@ -66,20 +66,20 @@ export default function CourseManagementPage() {
             </TableHeader>
             <TableBody>
               {filteredCourses.map((course) => (
-                <TableRow key={course.id} className="group hover:bg-slate-50/50 transition-colors border-slate-100">
+                <TableRow key={course.id} className="group hover:bg-muted/30 transition-colors border-border">
                   <TableCell className="py-4 pl-6 font-mono font-bold text-primary">
                     {course.code}
                   </TableCell>
-                  <TableCell className="font-bold text-slate-800">
+                  <TableCell className="font-bold text-foreground">
                     {course.name}
                   </TableCell>
                   <TableCell className="text-center">
-                    <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-bold border-none">
+                    <Badge variant="secondary" className="bg-muted text-muted-foreground font-bold border-none">
                        {course.credits} Units
                     </Badge>
                   </TableCell>
                   <TableCell>
-                     <span className="text-sm font-medium text-slate-600">{course.type}</span>
+                     <span className="text-sm font-medium text-muted-foreground">{course.type}</span>
                   </TableCell>
                   <TableCell className="text-right pr-6">
                     <Button variant="ghost" size="sm" className="text-primary font-bold hover:bg-primary/5 rounded-lg">Edit Syllabus</Button>

@@ -66,11 +66,11 @@ export default function AttendancePage() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Attendance Insights</h1>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Attendance Insights</h1>
           <p className="text-muted-foreground mt-1">Real-time institutional attendance trends and detailed logs.</p>
         </div>
         <div className="flex gap-2">
-           <Button variant="outline" className="gap-2 shadow-sm rounded-full">
+           <Button variant="outline" className="gap-2 shadow-sm rounded-full bg-card">
             <Download className="h-4 w-4" /> Export Data
           </Button>
           <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full px-6">
@@ -80,7 +80,7 @@ export default function AttendancePage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm overflow-hidden bg-white">
+        <Card className="border-none shadow-sm overflow-hidden bg-card">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardDescription className="font-bold uppercase text-[10px] tracking-widest">Today's Presence</CardDescription>
@@ -89,11 +89,11 @@ export default function AttendancePage() {
             <CardTitle className="text-3xl font-bold">94.2%</CardTitle>
           </CardHeader>
           <CardContent>
-            <Progress value={94.2} className="h-1.5 bg-slate-100" />
+            <Progress value={94.2} className="h-1.5 bg-muted" />
             <p className="text-[10px] text-muted-foreground mt-2 font-medium">4,520 Students marked present</p>
           </CardContent>
         </Card>
-        <Card className="border-none shadow-sm overflow-hidden bg-white">
+        <Card className="border-none shadow-sm overflow-hidden bg-card">
           <CardHeader className="pb-2">
              <div className="flex items-center justify-between">
               <CardDescription className="font-bold uppercase text-[10px] tracking-widest">At-Risk Alerts</CardDescription>
@@ -102,11 +102,11 @@ export default function AttendancePage() {
             <CardTitle className="text-3xl font-bold">128</CardTitle>
           </CardHeader>
           <CardContent>
-             <Progress value={20} className="h-1.5 bg-slate-100" />
+             <Progress value={20} className="h-1.5 bg-muted" />
              <p className="text-[10px] text-muted-foreground mt-2 font-medium">Students under 75% threshold</p>
           </CardContent>
         </Card>
-        <Card className="border-none shadow-sm overflow-hidden bg-white">
+        <Card className="border-none shadow-sm overflow-hidden bg-card">
           <CardHeader className="pb-2">
              <div className="flex items-center justify-between">
               <CardDescription className="font-bold uppercase text-[10px] tracking-widest">Late Entries</CardDescription>
@@ -115,21 +115,21 @@ export default function AttendancePage() {
             <CardTitle className="text-3xl font-bold">42</CardTitle>
           </CardHeader>
           <CardContent>
-             <Progress value={10} className="h-1.5 bg-slate-100" />
+             <Progress value={10} className="h-1.5 bg-muted" />
              <p className="text-[10px] text-muted-foreground mt-2 font-medium">Reported in the last 24 hours</p>
           </CardContent>
         </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-none shadow-sm bg-white overflow-hidden">
+        <Card className="lg:col-span-2 border-none shadow-sm bg-card overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-lg font-headline">Departmental Trends</CardTitle>
               <CardDescription>Comparative data for current semester</CardDescription>
             </div>
             <Select value={timeRange} onValueChange={setTimeRange}>
-              <SelectTrigger className="w-[140px] bg-slate-50 border-none h-9 text-xs">
+              <SelectTrigger className="w-[140px] bg-muted border-none h-9 text-xs">
                 <SelectValue placeholder="Range" />
               </SelectTrigger>
               <SelectContent>
@@ -141,9 +141,9 @@ export default function AttendancePage() {
           <CardContent className="h-[300px] pt-4">
             <ChartContainer config={chartConfig}>
               <AreaChart data={weeklyData}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{fontSize: 10}} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10}} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                <XAxis dataKey="label" axisLine={false} tickLine={false} tick={{fontSize: 10, fill: 'hsl(var(--muted-foreground))'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fill: 'hsl(var(--muted-foreground))'}} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Area type="monotone" dataKey="engineering" stroke="var(--color-engineering)" fill="var(--color-engineering)" fillOpacity={0.1} />
                 <Area type="monotone" dataKey="management" stroke="var(--color-management)" fill="var(--color-management)" fillOpacity={0.1} />
@@ -152,22 +152,22 @@ export default function AttendancePage() {
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm bg-white">
+        <Card className="border-none shadow-sm bg-card">
            <CardHeader>
               <CardTitle className="text-lg">Recent Logs</CardTitle>
               <CardDescription>Last entries from all sections</CardDescription>
            </CardHeader>
            <CardContent className="space-y-4">
               {mockAttendance.slice(0, 4).map(log => (
-                <div key={log.id} className="flex items-center justify-between p-3 rounded-xl bg-slate-50/50 border border-slate-100">
+                <div key={log.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 border border-border">
                   <div className="flex flex-col">
-                    <span className="text-sm font-bold text-slate-800">{log.name}</span>
+                    <span className="text-sm font-bold text-foreground">{log.name}</span>
                     <span className="text-[10px] text-muted-foreground">{log.subject}</span>
                   </div>
                   <Badge className={cn(
                     "uppercase text-[9px] font-bold border-none",
-                    log.status === 'present' ? "bg-emerald-100 text-emerald-700" :
-                    log.status === 'absent' ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                    log.status === 'present' ? "bg-emerald-500/10 text-emerald-500" :
+                    log.status === 'absent' ? "bg-red-500/10 text-red-500" : "bg-amber-500/10 text-amber-500"
                   )}>
                     {log.status}
                   </Badge>
@@ -178,18 +178,18 @@ export default function AttendancePage() {
         </Card>
       </div>
 
-      <Card className="border-none shadow-sm bg-white overflow-hidden">
+      <Card className="border-none shadow-sm bg-card overflow-hidden">
         <CardHeader className="border-b pb-6">
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-4 flex-1">
               <div className="relative w-full max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search students..." className="pl-10 bg-slate-50 border-none h-10" />
+                <Input placeholder="Search students..." className="pl-10 bg-muted border-none h-10" />
               </div>
               <Select value={subjectFilter} onValueChange={setSubjectFilter}>
-                <SelectTrigger className="w-[180px] bg-slate-50 border-none h-10">
+                <SelectTrigger className="w-[180px] bg-muted border-none h-10">
                   <div className="flex items-center gap-2">
-                    <Filter className="h-3.5 w-3.5 text-slate-400" />
+                    <Filter className="h-3.5 w-3.5 text-muted-foreground" />
                     <SelectValue placeholder="All Subjects" />
                   </div>
                 </SelectTrigger>
@@ -207,7 +207,7 @@ export default function AttendancePage() {
         </CardHeader>
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-slate-50/50">
+            <TableHeader className="bg-muted/50">
               <TableRow className="border-none hover:bg-transparent">
                 <TableHead className="font-bold pl-6">Student Name</TableHead>
                 <TableHead className="font-bold">Subject</TableHead>
@@ -218,22 +218,22 @@ export default function AttendancePage() {
             </TableHeader>
             <TableBody>
               {mockAttendance.map((row) => (
-                <TableRow key={row.id} className="group hover:bg-slate-50/50 border-slate-100">
-                  <TableCell className="font-bold pl-6">{row.name}</TableCell>
-                  <TableCell className="text-sm text-slate-600">{row.subject}</TableCell>
-                  <TableCell className="text-sm text-slate-500 font-medium">{row.date}</TableCell>
+                <TableRow key={row.id} className="group hover:bg-muted/30 border-border">
+                  <TableCell className="font-bold pl-6 text-foreground">{row.name}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{row.subject}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground font-medium">{row.date}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className={cn(
                         "p-1.5 rounded-full",
-                        row.status === 'present' ? "bg-emerald-100 text-emerald-600" :
-                        row.status === 'absent' ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"
+                        row.status === 'present' ? "bg-emerald-500/10 text-emerald-500" :
+                        row.status === 'absent' ? "bg-red-500/10 text-red-500" : "bg-amber-500/10 text-amber-500"
                       )}>
                         {row.status === 'present' ? <CheckCircle2 className="h-3.5 w-3.5" /> :
                          row.status === 'absent' ? <XCircle className="h-3.5 w-3.5" /> : 
                          <Clock className="h-3.5 w-3.5" />}
                       </div>
-                      <span className="text-xs font-bold capitalize">{row.status}</span>
+                      <span className="text-xs font-bold capitalize text-foreground">{row.status}</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-right pr-6">
