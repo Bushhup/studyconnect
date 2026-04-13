@@ -35,8 +35,8 @@
       "description": "User profile with role-specific data.",
       "properties": {
         "id": { "type": "string" },
-        "role": { "type": "string", "enum": ["student", "faculty", "admin"] },
-        "departmentId": { "type": "string" },
+        "role": { "type": "string", "enum": ["student", "faculty", "admin", "hod"] },
+        "departmentId": { "type": "string", "description": "Mandatory for HOD, Faculty, and Students." },
         "performanceScore": { "type": "number", "description": "0-100 score based on metrics." },
         "attendanceRate": { "type": "number" }
       }

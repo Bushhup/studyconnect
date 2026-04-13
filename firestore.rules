@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -20,15 +21,30 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && (
         exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid)) ||
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        get(/databases/$(database)/documents/colleges/study-connect-college/users/$(request.auth.uid)).data.role == 'admin'
       );
+    }
+
+    /**
+     * HOD check: Verified via user role and department restriction.
+     */
+    function isHOD() {
+      return isSignedIn() && get(/databases/$(database)/documents/colleges/study-connect-college/users/$(request.auth.uid)).data.role == 'hod';
+    }
+
+    function hodDept() {
+      return get(/databases/$(database)/documents/colleges/study-connect-college/users/$(request.auth.uid)).data.departmentId;
     }
 
     /**
      * Faculty check: Verified via marker collection.
      */
     function isFaculty() {
-      return isSignedIn() && exists(/databases/$(database)/documents/roles_faculty/$(request.auth.uid));
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/roles_faculty/$(request.auth.uid)) ||
+        get(/databases/$(database)/documents/colleges/study-connect-college/users/$(request.auth.uid)).data.role == 'faculty'
+      );
     }
 
     /** 
@@ -54,12 +70,24 @@ service cloud.firestore {
       match /users/{userId} {
         allow get: if isSignedIn();
         allow list: if true; // Required for client-side username -> email lookup
-        allow write: if isAdmin();
+        allow write: if isAdmin() || (isHOD() && userId == request.auth.uid);
       }
 
-      match /departments/{id} { allow read: if true; allow write: if isAdmin(); }
-      match /classes/{id} { allow read: if true; allow write: if isAdmin(); }
-      match /courses/{id} { allow read: if true; allow write: if isAdmin(); }
+      match /departments/{id} { 
+        allow read: if true; 
+        allow write: if isAdmin() || (isHOD() && id == hodDept()); 
+      }
+      
+      match /classes/{id} { 
+        allow read: if true; 
+        allow write: if isAdmin() || (isHOD() && get(/databases/$(database)/documents/colleges/$(collegeId)/classes/$(id)).data.departmentId == hodDept()); 
+      }
+      
+      match /courses/{id} { 
+        allow read: if true; 
+        allow write: if isAdmin() || (isHOD() && get(/databases/$(database)/documents/colleges/$(collegeId)/courses/$(id)).data.departmentId == hodDept()); 
+      }
+      
       match /achievements/{id} { allow read: if true; allow write: if isAdmin(); }
       match /events/{id} { allow read: if true; allow write: if isAdmin(); }
 
@@ -70,8 +98,8 @@ service cloud.firestore {
        * - Updatable ONLY by Admin.
        */
       match /studentProfiles/{userId} {
-        allow get: if isOwner(userId) || isAdmin() || isFaculty();
-        allow list: if isAdmin() || isFaculty();
+        allow get: if isOwner(userId) || isAdmin() || isFaculty() || isHOD();
+        allow list: if isAdmin() || isFaculty() || isHOD();
         allow create: if isOwner(userId);
         allow update, delete: if isAdmin();
       }
@@ -80,7 +108,7 @@ service cloud.firestore {
     // --- Auth & Role Markers ---
 
     match /roles_admin/{id} { allow get: if isSignedIn(); allow list: if isAdmin(); }
-    match /roles_faculty/{id} { allow get: if isSignedIn(); allow list: if isAdmin() || isFaculty(); }
+    match /roles_faculty/{id} { allow get: if isSignedIn(); allow list: if isAdmin() || isFaculty() || isHOD(); }
     match /admins/{id} { allow get, write: if true; } // Facilitates initial admin setup
   }
 }

@@ -20,10 +20,13 @@ import {
   DropdownMenuItem, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
-import { useFirebase } from '@/firebase';
+import { useFirebase, useUser, useDoc, useMemoFirebase } from '@/firebase';
+import { doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAppTheme } from '@/components/theme-provider';
+
+const collegeId = 'study-connect-college';
 
 const adminLinks = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, keywords: 'overview, stats, analytics' },
@@ -44,7 +47,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const hubRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLDivElement>(null);
-  const { auth } = useFirebase();
+  const { auth, firestore } = useFirebase();
+  const { user } = useUser();
   const isMobile = useIsMobile();
   const { theme } = useAppTheme();
   
@@ -59,6 +63,24 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [startRotation, setStartRotation] = useState(0);
   const [startDragPos, setStartDragPos] = useState({ x: 0, y: 0 });
   const [startLoopProgress, setStartLoopProgress] = useState(0);
+
+  // User Profile
+  const profileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
+  }, [firestore, user?.uid]);
+  const { data: profile } = useDoc(profileRef);
+
+  const isHOD = profile?.role === 'hod';
+
+  // Filter links for HOD
+  const filteredLinks = adminLinks.filter(link => {
+    if (isHOD) {
+      // HOD restricted access
+      return !['/admin/logs', '/admin/settings', '/admin/users'].includes(link.href);
+    }
+    return true;
+  });
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -83,16 +105,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (theme.navStyle === 'wheel') {
         setRotation(prev => (prev + 0.15) % 360);
       } else {
-        setLoopProgress(prev => (prev + 0.04) % adminLinks.length);
+        setLoopProgress(prev => (prev + 0.04) % filteredLinks.length);
       }
     }, 30);
     return () => clearInterval(interval);
-  }, [isOpen, isRotating, isDragging, theme.navStyle]);
+  }, [isOpen, isRotating, isDragging, theme.navStyle, filteredLinks.length]);
 
   // Search Logic
   useEffect(() => {
     if (searchQuery.trim().length > 0) {
-      const filtered = adminLinks.filter(link => 
+      const filtered = filteredLinks.filter(link => 
         link.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
         link.keywords?.toLowerCase().includes(searchQuery.toLowerCase())
       );
@@ -102,7 +124,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setSearchResults([]);
       setIsSearchOpen(false);
     }
-  }, [searchQuery]);
+  }, [searchQuery, filteredLinks]);
 
   // Click outside search results
   useEffect(() => {
@@ -173,7 +195,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       } else {
         const isAtBottom = position.y > window.innerHeight - 100;
         const isAtTop = position.y < 100;
-        const count = adminLinks.length;
+        const count = filteredLinks.length;
         
         if (isAtBottom || isAtTop) {
           const dx = clientX - startDragPos.x;
@@ -186,7 +208,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
       }
     }
-  }, [isDragging, isRotating, dragOffset, startAngle, startRotation, theme.navStyle, position, startDragPos, startLoopProgress, getAngle]);
+  }, [isDragging, isRotating, dragOffset, startAngle, startRotation, theme.navStyle, position, startDragPos, startLoopProgress, getAngle, filteredLinks.length]);
 
   const onEnd = useCallback(() => {
     if (isDragging) {
@@ -232,7 +254,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const getLinearTransform = (index: number) => {
     if (typeof window === 'undefined') return '';
     
-    const count = adminLinks.length;
+    const count = filteredLinks.length;
     const effectiveIndex = ((index - loopProgress) % count + count) % count;
     
     const isAtBottom = position.y > window.innerHeight - 100;
@@ -313,14 +335,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </div>
           <div className="flex items-center gap-4">
             <div className="flex flex-col items-end mr-2">
-              <span className="text-xs font-bold text-foreground">Administrator</span>
-              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">Master Portal</span>
+              <span className="text-xs font-bold text-foreground capitalize">{isHOD ? 'Department Head' : 'Administrator'}</span>
+              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">{isHOD ? profile?.departmentId : 'Master Portal'}</span>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-0 rounded-full border-2 border-transparent hover:border-border">
                   <Avatar className="h-9 w-9 md:h-10 md:w-10">
-                    <AvatarFallback className="bg-slate-900 text-white font-bold text-xs">AD</AvatarFallback>
+                    <AvatarFallback className="bg-slate-900 text-white font-bold text-xs">{isHOD ? 'HD' : 'AD'}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
@@ -362,9 +384,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             onMouseDown={startRotating}
             onTouchStart={startRotating}
           >
-            {adminLinks.map((link, index) => {
+            {filteredLinks.map((link, index) => {
               const isActive = pathname === link.href;
-              const angle = (index / adminLinks.length) * 360;
+              const angle = (index / filteredLinks.length) * 360;
               const radius = hubRadius;
 
               const style = theme.navStyle === 'wheel' 

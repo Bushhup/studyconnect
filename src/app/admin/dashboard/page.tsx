@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { seedDatabase } from '@/lib/seed-data';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -61,16 +61,25 @@ export default function AdminDashboard() {
   
   const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
   const isAdmin = profile?.role === 'admin';
+  const isHOD = profile?.role === 'hod';
+  const hasAccess = isAdmin || isHOD;
 
+  // Department-restricted queries
   const usersQuery = useMemoFirebase(() => {
-    if (!db || !isAdmin) return null;
+    if (!db || !hasAccess) return null;
+    if (isHOD && profile?.departmentId) {
+      return query(collection(db, 'colleges', collegeId, 'users'), where('departmentId', '==', profile.departmentId));
+    }
     return collection(db, 'colleges', collegeId, 'users');
-  }, [db, isAdmin]);
+  }, [db, hasAccess, isHOD, profile?.departmentId]);
 
   const deptsQuery = useMemoFirebase(() => {
-    if (!db || !isAdmin) return null;
+    if (!db || !hasAccess) return null;
+    if (isHOD && profile?.departmentId) {
+      return query(collection(db, 'colleges', collegeId, 'departments'), where('id', '==', profile.departmentId));
+    }
     return collection(db, 'colleges', collegeId, 'departments');
-  }, [db, isAdmin]);
+  }, [db, hasAccess, isHOD, profile?.departmentId]);
   
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
   const { data: depts, isLoading: deptsLoading } = useCollection(deptsQuery);
@@ -86,10 +95,10 @@ export default function AdminDashboard() {
   })) || [];
 
   const stats = [
-    { label: 'Academic Divisions', value: deptCount.toString(), icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50', link: '/admin/departments' },
-    { label: 'Total Faculty', value: facultyCount.toString(), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50', link: '/admin/faculty' },
-    { label: 'Total Students', value: studentCount.toString(), icon: GraduationCap, color: 'text-emerald-600', bg: 'bg-emerald-50', link: '/admin/students' },
-    { label: 'System Uptime', value: '99.9%', icon: CheckCircle2, color: 'text-amber-600', bg: 'bg-amber-50', link: '/admin/logs' },
+    { label: isHOD ? 'My Division' : 'Academic Divisions', value: deptCount.toString(), icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50', link: '/admin/departments' },
+    { label: 'Division Faculty', value: facultyCount.toString(), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50', link: isHOD ? `/admin/departments/${profile?.departmentId}` : '/admin/faculty' },
+    { label: 'Division Students', value: studentCount.toString(), icon: GraduationCap, color: 'text-emerald-600', bg: 'bg-emerald-50', link: isHOD ? `/admin/departments/${profile?.departmentId}` : '/admin/students' },
+    { label: 'System Status', value: '99.9%', icon: CheckCircle2, color: 'text-amber-600', bg: 'bg-amber-50', link: '#' },
   ];
 
   const handleSeedData = async () => {
@@ -114,7 +123,7 @@ export default function AdminDashboard() {
     );
   }
 
-  if (!isAdmin) {
+  if (!hasAccess) {
     return (
       <div className="flex flex-col items-center justify-center p-40 text-center gap-4">
         <AlertCircle className="h-12 w-12 text-red-500" />
@@ -128,14 +137,20 @@ export default function AdminDashboard() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Institutional Oversight</h1>
-          <p className="text-muted-foreground mt-1">Unified command for departments, performance, and infrastructure.</p>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">
+            {isHOD ? `${profile?.departmentId} Oversight` : 'Institutional Oversight'}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {isHOD ? `Head of Department management for ${profile?.departmentId}.` : 'Unified command for departments, performance, and infrastructure.'}
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 bg-card" onClick={handleSeedData} disabled={isSeeding}>
-            {isSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
-            Provision Hierarchy
-          </Button>
+          {isAdmin && (
+            <Button variant="outline" className="gap-2 bg-card" onClick={handleSeedData} disabled={isSeeding}>
+              {isSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+              Provision Hierarchy
+            </Button>
+          )}
           <Button className="font-bold shadow-lg shadow-primary/20">Generate Insights</Button>
         </div>
       </div>
@@ -163,8 +178,8 @@ export default function AdminDashboard() {
         <Card className="lg:col-span-2 border-none shadow-sm bg-card rounded-[2.5rem] overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-headline font-bold">Institutional Growth</CardTitle>
-              <CardDescription>Academic progression vs attendance rates across all divisions.</CardDescription>
+              <CardTitle className="text-lg font-headline font-bold">Growth Metrics</CardTitle>
+              <CardDescription>Academic progression vs attendance rates for your division.</CardDescription>
             </div>
             <div className="flex gap-2">
                 <Badge variant="outline" className="bg-primary/5 text-primary border-none font-bold uppercase text-[9px]">Attendance</Badge>
@@ -198,9 +213,9 @@ export default function AdminDashboard() {
         <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
           <CardHeader>
             <CardTitle className="text-lg font-headline font-bold flex items-center gap-2">
-              <PieChartIcon className="h-5 w-5 text-primary" /> Enrollment Split
+              <PieChartIcon className="h-5 w-5 text-primary" /> Student Split
             </CardTitle>
-            <CardDescription>Student distribution per division</CardDescription>
+            <CardDescription>Enrollment per class section</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -236,7 +251,7 @@ export default function AdminDashboard() {
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
           <CardHeader className="pb-4">
-            <CardTitle className="text-lg font-headline font-bold">Top Performing Divisions</CardTitle>
+            <CardTitle className="text-lg font-headline font-bold">Division Efficiency</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {depts?.slice(0, 3).map((d, i) => (
@@ -255,7 +270,7 @@ export default function AdminDashboard() {
               </div>
             ))}
             <Button asChild variant="ghost" className="w-full font-bold uppercase text-[10px] tracking-widest text-primary hover:bg-primary/5">
-              <Link href="/admin/departments">View All Departments</Link>
+              <Link href="/admin/departments">View Detailed Analysis</Link>
             </Button>
           </CardContent>
         </Card>
@@ -265,13 +280,13 @@ export default function AdminDashboard() {
             <div className="p-3 bg-white/10 rounded-2xl">
               <TrendingUp className="h-6 w-6" />
             </div>
-            <p className="font-bold text-lg font-headline">Departmental Load</p>
+            <p className="font-bold text-lg font-headline">Operational Load</p>
           </div>
           <p className="text-xs text-white/60 leading-relaxed">
-            Academic resources are balanced across {deptCount} divisions. Engineering currently holds the highest student enrollment at 42%.
+            Your division resource allocation is optimized. Current capacity is at 84%.
           </p>
           <Button variant="outline" className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white font-bold rounded-xl h-12">
-            Optimize Resource Allocation
+            Request Resource Scaling
           </Button>
         </Card>
       </div>

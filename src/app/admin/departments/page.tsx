@@ -2,8 +2,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useCollection, useMemoFirebase, useFirestore, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useMemoFirebase, useFirestore, useUser, useDoc } from '@/firebase';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { addDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -28,16 +28,28 @@ export default function DepartmentManagement() {
   const [name, setName] = useState('');
   const [hod, setHod] = useState('');
 
+  const userProfileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
+  }, [firestore, user?.uid]);
+  
+  const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
+  const isAdmin = profile?.role === 'admin';
+  const isHOD = profile?.role === 'hod';
+
   const deptQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
+    if (isHOD && profile?.departmentId) {
+      return query(collection(firestore, 'colleges', collegeId, 'departments'), where('id', '==', profile.departmentId));
+    }
     return collection(firestore, 'colleges', collegeId, 'departments');
-  }, [firestore, user]);
+  }, [firestore, user, isHOD, profile?.departmentId]);
 
   const { data: departments, isLoading } = useCollection(deptQuery);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) return;
+    if (!name || !isAdmin) return;
 
     const deptRef = collection(firestore, 'colleges', collegeId, 'departments');
     addDocumentNonBlocking(deptRef, {
@@ -58,43 +70,47 @@ export default function DepartmentManagement() {
           <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Institutional Architecture</h1>
           <p className="text-muted-foreground mt-1">Manage academic divisions and their assigned resources.</p>
         </div>
-        <div className="flex gap-2">
-          <CsvImportDialog 
-            title="Bulk Create Departments"
-            description="Import multiple academic divisions at once."
-            columns={DEPT_CSV_COLUMNS}
-          />
-          <Button onClick={() => (document.getElementById('deptName') as any)?.focus()} className="gap-2 shadow-lg shadow-primary/20">
-            <Plus className="h-4 w-4" /> New Division
-          </Button>
-        </div>
+        {isAdmin && (
+          <div className="flex gap-2">
+            <CsvImportDialog 
+              title="Bulk Create Departments"
+              description="Import multiple academic divisions at once."
+              columns={DEPT_CSV_COLUMNS}
+            />
+            <Button onClick={() => (document.getElementById('deptName') as any)?.focus()} className="gap-2 shadow-lg shadow-primary/20">
+              <Plus className="h-4 w-4" /> New Division
+            </Button>
+          </div>
+        )}
       </div>
 
       <div className="grid lg:grid-cols-4 gap-8">
-        <Card className="h-fit bg-card border-none shadow-sm rounded-2xl lg:sticky lg:top-8">
-          <CardHeader>
-            <CardTitle className="text-lg">Register Department</CardTitle>
-            <CardDescription>Add a new academic node to the system.</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleCreate}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="deptName">Division Name</Label>
-                <Input id="deptName" value={name} onChange={(e) => setName(e.target.value)} required className="bg-muted border-none shadow-none h-11" placeholder="e.g. Mechanical Engineering" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="hod">Head of Department</Label>
-                <Input id="hod" value={hod} onChange={(e) => setHod(e.target.value)} placeholder="e.g. Dr. Jane Doe" className="bg-muted border-none shadow-none h-11" />
-              </div>
-              <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight">
-                <Plus className="mr-2 h-4 w-4" /> Create Node
-              </Button>
-            </CardContent>
-          </form>
-        </Card>
+        {isAdmin && (
+          <Card className="h-fit bg-card border-none shadow-sm rounded-2xl lg:sticky lg:top-8">
+            <CardHeader>
+              <CardTitle className="text-lg">Register Department</CardTitle>
+              <CardDescription>Add a new academic node to the system.</CardDescription>
+            </CardHeader>
+            <form onSubmit={handleCreate}>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="deptName">Division Name</Label>
+                  <Input id="deptName" value={name} onChange={(e) => setName(e.target.value)} required className="bg-muted border-none shadow-none h-11" placeholder="e.g. Mechanical Engineering" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="hod">Head of Department</Label>
+                  <Input id="hod" value={hod} onChange={(e) => setHod(e.target.value)} placeholder="e.g. Dr. Jane Doe" className="bg-muted border-none shadow-none h-11" />
+                </div>
+                <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight">
+                  <Plus className="mr-2 h-4 w-4" /> Create Node
+                </Button>
+              </CardContent>
+            </form>
+          </Card>
+        )}
 
-        <div className="lg:col-span-3">
-          {isLoading ? (
+        <div className={cn(isAdmin ? "lg:col-span-3" : "col-span-full")}>
+          {isLoading || profileLoading ? (
             <div className="flex flex-col items-center justify-center p-20 gap-4">
               <Loader2 className="animate-spin h-10 w-10 text-primary" />
               <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Syncing Divisions...</p>

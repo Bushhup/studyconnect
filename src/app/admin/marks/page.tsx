@@ -2,8 +2,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useFirestore, useCollection, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +41,14 @@ export default function MarksManagementPage() {
   const firestore = useFirestore();
   const { user } = useUser();
 
+  // User Profile for HOD Role Check
+  const profileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.uid) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
+  }, [firestore, user?.uid]);
+  const { data: profile, isLoading: profileLoading } = useDoc(profileRef);
+  const isHOD = profile?.role === 'hod';
+
   // Navigation State
   const [viewState, setViewState] = useState<'depts' | 'classes' | 'students'>('depts');
   const [selectedDeptId, setSelectedDeptId] = useState<string | null>(null);
@@ -52,11 +60,18 @@ export default function MarksManagementPage() {
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
 
   // Data Fetching
-  const deptsQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'departments'), [firestore]);
+  const deptsQuery = useMemoFirebase(() => {
+    if (isHOD && profile?.departmentId) {
+      return query(collection(firestore, 'colleges', collegeId, 'departments'), where('id', '==', profile.departmentId));
+    }
+    return collection(firestore, 'colleges', collegeId, 'departments');
+  }, [firestore, isHOD, profile?.departmentId]);
+
   const classesQuery = useMemoFirebase(() => {
-    if (!selectedDeptId) return null;
-    return query(collection(firestore, 'colleges', collegeId, 'classes'), where('departmentId', '==', selectedDeptId));
-  }, [firestore, selectedDeptId]);
+    const deptId = selectedDeptId || (isHOD ? profile?.departmentId : null);
+    if (!deptId) return null;
+    return query(collection(firestore, 'colleges', collegeId, 'classes'), where('departmentId', '==', deptId));
+  }, [firestore, selectedDeptId, isHOD, profile?.departmentId]);
   
   const studentsQuery = useMemoFirebase(() => {
     if (!selectedClassId) return null;
@@ -66,6 +81,14 @@ export default function MarksManagementPage() {
   const { data: departments, isLoading: deptsLoading } = useCollection(deptsQuery);
   const { data: classes, isLoading: classesLoading } = useCollection(classesQuery);
   const { data: students, isLoading: studentsLoading } = useCollection(studentsQuery);
+
+  // Auto-select department for HOD
+  useState(() => {
+    if (isHOD && profile?.departmentId && viewState === 'depts') {
+      setViewState('classes');
+      setSelectedDeptId(profile.departmentId);
+    }
+  });
 
   // Aggregation Logic (Mocked performance for sorting)
   const departmentsWithPerformance = departments?.map(d => ({
@@ -95,8 +118,10 @@ export default function MarksManagementPage() {
       setViewState('classes');
       setSelectedClassId(null);
     } else if (viewState === 'classes') {
-      setViewState('depts');
-      setSelectedDeptId(null);
+      if (!isHOD) {
+        setViewState('depts');
+        setSelectedDeptId(null);
+      }
     }
   };
 
@@ -104,15 +129,17 @@ export default function MarksManagementPage() {
     `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
-  const selectedDept = departments?.find(d => d.id === selectedDeptId);
+  const selectedDept = departments?.find(d => d.id === (selectedDeptId || profile?.departmentId));
   const selectedClass = classes?.find(c => c.id === selectedClassId);
+
+  if (profileLoading) return <div className="flex justify-center p-40"><Loader2 className="animate-spin" /></div>;
 
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            {viewState !== 'depts' && (
+            {viewState !== 'depts' && (!isHOD || (isHOD && viewState !== 'classes')) && (
               <Button variant="ghost" size="icon" onClick={handleBack} className="h-8 w-8 rounded-full bg-muted">
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -145,7 +172,7 @@ export default function MarksManagementPage() {
       </div>
 
       {/* Leaderboard View */}
-      {viewState === 'depts' && (
+      {viewState === 'depts' && !isHOD && (
         <div className="space-y-8">
           <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
             <CardHeader>
@@ -217,21 +244,6 @@ export default function MarksManagementPage() {
                 <Button className="w-full bg-white text-primary hover:bg-slate-100 font-bold rounded-xl h-12 relative z-10 shadow-lg">
                   View Detailed Analytics
                 </Button>
-              </Card>
-
-              <Card className="border-none shadow-sm bg-card rounded-2xl p-6">
-                <CardHeader className="p-0 pb-4">
-                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Institutional Momentum</CardTitle>
-                </CardHeader>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
-                    <TrendingUp className="h-5 w-5 text-emerald-500" />
-                    <div>
-                      <p className="text-xs font-bold text-foreground">+4.2% Growth</p>
-                      <p className="text-[10px] text-muted-foreground">Institution average compared to last year.</p>
-                    </div>
-                  </div>
-                </div>
               </Card>
             </div>
           </div>
