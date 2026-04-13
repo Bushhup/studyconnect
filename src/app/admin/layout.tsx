@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
-  LayoutDashboard, Users, GraduationCap, Building2, 
+  LayoutDashboard, Building2, 
   BookOpen, Calendar, FileSpreadsheet, ClipboardCheck, 
   BarChart3, FileText, Settings, Bell, Activity, UserCog,
   Search, LogOut, Menu, X, GripHorizontal
@@ -27,8 +27,6 @@ import { useAppTheme } from '@/components/theme-provider';
 const adminLinks = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { href: '/admin/users', label: 'Users', icon: UserCog },
-  { href: '/admin/students', label: 'Students', icon: GraduationCap },
-  { href: '/admin/faculty', label: 'Faculty', icon: Users },
   { href: '/admin/departments', label: 'Departments', icon: Building2 },
   { href: '/admin/classes', label: 'Classes', icon: Calendar },
   { href: '/admin/courses', label: 'Courses', icon: BookOpen },
@@ -79,7 +77,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (theme.navStyle === 'wheel') {
         setRotation(prev => (prev + 0.15) % 360);
       } else {
-        // Reduced kinetic loop speed
         setLoopProgress(prev => (prev + 0.04) % adminLinks.length);
       }
     }, 30);
@@ -148,7 +145,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         
         if (isAtBottom || isAtTop) {
           const dx = clientX - startDragPos.x;
-          // One link width = totalWidth / count
           const units = dx / (window.innerWidth / count);
           setLoopProgress(((startLoopProgress - units) % count + count) % count);
         } else {

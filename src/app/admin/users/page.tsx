@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { 
   useCollection, 
   useDoc,
@@ -14,7 +15,7 @@ import {
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -30,7 +31,7 @@ import {
   Users, Search, MoreHorizontal, Plus, 
   GraduationCap, ShieldCheck, UserCog, Edit3, 
   Eye, Trash2, Loader2, CheckCircle2, Lock, AlertCircle,
-  AtSign
+  AtSign, ArrowRight, FileUser
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -298,6 +299,53 @@ export default function UserManagementPage() {
             </DialogContent>
           </Dialog>
         )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <Card className="border-none shadow-sm bg-card hover:shadow-md transition-all group rounded-[2rem] overflow-hidden">
+          <CardHeader className="pb-4">
+            <div className="p-3 bg-blue-500/10 text-blue-500 rounded-2xl w-fit mb-2">
+              <Users className="h-6 w-6" />
+            </div>
+            <CardTitle className="text-xl font-headline">Faculty Directory</CardTitle>
+            <CardDescription>Manage academic staff and department assignments.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="link" className="p-0 font-bold text-primary group-hover:translate-x-1 transition-transform">
+              <Link href="/admin/faculty">Open Directory <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-card hover:shadow-md transition-all group rounded-[2rem] overflow-hidden">
+          <CardHeader className="pb-4">
+            <div className="p-3 bg-emerald-500/10 text-emerald-500 rounded-2xl w-fit mb-2">
+              <GraduationCap className="h-6 w-6" />
+            </div>
+            <CardTitle className="text-xl font-headline">Student Directory</CardTitle>
+            <CardDescription>Track enrollment and performance metrics.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="link" className="p-0 font-bold text-primary group-hover:translate-x-1 transition-transform">
+              <Link href="/admin/students">Open Directory <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm bg-card hover:shadow-md transition-all group rounded-[2rem] overflow-hidden">
+          <CardHeader className="pb-4">
+            <div className="p-3 bg-purple-500/10 text-purple-500 rounded-2xl w-fit mb-2">
+              <FileUser className="h-6 w-6" />
+            </div>
+            <CardTitle className="text-xl font-headline">Student Bio-Data</CardTitle>
+            <CardDescription>Verified biographical records and ID registries.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="link" className="p-0 font-bold text-primary group-hover:translate-x-1 transition-transform">
+              <Link href="/admin/students">Access Registry <ArrowRight className="ml-2 h-4 w-4" /></Link>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
       <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
