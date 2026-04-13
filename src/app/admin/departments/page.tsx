@@ -146,7 +146,7 @@ export default function DepartmentManagement() {
                       </div>
                     </div>
                     <Button asChild variant="outline" className="w-full rounded-xl h-11 font-bold group-hover:bg-primary group-hover:text-white transition-all">
-                      <Link href={`/admin/departments/${dept.id}`}>
+                      <Link href={`/admin/departments/view?id=${dept.id}`}>
                         Manage Division <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
@@ -168,5 +168,5 @@ export default function DepartmentManagement() {
 }
 
 function Badge({ children, className, variant = "default" }: any) {
-  return <span className={`px-2 py-0.5 rounded-full text-[10px] border ${className}`}>{children}</span>;
+  return <span className={cn("px-2 py-0.5 rounded-full text-[10px] border", className)}>{children}</span>;
 }

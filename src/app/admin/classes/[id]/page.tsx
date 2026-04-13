@@ -1,11 +1,9 @@
-import ClassDetailClient from './class-detail-client';
-
-// Required for output: export with dynamic routes
+// This file is deprecated due to static export constraints.
+// Dynamic logic has moved to /admin/classes/view?id=...
 export function generateStaticParams() {
-  return [];
+  return [{ id: 'deprecated' }];
 }
 
-export default async function Page({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = await params;
-  return <ClassDetailClient id={resolvedParams.id} />;
+export default function Page() {
+  return null;
 }
