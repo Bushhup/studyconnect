@@ -59,6 +59,37 @@
           }
         }
       }
+    },
+    "Achievement": {
+      "title": "Achievement",
+      "type": "object",
+      "description": "A recorded academic or extracurricular milestone.",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "year": { "type": "integer" },
+        "description": { "type": "string" },
+        "category": { "type": "string" },
+        "departmentId": { "type": "string" },
+        "facultyInCharge": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "Event": {
+      "title": "Event",
+      "type": "object",
+      "description": "A campus activity or seminar.",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "description": { "type": "string" },
+        "location": { "type": "string" },
+        "category": { "type": "string" },
+        "departmentId": { "type": "string" },
+        "facultyInCharge": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
     }
   },
   "auth": {
@@ -81,6 +112,14 @@
       {
         "path": "/colleges/{collegeId}/academicRecords/{recordId}",
         "definition": { "entityName": "AcademicRecord", "description": "Aggregated performance data." }
+      },
+      {
+        "path": "/colleges/{collegeId}/achievements/{achievementId}",
+        "definition": { "entityName": "Achievement", "description": "Institutional milestones." }
+      },
+      {
+        "path": "/colleges/{collegeId}/events/{eventId}",
+        "definition": { "entityName": "Event", "description": "Campus calendar events." }
       }
     ]
   }
