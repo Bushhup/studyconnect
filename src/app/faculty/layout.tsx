@@ -23,6 +23,7 @@ import {
 import { useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAppTheme } from '@/components/theme-provider';
 
 const facultyLinks = [
   { href: '/faculty/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -46,6 +47,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
   const hubRef = useRef<HTMLDivElement>(null);
   const { auth } = useFirebase();
   const isMobile = useIsMobile();
+  const { theme } = useAppTheme();
   
   const [isOpen, setIsOpen] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -68,12 +70,12 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
   }, [isMobile, EDGE_MARGIN]);
 
   useEffect(() => {
-    if (!isOpen || isRotating || isDragging) return;
+    if (!isOpen || isRotating || isDragging || theme.navStyle === 'straight') return;
     const interval = setInterval(() => {
       setRotation(prev => (prev + 0.08) % 360);
     }, 50);
     return () => clearInterval(interval);
-  }, [isOpen, isRotating, isDragging]);
+  }, [isOpen, isRotating, isDragging, theme.navStyle]);
 
   const handleLogout = () => {
     signOut(auth).then(() => {
@@ -99,7 +101,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
   };
 
   const startRotating = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isOpen || isDragging) return;
+    if (!isOpen || isDragging || theme.navStyle === 'straight') return;
     e.stopPropagation();
     setIsRotating(true);
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -167,6 +169,21 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
   const hubDimensions = isMobile ? 320 : 480;
   const hubRadius = isMobile ? 130 : 190;
 
+  const getLinearTransform = (index: number) => {
+    const spacing = isMobile ? 48 : 56;
+    const offset = (index + 1) * spacing;
+    
+    const isAtBottom = position.y > window.innerHeight - 100;
+    const isAtTop = position.y < 100;
+    const isAtLeft = position.x < 100;
+    const isAtRight = position.x > window.innerWidth - 100;
+
+    if (isAtBottom) return `translateX(-${offset}px)`;
+    if (isAtTop) return `translateY(${offset}px)`;
+    if (isAtLeft || isAtRight) return `translateY(-${offset}px)`;
+    return `translateY(-${offset}px)`;
+  };
+
   return (
     <div className="flex min-h-screen bg-background text-foreground overflow-hidden relative">
       <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -223,7 +240,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
             style={{ 
               width: `${hubDimensions}px`, 
               height: `${hubDimensions}px`,
-              transform: `rotate(${rotation}deg)` 
+              transform: theme.navStyle === 'wheel' ? `rotate(${rotation}deg)` : 'none'
             }}
             onMouseDown={startRotating}
             onTouchStart={startRotating}
@@ -233,18 +250,24 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
               const radius = hubRadius;
               const isActive = pathname === link.href;
 
-              return (
-                <div
-                  key={link.href}
-                  className="absolute left-1/2 top-1/2 pointer-events-auto"
-                  style={{
+              const transformStyle = theme.navStyle === 'wheel'
+                ? {
                     transform: `
                       translate(-50%, -50%) 
                       rotate(${angle}deg) 
                       translateY(-${radius}px) 
                       rotate(-${angle + rotation}deg)
                     `
-                  }}
+                  }
+                : {
+                    transform: `translate(-50%, -50%) ${getLinearTransform(index)}`
+                  };
+
+              return (
+                <div
+                  key={link.href}
+                  className="absolute left-1/2 top-1/2 pointer-events-auto transition-transform duration-500"
+                  style={transformStyle}
                 >
                   <Link
                     href={link.href}
@@ -272,7 +295,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
             onMouseDown={startDragging}
             onTouchStart={startDragging}
             className={cn(
-              "relative w-12 h-12 md:w-14 md:h-14 rounded-full bg-slate-950 flex items-center justify-center cursor-move shadow-2xl transition-all duration-500 border-4",
+              "relative w-12 h-12 md:size-14 rounded-full bg-slate-950 flex items-center justify-center cursor-move shadow-2xl transition-all duration-500 border-4",
               isOpen ? "border-primary scale-110 bg-slate-900" : "border-slate-800",
               isDragging && "scale-125 shadow-primary/40 ring-4 ring-primary/20"
             )}

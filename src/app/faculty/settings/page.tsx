@@ -17,7 +17,7 @@ import {
   UserCircle, Mail, Building2, Bell, 
   Shield, Key, Globe, LogOut, Palette,
   Camera, CheckCircle2, Loader2, Check,
-  Layout, Type, Monitor
+  Layout, Type, Monitor, GripVertical, CircleDot
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -25,7 +25,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
-import { useAppTheme, type BackgroundTheme, type PrimaryTheme, type TextTheme } from '@/components/theme-provider';
+import { useAppTheme, type BackgroundTheme, type PrimaryTheme, type TextTheme, type NavStyle } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 
 const collegeId = 'study-connect-college';
@@ -44,12 +44,17 @@ const primaryThemes: { id: PrimaryTheme; name: string; color: string }[] = [
   { id: 'amber', name: 'Golden Sun', color: 'bg-amber-500' },
 ];
 
+const navStyles: { id: NavStyle; name: string; desc: string; icon: any }[] = [
+  { id: 'wheel', name: 'Orbital Wheel', desc: 'Classic circular rotating carousel.', icon: CircleDot },
+  { id: 'straight', name: 'Linear Edge', desc: 'Icons extend in a dynamic straight line.', icon: GripVertical },
+];
+
 export default function FacultySettings() {
   const { toast } = useToast();
   const router = useRouter();
   const { auth, user } = useFirebase();
   const firestore = useFirestore();
-  const { theme, setBg, setPrimary, setText } = useAppTheme();
+  const { theme, setBg, setPrimary, setText, setNavStyle } = useAppTheme();
 
   const userDocRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -106,15 +111,18 @@ export default function FacultySettings() {
               </CardHeader>
               <CardContent>
                  <Tabs defaultValue="background" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 h-11 bg-slate-50 p-1 rounded-xl mb-6">
-                       <TabsTrigger value="background" className="gap-2 rounded-lg text-xs">
-                         <Monitor className="h-3.5 w-3.5" /> Background
+                    <TabsList className="grid w-full grid-cols-4 h-11 bg-slate-50 p-1 rounded-xl mb-6">
+                       <TabsTrigger value="background" className="gap-2 rounded-lg text-xs font-bold">
+                         <Monitor className="h-3.5 w-3.5" /> Workspace
                        </TabsTrigger>
-                       <TabsTrigger value="common" className="gap-2 rounded-lg text-xs">
-                         <Type className="h-3.5 w-3.5" /> Text Contrast
+                       <TabsTrigger value="common" className="gap-2 rounded-lg text-xs font-bold">
+                         <Type className="h-3.5 w-3.5" /> Text
                        </TabsTrigger>
-                       <TabsTrigger value="special" className="gap-2 rounded-lg text-xs">
-                         <Layout className="h-3.5 w-3.5" /> Special Colors
+                       <TabsTrigger value="special" className="gap-2 rounded-lg text-xs font-bold">
+                         <Layout className="h-3.5 w-3.5" /> Accents
+                       </TabsTrigger>
+                       <TabsTrigger value="navigation" className="gap-2 rounded-lg text-xs font-bold">
+                         <GripVertical className="h-3.5 w-3.5" /> Nav
                        </TabsTrigger>
                     </TabsList>
 
@@ -164,6 +172,30 @@ export default function FacultySettings() {
                             <div className={cn("h-10 w-10 rounded-lg shadow-md", t.color)} />
                             <span className="text-[9px] font-bold uppercase tracking-tighter text-slate-500">{t.name}</span>
                             {theme.primary === t.id && <div className="absolute top-1 right-1 bg-primary text-white p-0.5 rounded-full"><Check className="h-2 w-2" /></div>}
+                          </button>
+                       ))}
+                    </TabsContent>
+
+                    <TabsContent value="navigation" className="space-y-3 animate-in fade-in-50">
+                       {navStyles.map((s) => (
+                          <button
+                            key={s.id}
+                            onClick={() => setNavStyle(s.id)}
+                            className={cn(
+                              "w-full flex items-center justify-between p-4 rounded-xl border-2 transition-all text-left",
+                              theme.navStyle === s.id ? "border-primary bg-primary/5" : "border-slate-50 bg-white"
+                            )}
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className={cn("p-2 rounded-lg", theme.navStyle === s.id ? "bg-primary text-white" : "bg-slate-100 text-slate-400")}>
+                                <s.icon className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold">{s.name}</p>
+                                <p className="text-[10px] text-muted-foreground">{s.desc}</p>
+                              </div>
+                            </div>
+                            {theme.navStyle === s.id && <Check className="h-4 w-4 text-primary" />}
                           </button>
                        ))}
                     </TabsContent>

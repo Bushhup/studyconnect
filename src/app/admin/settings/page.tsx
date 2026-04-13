@@ -8,9 +8,9 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Shield, Bell, Database, Palette, Check, 
-  Layout, Type, Sparkles, Monitor
+  Layout, Type, Sparkles, Monitor, CircleDot, GripVertical
 } from 'lucide-react';
-import { useAppTheme, type BackgroundTheme, type PrimaryTheme, type TextTheme } from '@/components/theme-provider';
+import { useAppTheme, type BackgroundTheme, type PrimaryTheme, type TextTheme, type NavStyle } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 
 const bgThemes: { id: BackgroundTheme; name: string; color: string }[] = [
@@ -35,8 +35,13 @@ const textThemes: { id: TextTheme; name: string; desc: string }[] = [
   { id: 'vivid', name: 'High Contrast', desc: 'Maximum readability for data-heavy views.' },
 ];
 
+const navStyles: { id: NavStyle; name: string; desc: string; icon: any }[] = [
+  { id: 'wheel', name: 'Orbital Wheel', desc: 'Icons rotate in a circular carousel format.', icon: CircleDot },
+  { id: 'straight', name: 'Linear Dynamic', desc: 'Icons align in a straight path based on edge.', icon: GripVertical },
+];
+
 export default function SettingsPage() {
-  const { theme, setBg, setPrimary, setText } = useAppTheme();
+  const { theme, setBg, setPrimary, setText, setNavStyle } = useAppTheme();
 
   return (
     <div className="space-y-8 pb-12">
@@ -71,15 +76,18 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="pt-6">
                  <Tabs defaultValue="background" className="w-full">
-                    <TabsList className="grid w-full grid-cols-3 h-12 bg-muted p-1 rounded-xl mb-8">
-                       <TabsTrigger value="background" className="gap-2 rounded-lg">
-                         <Monitor className="h-4 w-4" /> 1. Background
+                    <TabsList className="grid w-full grid-cols-4 h-12 bg-muted p-1 rounded-xl mb-8">
+                       <TabsTrigger value="background" className="gap-2 rounded-lg text-xs">
+                         <Monitor className="h-3.5 w-3.5" /> 1. Workspace
                        </TabsTrigger>
-                       <TabsTrigger value="common" className="gap-2 rounded-lg">
-                         <Type className="h-4 w-4" /> 2. Common Text
+                       <TabsTrigger value="common" className="gap-2 rounded-lg text-xs">
+                         <Type className="h-3.5 w-3.5" /> 2. Text
                        </TabsTrigger>
-                       <TabsTrigger value="special" className="gap-2 rounded-lg">
-                         <Layout className="h-4 w-4" /> 3. Special Accents
+                       <TabsTrigger value="special" className="gap-2 rounded-lg text-xs">
+                         <Layout className="h-3.5 w-3.5" /> 3. Accents
+                       </TabsTrigger>
+                       <TabsTrigger value="navigation" className="gap-2 rounded-lg text-xs">
+                         <GripVertical className="h-3.5 w-3.5" /> 4. Nav Hub
                        </TabsTrigger>
                     </TabsList>
 
@@ -149,6 +157,30 @@ export default function SettingsPage() {
                                   <Check className="h-3 w-3" />
                                 </div>
                               )}
+                            </button>
+                          ))}
+                       </div>
+                    </TabsContent>
+
+                    <TabsContent value="navigation" className="space-y-6 animate-in fade-in-50 duration-500">
+                       <div className="grid gap-4">
+                          {navStyles.map((s) => (
+                            <button
+                              key={s.id}
+                              onClick={() => setNavStyle(s.id)}
+                              className={cn(
+                                "flex items-center gap-4 p-5 rounded-2xl border-2 transition-all text-left",
+                                theme.navStyle === s.id ? "border-primary bg-primary/5" : "border-border hover:border-primary/20 bg-muted/30"
+                              )}
+                            >
+                              <div className={cn("p-3 rounded-xl", theme.navStyle === s.id ? "bg-primary text-white" : "bg-muted text-muted-foreground")}>
+                                <s.icon className="h-6 w-6" />
+                              </div>
+                              <div className="flex-1">
+                                <p className={cn("text-base font-bold", theme.navStyle === s.id ? "text-primary" : "text-foreground")}>{s.name}</p>
+                                <p className="text-xs text-muted-foreground">{s.desc}</p>
+                              </div>
+                              {theme.navStyle === s.id && <Check className="h-5 w-5 text-primary" />}
                             </button>
                           ))}
                        </div>

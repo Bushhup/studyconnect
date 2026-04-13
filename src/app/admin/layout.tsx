@@ -22,6 +22,7 @@ import {
 import { useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useAppTheme } from '@/components/theme-provider';
 
 const adminLinks = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -46,6 +47,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const hubRef = useRef<HTMLDivElement>(null);
   const { auth } = useFirebase();
   const isMobile = useIsMobile();
+  const { theme } = useAppTheme();
   
   const [isOpen, setIsOpen] = useState(false);
   const [rotation, setRotation] = useState(0);
@@ -68,12 +70,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [isMobile, EDGE_MARGIN]);
 
   useEffect(() => {
-    if (!isOpen || isRotating || isDragging) return;
+    if (!isOpen || isRotating || isDragging || theme.navStyle === 'straight') return;
     const interval = setInterval(() => {
       setRotation(prev => (prev + 0.15) % 360);
     }, 50);
     return () => clearInterval(interval);
-  }, [isOpen, isRotating, isDragging]);
+  }, [isOpen, isRotating, isDragging, theme.navStyle]);
 
   const handleLogout = () => {
     signOut(auth).then(() => {
@@ -99,7 +101,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   const startRotating = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isOpen || isDragging) return;
+    if (!isOpen || isDragging || theme.navStyle === 'straight') return;
     e.stopPropagation();
     setIsRotating(true);
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
@@ -167,6 +169,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const hubDimensions = isMobile ? 300 : 440;
   const hubRadius = isMobile ? 120 : 170;
 
+  // Determine dynamic orientation for "Straight" mode
+  const getLinearTransform = (index: number) => {
+    const spacing = isMobile ? 48 : 56;
+    const offset = (index + 1) * spacing;
+    
+    // Snapping Logic Check
+    const isAtBottom = position.y > window.innerHeight - 100;
+    const isAtTop = position.y < 100;
+    const isAtLeft = position.x < 100;
+    const isAtRight = position.x > window.innerWidth - 100;
+
+    if (isAtBottom) {
+      // Bottom Edge: Right to Left
+      return `translateX(-${offset}px)`;
+    } else if (isAtTop) {
+      // Top Edge: Left to Right (or Right to Left based on preference, using Left to Right)
+      return `translateY(${offset}px)`;
+    } else if (isAtLeft) {
+      // Side (Left): Bottom to Top
+      return `translateY(-${offset}px)`;
+    } else if (isAtRight) {
+      // Side (Right): Bottom to Top
+      return `translateY(-${offset}px)`;
+    }
+    return `translateY(-${offset}px)`; // Default
+  };
+
   return (
     <div className="flex min-h-screen bg-background text-foreground overflow-hidden relative">
       <div className="flex-1 flex flex-col overflow-hidden relative">
@@ -223,28 +252,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             style={{ 
               width: `${hubDimensions}px`, 
               height: `${hubDimensions}px`,
-              transform: `rotate(${rotation}deg)` 
+              transform: theme.navStyle === 'wheel' ? `rotate(${rotation}deg)` : 'none'
             }}
             onMouseDown={startRotating}
             onTouchStart={startRotating}
           >
             {adminLinks.map((link, index) => {
+              const isActive = pathname === link.href;
               const angle = (index / adminLinks.length) * 360;
               const radius = hubRadius;
-              const isActive = pathname === link.href;
 
-              return (
-                <div
-                  key={link.href}
-                  className="absolute left-1/2 top-1/2 pointer-events-auto"
-                  style={{
+              const style = theme.navStyle === 'wheel' 
+                ? {
                     transform: `
                       translate(-50%, -50%) 
                       rotate(${angle}deg) 
                       translateY(-${radius}px) 
                       rotate(-${angle + rotation}deg)
                     `
-                  }}
+                  }
+                : {
+                    transform: `translate(-50%, -50%) ${getLinearTransform(index)}`
+                  };
+
+              return (
+                <div
+                  key={link.href}
+                  className="absolute left-1/2 top-1/2 pointer-events-auto transition-transform duration-500"
+                  style={style}
                 >
                   <Link
                     href={link.href}
