@@ -1,8 +1,7 @@
-
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { 
   LayoutDashboard, Building2, 
   BookOpen, Calendar, FileSpreadsheet, ClipboardCheck, 
@@ -73,14 +72,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const isHOD = profile?.role === 'hod';
 
-  // Filter links for HOD
-  const filteredLinks = adminLinks.filter(link => {
-    if (isHOD) {
-      // HOD restricted access
-      return !['/admin/logs', '/admin/settings', '/admin/users'].includes(link.href);
-    }
-    return true;
-  });
+  // Filter links for HOD - Memoized to prevent infinite loops
+  const filteredLinks = useMemo(() => {
+    return adminLinks.filter(link => {
+      if (isHOD) {
+        // HOD restricted access
+        return !['/admin/logs', '/admin/settings', '/admin/users'].includes(link.href);
+      }
+      return true;
+    });
+  }, [isHOD]);
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
@@ -154,11 +155,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     });
   };
 
-  const getAngle = (clientX: number, clientY: number) => {
+  const getAngle = useCallback((clientX: number, clientY: number) => {
     const dx = clientX - position.x;
     const dy = clientY - position.y;
     return Math.atan2(dy, dx) * (180 / Math.PI);
-  };
+  }, [position.x, position.y]);
 
   const startRotating = (e: React.MouseEvent | React.TouchEvent) => {
     if (!isOpen || isDragging) return;

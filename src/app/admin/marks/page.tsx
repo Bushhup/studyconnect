@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -82,13 +81,13 @@ export default function MarksManagementPage() {
   const { data: classes, isLoading: classesLoading } = useCollection(classesQuery);
   const { data: students, isLoading: studentsLoading } = useCollection(studentsQuery);
 
-  // Auto-select department for HOD
-  useState(() => {
+  // Auto-select department for HOD - Fixed render loop by using useEffect
+  useEffect(() => {
     if (isHOD && profile?.departmentId && viewState === 'depts') {
       setViewState('classes');
       setSelectedDeptId(profile.departmentId);
     }
-  });
+  }, [isHOD, profile?.departmentId, viewState]);
 
   // Aggregation Logic (Mocked performance for sorting)
   const departmentsWithPerformance = departments?.map(d => ({
