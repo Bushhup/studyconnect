@@ -31,7 +31,8 @@ import {
   Users, Search, MoreHorizontal, Plus, 
   GraduationCap, ShieldCheck, UserCog, Edit3, 
   Eye, Trash2, Loader2, CheckCircle2, Lock, AlertCircle,
-  AtSign, ArrowRight, FileUser, Sparkles, RefreshCcw
+  AtSign, ArrowRight, FileUser, Sparkles, RefreshCcw,
+  Key
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -246,7 +247,8 @@ export default function UserManagementPage() {
       lastName: formData.lastName,
       role: formData.role,
       status: formData.status,
-      username: formData.username
+      username: formData.username,
+      password: formData.password
     });
 
     toast({ title: 'Record Synchronized', description: 'User information has been updated.' });
@@ -488,6 +490,7 @@ export default function UserManagementPage() {
                   <TableRow className="hover:bg-transparent border-none">
                     <TableHead className="w-[300px] font-bold text-foreground py-4 pl-6">Institutional Identity</TableHead>
                     <TableHead className="font-bold text-foreground">Portal Role</TableHead>
+                    <TableHead className="font-bold text-foreground">Security Password</TableHead>
                     <TableHead className="font-bold text-foreground">Status</TableHead>
                     <TableHead className="text-right font-bold text-foreground pr-6">Management</TableHead>
                   </TableRow>
@@ -522,6 +525,14 @@ export default function UserManagementPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Key className="h-3 w-3 text-muted-foreground" />
+                          <code className="text-xs font-mono font-bold text-foreground bg-muted px-2 py-0.5 rounded">
+                            {u.password || '********'}
+                          </code>
+                        </div>
+                      </TableCell>
+                      <TableCell>
                          <div className="flex items-center gap-1.5">
                             <div className={cn("w-1.5 h-1.5 rounded-full", u.status === 'inactive' ? 'bg-muted-foreground/30' : 'bg-emerald-500')} />
                             <span className="text-xs font-semibold text-muted-foreground capitalize">{u.status}</span>
@@ -554,7 +565,7 @@ export default function UserManagementPage() {
                   ))}
                   {filteredUsers.length === 0 && !isDataLoading && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center py-20 text-muted-foreground">
                         No institutional records match your search.
                       </TableCell>
                     </TableRow>
@@ -592,6 +603,16 @@ export default function UserManagementPage() {
                 <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Last Name</Label>
                 <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required />
               </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Reset Password</Label>
+              <Input 
+                type="text"
+                value={formData.password} 
+                onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                className="bg-muted border-none h-12 rounded-xl font-mono" 
+                placeholder="Enter new password"
+              />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
