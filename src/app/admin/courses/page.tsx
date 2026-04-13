@@ -5,8 +5,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, BookOpen, GraduationCap, Search, Filter } from 'lucide-react';
+import { Plus, BookOpen, GraduationCap, Search, Filter, FileSpreadsheet } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
+
+const COURSE_CSV_COLUMNS: CsvColumn[] = [
+  { key: 'code', label: 'Course Code', description: 'Unique alphanumeric identifier.', example: 'CS101', required: true },
+  { key: 'name', label: 'Course Title', description: 'Full name of the course.', example: 'Introduction to Data Structures', required: true },
+  { key: 'credits', label: 'Credits', description: 'Academic weightage units.', example: '4', required: true },
+  { key: 'type', label: 'Course Type', description: 'Core or Elective.', example: 'Core', required: true },
+  { key: 'departmentId', label: 'Dept ID', description: 'Mapping to a department.', example: 'dept-eng', required: false },
+];
 
 const STATIC_COURSES = [
   { id: 'c1', code: 'CS101', name: 'Intro to Computer Science', credits: 4, type: 'Core' },
@@ -31,9 +40,16 @@ export default function CourseManagementPage() {
           <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Curriculum Management</h1>
           <p className="text-muted-foreground mt-1">Define courses, credits, and degree requirements (Static Prototype).</p>
         </div>
-        <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
-          <Plus className="h-4 w-4" /> Add New Course
-        </Button>
+        <div className="flex gap-2">
+          <CsvImportDialog 
+            title="Bulk Syllabus Import"
+            description="Register entire curricula by uploading a CSV mapping codes, credits, and requirements."
+            columns={COURSE_CSV_COLUMNS}
+          />
+          <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
+            <Plus className="h-4 w-4" /> Add New Course
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">

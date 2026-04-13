@@ -14,6 +14,16 @@ import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tool
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
+
+const MARKS_CSV_COLUMNS: CsvColumn[] = [
+  { key: 'studentId', label: 'Student ID', description: 'Unique institutional ID of the student.', example: 'S-101', required: true },
+  { key: 'subject', label: 'Subject Name', description: 'Course name or code.', example: 'Machine Learning', required: true },
+  { key: 'cat1', label: 'CAT-1', description: 'Continuous Assessment 1 score.', example: '42', required: true },
+  { key: 'cat2', label: 'CAT-2', description: 'Continuous Assessment 2 score.', example: '45', required: true },
+  { key: 'model', label: 'Model Exam', description: 'Mock semester exam score.', example: '88', required: false },
+  { key: 'final', label: 'Final Exam', description: 'Main semester exam score.', example: '94', required: false },
+];
 
 const chartData = [
   { name: 'CAT-1', avg: 72 },
@@ -47,6 +57,11 @@ export default function MarksManagementPage() {
           <p className="text-muted-foreground mt-1">Manage institutional assessments and results (Static Prototype).</p>
         </div>
         <div className="flex gap-2">
+          <CsvImportDialog 
+            title="Import Grade Ledger"
+            description="Publish results for an entire department by uploading a CSV with student scores."
+            columns={MARKS_CSV_COLUMNS}
+          />
           <Button variant="outline" className="gap-2 shadow-sm rounded-full h-11">
             <Download className="h-4 w-4" /> Export CSV
           </Button>

@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   Plus, Users, Clock, MapPin, Loader2, 
-  BookOpen, UserCheck
+  BookOpen, UserCheck, FileSpreadsheet
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -29,8 +29,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
+import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 
 const collegeId = 'study-connect-college';
+
+const CLASS_CSV_COLUMNS: CsvColumn[] = [
+  { key: 'name', label: 'Section Name', description: 'Identifying name for the class.', example: 'CSE - Section A', required: true },
+  { key: 'departmentId', label: 'Dept ID', description: 'Reference ID of the department.', example: 'dept-eng', required: true },
+  { key: 'facultyId', label: 'Faculty ID', description: 'Assigned Handling Instructor ID.', example: 'faculty-1', required: false },
+  { key: 'room', label: 'Room No', description: 'Assigned classroom or lab.', example: 'Lab 302', required: false },
+];
 
 export default function ClassManagementPage() {
   const firestore = useFirestore();
@@ -105,68 +113,75 @@ export default function ClassManagementPage() {
           <p className="text-muted-foreground mt-1">Manage class schedules, instructor assignments, and room allocations.</p>
         </div>
 
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2 shadow-lg shadow-primary/20">
-              <Plus className="h-4 w-4" /> Create New Class
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-card border-none shadow-xl rounded-2xl">
-            <DialogHeader>
-              <DialogTitle>Provision New Academic Section</DialogTitle>
-              <DialogDescription>
-                Define a new class group and assign a primary instructor.
-              </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCreateClass} className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Class / Section Name</Label>
-                <Input 
-                  placeholder="e.g. Computer Science - Section B" 
-                  value={newClassName}
-                  onChange={(e) => setNewClassName(e.target.value)}
-                  required
-                  className="bg-muted border-none shadow-none"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Department</Label>
-                <Select onValueChange={setSelectedDept} value={selectedDept}>
-                  <SelectTrigger className="bg-muted border-none shadow-none">
-                    <SelectValue placeholder="Select Academic Department" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card">
-                    {departments?.map((dept) => (
-                      <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Assigned Instructor (Optional)</Label>
-                <Select onValueChange={(val) => setSelectedFaculty(val)} value={selectedFaculty}>
-                  <SelectTrigger className="bg-muted border-none shadow-none">
-                    <SelectValue placeholder="Assign a Faculty Member" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-card">
-                    {facultyMembers.map((member) => (
-                      <SelectItem key={member.id} value={member.id}>
-                        Dr. {member.firstName} {member.lastName}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight mt-2" disabled={isSubmitting}>
-                {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
-                Confirm Class Creation
+        <div className="flex gap-2">
+          <CsvImportDialog 
+            title="Bulk Schedule Sections"
+            description="Upload a CSV to provision multiple class sections across various departments."
+            columns={CLASS_CSV_COLUMNS}
+          />
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2 shadow-lg shadow-primary/20">
+                <Plus className="h-4 w-4" /> Create New Class
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent className="bg-card border-none shadow-xl rounded-2xl">
+              <DialogHeader>
+                <DialogTitle>Provision New Academic Section</DialogTitle>
+                <DialogDescription>
+                  Define a new class group and assign a primary instructor.
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleCreateClass} className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Class / Section Name</Label>
+                  <Input 
+                    placeholder="e.g. Computer Science - Section B" 
+                    value={newClassName}
+                    onChange={(e) => setNewClassName(e.target.value)}
+                    required
+                    className="bg-muted border-none shadow-none"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Department</Label>
+                  <Select onValueChange={setSelectedDept} value={selectedDept}>
+                    <SelectTrigger className="bg-muted border-none shadow-none">
+                      <SelectValue placeholder="Select Academic Department" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card">
+                      {departments?.map((dept) => (
+                        <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Assigned Instructor (Optional)</Label>
+                  <Select onValueChange={(val) => setSelectedFaculty(val)} value={selectedFaculty}>
+                    <SelectTrigger className="bg-muted border-none shadow-none">
+                      <SelectValue placeholder="Assign a Faculty Member" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-card">
+                      {facultyMembers.map((member) => (
+                        <SelectItem key={member.id} value={member.id}>
+                          Dr. {member.firstName} {member.lastName}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight mt-2" disabled={isSubmitting}>
+                  {isSubmitting ? <Loader2 className="animate-spin mr-2 h-4 w-4" /> : <Plus className="mr-2 h-4 w-4" />}
+                  Confirm Class Creation
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {isLoading ? (

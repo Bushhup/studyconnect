@@ -57,8 +57,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 
 const collegeId = 'study-connect-college';
+
+const USER_CSV_COLUMNS: CsvColumn[] = [
+  { key: 'username', label: 'Institutional Username', description: 'Unique portal ID for the user.', example: 'stu_2024_001', required: true },
+  { key: 'firstName', label: 'First Name', description: 'Legal first name of the individual.', example: 'Alex', required: true },
+  { key: 'lastName', label: 'Last Name', description: 'Legal last name of the individual.', example: 'Johnson', required: true },
+  { key: 'email', label: 'System Email', description: 'Email used for authentication.', example: 'alex.j@college.edu', required: true },
+  { key: 'password', label: 'Initial Password', description: 'Default temporary login password.', example: 'Welcome@123', required: true },
+  { key: 'role', label: 'System Role', description: 'Access level (student, faculty, admin).', example: 'student', required: true },
+  { key: 'status', label: 'Account Status', description: 'Current state (active, inactive).', example: 'active', required: false },
+];
 
 export default function UserManagementPage() {
   const router = useRouter();
@@ -207,97 +218,104 @@ export default function UserManagementPage() {
         </div>
         
         {isAdmin && (
-          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-            <DialogTrigger asChild>
-              <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
-                <Plus className="h-4 w-4" /> Register New User
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="rounded-[2rem] bg-card border-none">
-              <DialogHeader>
-                <DialogTitle>Register Institutional Identity</DialogTitle>
-                <DialogDescription>Assign a unique username and temporary credentials.</DialogDescription>
-              </DialogHeader>
-              <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <AtSign className="h-3.5 w-3.5 text-muted-foreground" /> Unique Username
-                  </Label>
-                  <Input 
-                    placeholder="e.g. student_2024_01"
-                    value={formData.username} 
-                    onChange={(e) => setFormData({...formData, username: e.target.value})} 
-                    className="bg-muted border-none" required 
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>First Name</Label>
-                    <Input 
-                      value={formData.firstName} 
-                      onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
-                      className="bg-muted border-none" required 
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Last Name</Label>
-                    <Input 
-                      value={formData.lastName} 
-                      onChange={(e) => setFormData({...formData, lastName: e.target.value})} 
-                      className="bg-muted border-none" required 
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label>Email Address (For System Auth)</Label>
-                  <Input 
-                    type="email" 
-                    value={formData.email} 
-                    onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                    className="bg-muted border-none" required 
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Lock className="h-3.5 w-3.5 text-muted-foreground" /> Initial Password
-                  </Label>
-                  <Input 
-                    type="password" 
-                    value={formData.password} 
-                    onChange={(e) => setFormData({...formData, password: e.target.value})} 
-                    className="bg-muted border-none" required 
-                    placeholder="Min 6 characters"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Portal Role</Label>
-                    <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
-                      <SelectTrigger className="bg-muted border-none shadow-none"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="student">Student</SelectItem>
-                        <SelectItem value="faculty">Faculty</SelectItem>
-                        <SelectItem value="admin">Administrator</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Status</Label>
-                    <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
-                      <SelectTrigger className="bg-muted border-none shadow-none"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <Button type="submit" className="w-full h-12 font-bold shadow-lg shadow-primary/20 mt-2">
-                  Confirm Provisioning
+          <div className="flex gap-2">
+            <CsvImportDialog 
+              title="Bulk Provision Users"
+              description="Upload a CSV file to register multiple students, faculty, or staff at once."
+              columns={USER_CSV_COLUMNS}
+            />
+            <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+              <DialogTrigger asChild>
+                <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
+                  <Plus className="h-4 w-4" /> Register New User
                 </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="rounded-[2rem] bg-card border-none">
+                <DialogHeader>
+                  <DialogTitle>Register Institutional Identity</DialogTitle>
+                  <DialogDescription>Assign a unique username and temporary credentials.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <AtSign className="h-3.5 w-3.5 text-muted-foreground" /> Unique Username
+                    </Label>
+                    <Input 
+                      placeholder="e.g. student_2024_01"
+                      value={formData.username} 
+                      onChange={(e) => setFormData({...formData, username: e.target.value})} 
+                      className="bg-muted border-none" required 
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>First Name</Label>
+                      <Input 
+                        value={formData.firstName} 
+                        onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
+                        className="bg-muted border-none" required 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Last Name</Label>
+                      <Input 
+                        value={formData.lastName} 
+                        onChange={(e) => setFormData({...formData, lastName: e.target.value})} 
+                        className="bg-muted border-none" required 
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Email Address (For System Auth)</Label>
+                    <Input 
+                      type="email" 
+                      value={formData.email} 
+                      onChange={(e) => setFormData({...formData, email: e.target.value})} 
+                      className="bg-muted border-none" required 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Lock className="h-3.5 w-3.5 text-muted-foreground" /> Initial Password
+                    </Label>
+                    <Input 
+                      type="password" 
+                      value={formData.password} 
+                      onChange={(e) => setFormData({...formData, password: e.target.value})} 
+                      className="bg-muted border-none" required 
+                      placeholder="Min 6 characters"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Portal Role</Label>
+                      <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
+                        <SelectTrigger className="bg-muted border-none shadow-none"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="student">Student</SelectItem>
+                          <SelectItem value="faculty">Faculty</SelectItem>
+                          <SelectItem value="admin">Administrator</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Status</Label>
+                      <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
+                        <SelectTrigger className="bg-muted border-none shadow-none"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full h-12 font-bold shadow-lg shadow-primary/20 mt-2">
+                    Confirm Provisioning
+                  </Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         )}
       </div>
 

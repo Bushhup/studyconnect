@@ -23,7 +23,8 @@ import {
   BookOpen,
   Loader2,
   AlertCircle,
-  FileUser
+  FileUser,
+  FileSpreadsheet
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -40,8 +41,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 
 const collegeId = 'study-connect-college';
+
+const STUDENT_CSV_COLUMNS: CsvColumn[] = [
+  { key: 'firstName', label: 'First Name', description: 'Legal first name.', example: 'Alex', required: true },
+  { key: 'lastName', label: 'Last Name', description: 'Legal last name.', example: 'Johnson', required: true },
+  { key: 'email', label: 'Institutional Email', description: 'Assigned student email.', example: 'alex.j@college.edu', required: true },
+  { key: 'departmentId', label: 'Dept ID', description: 'ID of the department (e.g. dept-eng).', example: 'dept-eng', required: true },
+  { key: 'status', label: 'Enrollment Status', description: 'active or inactive.', example: 'active', required: false },
+];
 
 export default function StudentManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -106,9 +116,16 @@ export default function StudentManagementPage() {
           <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Student Directory</h1>
           <p className="text-muted-foreground mt-1 font-body">Live institutional records and performance monitoring.</p>
         </div>
-        <Button className="gap-2 shadow-lg shadow-primary/20 rounded-xl px-6">
-          <Plus className="h-4 w-4" /> Add Student
-        </Button>
+        <div className="flex gap-2">
+          <CsvImportDialog 
+            title="Bulk Enroll Students"
+            description="Onboard an entire batch by uploading a CSV file with student identities and department codes."
+            columns={STUDENT_CSV_COLUMNS}
+          />
+          <Button className="gap-2 shadow-lg shadow-primary/20 rounded-xl px-6">
+            <Plus className="h-4 w-4" /> Add Student
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

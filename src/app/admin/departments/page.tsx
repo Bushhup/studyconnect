@@ -10,9 +10,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Plus, Loader2 } from 'lucide-react';
+import { Building2, Plus, Loader2, FileSpreadsheet } from 'lucide-react';
+import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 
 const collegeId = 'study-connect-college';
+
+const DEPT_CSV_COLUMNS: CsvColumn[] = [
+  { key: 'name', label: 'Department Name', description: 'The official academic title.', example: 'School of Bio-Engineering', required: true },
+  { key: 'headOfDept', label: 'H.O.D', description: 'Name of the primary lead.', example: 'Dr. Sarah Miller', required: true },
+];
 
 export default function DepartmentManagement() {
   const firestore = useFirestore();
@@ -47,9 +53,16 @@ export default function DepartmentManagement() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-headline font-bold text-foreground">Department Management</h1>
-        <p className="text-muted-foreground">Manage academic divisions and faculty assignments.</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-headline font-bold text-foreground">Department Management</h1>
+          <p className="text-muted-foreground">Manage academic divisions and faculty assignments.</p>
+        </div>
+        <CsvImportDialog 
+          title="Bulk Create Departments"
+          description="Import multiple academic divisions at once by uploading a list of names and heads of departments."
+          columns={DEPT_CSV_COLUMNS}
+        />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">

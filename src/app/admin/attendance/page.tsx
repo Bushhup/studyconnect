@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Calendar, Users, CheckCircle2, AlertCircle, 
   Search, Download, TrendingUp, XCircle, 
-  Clock, Filter, ChevronDown
+  Clock, Filter, ChevronDown, FileSpreadsheet
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { 
@@ -32,6 +32,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { cn } from '@/lib/utils';
+import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
+
+const ATTENDANCE_CSV_COLUMNS: CsvColumn[] = [
+  { key: 'studentId', label: 'Student ID', description: 'Institutional unique identifier.', example: 'S-101', required: true },
+  { key: 'subject', label: 'Subject', description: 'Academic course name.', example: 'Algorithms 101', required: true },
+  { key: 'date', label: 'Date', description: 'Presence date (YYYY-MM-DD).', example: '2024-10-24', required: true },
+  { key: 'status', label: 'Status', description: 'present, absent, or late.', example: 'present', required: true },
+];
 
 const weeklyData = [
   { label: 'Mon', engineering: 92, management: 88, arts: 85, science: 94 },
@@ -70,6 +78,11 @@ export default function AttendancePage() {
           <p className="text-muted-foreground mt-1">Real-time institutional attendance trends and detailed logs.</p>
         </div>
         <div className="flex gap-2">
+          <CsvImportDialog 
+            title="Import Presence Logs"
+            description="Process daily attendance for a whole department by uploading a CSV log."
+            columns={ATTENDANCE_CSV_COLUMNS}
+          />
            <Button variant="outline" className="gap-2 shadow-sm rounded-full bg-card">
             <Download className="h-4 w-4" /> Export Data
           </Button>

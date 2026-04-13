@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { 
   Search, Plus, Mail, BookOpen, 
   MessageSquare, Edit3, MoreHorizontal, 
-  Briefcase, CheckCircle2, Loader2, AlertCircle 
+  Briefcase, CheckCircle2, Loader2, AlertCircle,
+  FileSpreadsheet
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -19,8 +20,17 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
+import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 
 const collegeId = 'study-connect-college';
+
+const FACULTY_CSV_COLUMNS: CsvColumn[] = [
+  { key: 'firstName', label: 'First Name', description: 'Legal first name.', example: 'Sarah', required: true },
+  { key: 'lastName', label: 'Last Name', description: 'Legal last name.', example: 'Smith', required: true },
+  { key: 'email', label: 'System Email', description: 'Authentication email.', example: 'sarah.s@college.edu', required: true },
+  { key: 'departmentId', label: 'Dept ID', description: 'ID of the department.', example: 'dept-eng', required: true },
+  { key: 'designation', label: 'Designation', description: 'Job title.', example: 'Professor', required: false },
+];
 
 const deptColors: Record<string, string> = {
   'Engineering': 'bg-blue-500/10 text-blue-500',
@@ -96,9 +106,16 @@ export default function FacultyManagementPage() {
           <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Faculty Directory</h1>
           <p className="text-muted-foreground mt-1">Live directory of academic staff and assignments.</p>
         </div>
-        <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
-          <Plus className="h-4 w-4" /> Add Faculty Member
-        </Button>
+        <div className="flex gap-2">
+          <CsvImportDialog 
+            title="Import Faculty Roster"
+            description="Quickly onboard staff by uploading a CSV with names, emails, and department mapping."
+            columns={FACULTY_CSV_COLUMNS}
+          />
+          <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
+            <Plus className="h-4 w-4" /> Add Faculty Member
+          </Button>
+        </div>
       </div>
 
       <div className="relative w-full max-w-md">
