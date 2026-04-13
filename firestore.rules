@@ -3,124 +3,144 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * SHIELD FIREBASE SECURITY RULES
+     * COLLEGE DATA MANAGEMENT SYSTEM - SECURITY RULES
      * 
-     * Core Philosophy:
-     * This ruleset implements a centralized administrative control model for a college information portal. 
-     * Content is intended for broad public consumption (events, achievements) or authenticated 
-     * institutional access (departments, classes), while modification is strictly restricted 
-     * to verified administrators.
-     *
-     * Data Structure:
-     * - Public Content: /colleges/{id}/events, /colleges/{id}/achievements are globally readable.
-     * - Institutional Content: /colleges/{id}/departments, /colleges/{id}/classes require auth.
-     * - Admin Management: A dedicated /admins collection stores UIDs of users with write privileges.
-     * - User Profiles: Users can manage their own profile; admins have full directory access.
+     * CORE PHILOSOPHY:
+     * This ruleset implements a Role-Based Access Control (RBAC) model combined with individual 
+     * ownership for sensitive data. It prioritizes "Authorization Independence" by using 
+     * marker collections for roles and denormalized fields (like 'userId') for ownership checks, 
+     * ensuring high performance and clear audit trails.
+     * 
+     * DATA STRUCTURE:
+     * - /collegeInfo, /achievements, /galleryImages, /events: Publicly readable singleton or collections.
+     * - /studentProfiles: Sensitive biographical data. Access is restricted to the student owner, 
+     *   faculty members, and administrators.
+     * - /roles_admin, /roles_faculty: Internal marker collections to identify privileged users.
+     * 
+     * KEY SECURITY DECISIONS:
+     * 1. Public Access: General college information is readable by any user (including anonymous/unauthenticated).
+     * 2. Administrative Control: All write operations on public data are restricted to accounts 
+     *    verified in the 'roles_admin' collection.
+     * 3. Student Bio-Data: Students can create their own profiles, but once created, updates are 
+     *    strictly locked to Administrators only to ensure data integrity for official records.
+     * 4. Relational Integrity: On creation of a profile, the rules enforce that the 'userId' 
+     *    field matches the student's authenticated UID to prevent identity spoofing.
      */
 
     // --- Helper Functions ---
 
-    /** @description Checks if the user is authenticated with Firebase Auth. */
+    /** Checks if a user is authenticated with any provider. */
     function isSignedIn() {
       return request.auth != null;
     }
 
-    /** @description Validates if the authenticated user's UID matches the provided userId. */
+    /** Checks if the authenticated user has the Admin role. */
+    function isAdmin() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_admin/$(request.auth.uid));
+    }
+
+    /** Checks if the authenticated user has the Faculty role. */
+    function isFaculty() {
+      return isSignedIn() && exists(/databases/$(database)/documents/roles_faculty/$(request.auth.uid));
+    }
+
+    /** Checks if the user's UID matches a specific target ID. */
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
-    }
-
-    /** @description Checks if the authenticated user exists in the designated global admins collection. */
-    function isAdmin() {
-      return isSignedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-
-    /** @description Combines admin check with existence check for destructive/modifying operations. */
-    function isAuthorizedAdmin() {
-      return isAdmin() && (resource != null || request.method == 'create');
     }
 
     // --- Collection Rules ---
 
     /**
-     * @description Institutional Root and Sub-collections
-     * @path /colleges/{collegeId}
+     * @description Public college information.
+     * @path /collegeInfo/main
+     * @allow get (any user), create/update (admin)
+     * @deny write (non-admin)
+     * @principle Public read with admin-only writes.
      */
-    match /colleges/{collegeId} {
-      allow get: if true;
-      allow write: if isAdmin();
-
-      /**
-       * @description Institutional directory of students, faculty, and admins.
-       * Note: 'list' is allowed for lookup by username during login.
-       */
-      match /users/{userId} {
-        allow get, list: if true; 
-        allow create, update: if isAdmin() || isOwner(userId);
-        allow delete: if isAdmin();
-      }
-
-      /**
-       * @description Academic departments and divisions.
-       */
-      match /departments/{deptId} {
-        allow read: if true;
-        allow write: if isAdmin();
-      }
-
-      /**
-       * @description Academic classes and sections.
-       */
-      match /classes/{classId} {
-        allow read: if true;
-        allow write: if isAdmin();
-      }
-
-      /**
-       * @description College event calendar data (nested).
-       */
-      match /events/{eventId} {
-        allow read: if true;
-        allow write: if isAdmin();
-      }
-
-      /**
-       * @description Academic achievements (nested).
-       */
-      match /achievements/{achievementId} {
-        allow read: if true;
-        allow write: if isAdmin();
-      }
+    match /collegeInfo/{document} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description Legacy/Alternative paths for public content (if used).
+     * @description Highlights of college achievements.
+     * @path /achievements/{achievementId}
+     * @allow get (any user), create/update/delete (admin)
+     * @deny write (non-admin)
+     * @principle Public read with admin-only writes.
      */
-    match /collegeProfile/main {
-      allow get, list: if true;
-      allow write: if isAdmin();
-    }
-
     match /achievements/{achievementId} {
       allow get, list: if true;
-      allow write: if isAdmin();
-    }
-
-    match /events/{eventId} {
-      allow get, list: if true;
-      allow write: if isAdmin();
+      allow create, update, delete: if isAdmin();
     }
 
     /**
-     * @description The root of authority. Stores UIDs of users with administrative privileges.
-     * @path /admins/{adminId}
+     * @description Gallery metadata for campus images.
+     * @path /galleryImages/{galleryImageId}
+     * @allow get (any user), create/update/delete (admin)
+     * @deny write (non-admin)
+     * @principle Public read with admin-only writes.
      */
-    match /admins/{adminId} {
-      allow get: if isOwner(adminId) || isAdmin();
+    match /galleryImages/{galleryImageId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description College event schedules and details.
+     * @path /events/{eventId}
+     * @allow get (any user), create/update/delete (admin)
+     * @deny write (non-admin)
+     * @principle Public read with admin-only writes.
+     */
+    match /events/{eventId} {
+      allow get, list: if true;
+      allow create, update, delete: if isAdmin();
+    }
+
+    /**
+     * @description Sensitive student biographical data.
+     * @path /studentProfiles/{studentProfileId}
+     * @allow get/list (owner, faculty, admin), create (owner, admin), update (admin)
+     * @deny update (student owner), list (anonymous)
+     * @principle Restricted access based on ownership or role; immutable for students after creation.
+     */
+    match /studentProfiles/{studentProfileId} {
+      // Students can read their own data; Faculty and Admins can read all.
+      allow get, list: if isAdmin() || isFaculty() || (resource != null && isOwner(resource.data.userId));
+      
+      // Allow student to create their own record OR an admin to create one.
+      allow create: if isAdmin() || (isSignedIn() && request.resource.data.userId == request.auth.uid);
+      
+      // Updates and deletes are restricted to Admins only.
+      allow update, delete: if isAdmin() && resource != null;
+    }
+
+    /**
+     * @description Administrative role markers.
+     * @path /roles_admin/{adminId}
+     * @allow get (signed-in), list (admin)
+     * @deny write (client-side)
+     * @principle Marker collection for authorization verification.
+     */
+    match /roles_admin/{adminId} {
+      allow get: if isSignedIn();
       allow list: if isAdmin();
-      allow create: if (isSignedIn() && adminId == request.auth.uid) || isAdmin();
-      allow update: if isAuthorizedAdmin();
-      allow delete: if isAuthorizedAdmin();
+      allow create, update, delete: if false; // Managed via Admin SDK or Console
+    }
+
+    /**
+     * @description Faculty role markers.
+     * @path /roles_faculty/{facultyId}
+     * @allow get (signed-in), list (admin/faculty)
+     * @deny write (client-side)
+     * @principle Marker collection for authorization verification.
+     */
+    match /roles_faculty/{facultyId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin() || isFaculty();
+      allow create, update, delete: if false; // Managed via Admin SDK or Console
     }
   }
 }

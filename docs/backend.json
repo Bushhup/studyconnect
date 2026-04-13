@@ -1,18 +1,18 @@
 {
   "entities": {
-    "CollegeProfile": {
+    "CollegeInfo": {
       "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "CollegeProfile",
+      "title": "CollegeInfo",
       "type": "object",
-      "description": "Stores essential information about the college or institution featured in the app, displayed on the home screen.",
+      "description": "Stores general information and configuration details for the college displayed in the application.",
       "properties": {
         "id": {
           "type": "string",
-          "description": "Unique identifier for the CollegeProfile entity."
+          "description": "Unique identifier for the CollegeInfo entity."
         },
         "name": {
           "type": "string",
-          "description": "The official name of the college or institution."
+          "description": "The official name of the college."
         },
         "logoUrl": {
           "type": "string",
@@ -21,15 +21,15 @@
         },
         "tagline": {
           "type": "string",
-          "description": "A short, descriptive tagline for the college."
+          "description": "A short, memorable motto or slogan for the college."
         },
-        "overview": {
+        "facilityOverview": {
           "type": "string",
-          "description": "A general overview or description of the college's facilities and offerings."
+          "description": "A general overview or summary of the college's facilities."
         },
-        "statisticHighlights": {
+        "statisticalHighlights": {
           "type": "array",
-          "description": "An array of key statistical highlights about the college, such as student count or faculty numbers. Each item is a formatted string (e.g., 'Students: 10,000').",
+          "description": "A list of key statistical achievements or facts about the college.",
           "items": {
             "type": "string"
           }
@@ -40,15 +40,15 @@
         "name",
         "logoUrl",
         "tagline",
-        "overview",
-        "statisticHighlights"
+        "facilityOverview",
+        "statisticalHighlights"
       ]
     },
     "Achievement": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Achievement",
       "type": "object",
-      "description": "Represents academic, research, or extracurricular accomplishments by the college or its members.",
+      "description": "Represents an academic, research, or extracurricular achievement of the college or its students.",
       "properties": {
         "id": {
           "type": "string",
@@ -68,12 +68,17 @@
         },
         "year": {
           "type": "number",
-          "description": "The year the achievement was accomplished."
+          "description": "The year in which the achievement was attained."
         },
         "dateAchieved": {
           "type": "string",
-          "description": "The specific date the achievement was recognized.",
-          "format": "date"
+          "description": "The specific date and time when the achievement was officially recognized.",
+          "format": "date-time"
+        },
+        "imageUrl": {
+          "type": "string",
+          "description": "URL to an image related to the achievement.",
+          "format": "uri"
         }
       },
       "required": [
@@ -81,39 +86,14 @@
         "title",
         "description",
         "category",
-        "year",
-        "dateAchieved"
-      ]
-    },
-    "ImageCategory": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ImageCategory",
-      "type": "object",
-      "description": "Defines categories for organizing gallery images, allowing for better navigation and filtering in the Campus Gallery.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the ImageCategory entity."
-        },
-        "name": {
-          "type": "string",
-          "description": "The name of the image category (e.g., 'Labs', 'Library', 'Campus Areas')."
-        },
-        "description": {
-          "type": "string",
-          "description": "A brief description of what this image category represents."
-        }
-      },
-      "required": [
-        "id",
-        "name"
+        "year"
       ]
     },
     "GalleryImage": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "GalleryImage",
       "type": "object",
-      "description": "Represents an image to be displayed in the Campus Gallery, including its details and category association.",
+      "description": "Stores metadata for a campus image displayed in the gallery. The image itself is stored externally (e.g., Firebase Storage).",
       "properties": {
         "id": {
           "type": "string",
@@ -121,40 +101,45 @@
         },
         "title": {
           "type": "string",
-          "description": "A title for the image, often displayed as a caption."
+          "description": "A short, descriptive title for the image."
         },
         "description": {
           "type": "string",
-          "description": "A detailed description or alt text for the image."
+          "description": "A detailed description of the image content."
         },
         "imageUrl": {
           "type": "string",
-          "description": "The URL to the full-size image in storage (e.g., Firebase Storage) for full-screen preview.",
+          "description": "The URL to the full-size image file stored externally.",
           "format": "uri"
         },
         "thumbnailUrl": {
           "type": "string",
-          "description": "The URL to a smaller thumbnail version of the image, optimized for grid layout display.",
+          "description": "The URL to a smaller thumbnail version of the image file, if available.",
           "format": "uri"
         },
-        "categoryId": {
+        "category": {
           "type": "string",
-          "description": "Reference to ImageCategory. (Relationship: ImageCategory 1:N GalleryImage)"
+          "description": "The category or area of the campus depicted in the image (e.g., 'Campus Areas', 'Labs', 'Library', 'Sports')."
+        },
+        "uploadDate": {
+          "type": "string",
+          "description": "The date and time when the image was uploaded.",
+          "format": "date-time"
         }
       },
       "required": [
         "id",
         "title",
         "imageUrl",
-        "thumbnailUrl",
-        "categoryId"
+        "category",
+        "uploadDate"
       ]
     },
     "Event": {
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Event",
       "type": "object",
-      "description": "Details about upcoming and past college events, displayed in the Events Calendar.",
+      "description": "Represents a college event, including details for both upcoming and past events.",
       "properties": {
         "id": {
           "type": "string",
@@ -162,48 +147,142 @@
         },
         "title": {
           "type": "string",
-          "description": "The title or name of the event."
+          "description": "The title of the event."
         },
         "description": {
           "type": "string",
-          "description": "A detailed description of the event."
-        },
-        "startDateTime": {
-          "type": "string",
-          "description": "The start date and time of the event.",
-          "format": "date-time"
-        },
-        "endDateTime": {
-          "type": "string",
-          "description": "The optional end date and time of the event, for multi-day or duration-specific events.",
-          "format": "date-time"
+          "description": "A detailed description of the event, its purpose, and agenda."
         },
         "location": {
           "type": "string",
           "description": "The physical or virtual location where the event will take place."
         },
-        "eventType": {
+        "startTime": {
           "type": "string",
-          "description": "The type or category of the event (e.g., 'Academic', 'Cultural', 'Sports')."
+          "description": "The start date and time of the event.",
+          "format": "date-time"
         },
-        "organizer": {
+        "endTime": {
           "type": "string",
-          "description": "The department, club, or organization responsible for hosting the event."
+          "description": "The end date and time of the event.",
+          "format": "date-time"
         },
-        "imageUrl": {
+        "category": {
           "type": "string",
-          "description": "Optional URL for a banner or promotional image associated with the event.",
+          "description": "The category of the event (e.g., 'Academic', 'Sports', 'Cultural', 'Workshop')."
+        },
+        "isFeatured": {
+          "type": "boolean",
+          "description": "Indicates if the event should be highlighted or featured prominently."
+        },
+        "registrationLink": {
+          "type": "string",
+          "description": "URL for event registration, if applicable.",
           "format": "uri"
+        },
+        "contactEmail": {
+          "type": "string",
+          "description": "Email address for event inquiries.",
+          "format": "email"
         }
       },
       "required": [
         "id",
         "title",
         "description",
-        "startDateTime",
         "location",
-        "eventType",
-        "organizer"
+        "startTime",
+        "endTime",
+        "category"
+      ]
+    },
+    "StudentProfile": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "StudentProfile",
+      "type": "object",
+      "description": "Stores detailed biographical and contact information for each student, accessible by faculty, admin, and the student themselves.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the StudentProfile entity."
+        },
+        "userId": {
+          "type": "string",
+          "description": "Reference to the unique identifier of the user in the external authentication system. (Relationship: External User 1:1 StudentProfile)"
+        },
+        "fullName": {
+          "type": "string",
+          "description": "The student's full legal name."
+        },
+        "gender": {
+          "type": "string",
+          "description": "The student's gender."
+        },
+        "phoneNumber": {
+          "type": "string",
+          "description": "The student's personal phone number."
+        },
+        "address": {
+          "type": "string",
+          "description": "The student's residential address."
+        },
+        "fatherName": {
+          "type": "string",
+          "description": "The full name of the student's father."
+        },
+        "fatherPhoneNumber": {
+          "type": "string",
+          "description": "The phone number of the student's father."
+        },
+        "motherName": {
+          "type": "string",
+          "description": "The full name of the student's mother."
+        },
+        "motherPhoneNumber": {
+          "type": "string",
+          "description": "The phone number of the student's mother."
+        },
+        "religion": {
+          "type": "string",
+          "description": "The student's religious affiliation."
+        },
+        "aadharNumber": {
+          "type": "string",
+          "description": "The student's Aadhar identification number."
+        },
+        "quota": {
+          "type": "string",
+          "description": "The admission quota under which the student was admitted (e.g., 'Government', 'Management')."
+        },
+        "enrollmentDate": {
+          "type": "string",
+          "description": "The date when the student was officially enrolled in the college.",
+          "format": "date-time"
+        },
+        "lastUpdatedByAdminId": {
+          "type": "string",
+          "description": "Reference to the unique identifier of the admin user who last modified this profile. (Relationship: External Admin User 1:N StudentProfile)"
+        },
+        "lastUpdatedAt": {
+          "type": "string",
+          "description": "The date and time when this student profile was last updated.",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "userId",
+        "fullName",
+        "gender",
+        "phoneNumber",
+        "address",
+        "fatherName",
+        "fatherPhoneNumber",
+        "motherName",
+        "motherPhoneNumber",
+        "religion",
+        "aadharNumber",
+        "quota"
       ]
     }
   },
@@ -216,13 +295,13 @@
   "firestore": {
     "structure": [
       {
-        "path": "/collegeProfile/main",
+        "path": "/collegeInfo/main",
         "definition": {
-          "entityName": "CollegeProfile",
+          "entityName": "CollegeInfo",
           "schema": {
-            "$ref": "#/backend/entities/CollegeProfile"
+            "$ref": "#/backend/entities/CollegeInfo"
           },
-          "description": "Stores the single, central college profile data. This document is publicly readable by all users and writable only by administrators."
+          "description": "Singleton document storing general college information, including name, logo, tagline, and highlights. Publicly readable by all users. Only admin users can create or modify this document."
         }
       },
       {
@@ -232,27 +311,11 @@
           "schema": {
             "$ref": "#/backend/entities/Achievement"
           },
-          "description": "Collection for academic, research, and extracurricular achievements. Documents are publicly readable and administrator-writable.",
+          "description": "Collection of college achievements, categorized by type and year. Publicly readable by all users. Only admin users can create, update, or delete achievements.",
           "params": [
             {
               "name": "achievementId",
-              "description": "Unique identifier for an achievement document."
-            }
-          ]
-        }
-      },
-      {
-        "path": "/imageCategories/{imageCategoryId}",
-        "definition": {
-          "entityName": "ImageCategory",
-          "schema": {
-            "$ref": "#/backend/entities/ImageCategory"
-          },
-          "description": "Collection for defining categories used to organize gallery images. Documents are publicly readable and administrator-writable.",
-          "params": [
-            {
-              "name": "imageCategoryId",
-              "description": "Unique identifier for an image category document."
+              "description": "The unique identifier for an achievement document."
             }
           ]
         }
@@ -264,11 +327,11 @@
           "schema": {
             "$ref": "#/backend/entities/GalleryImage"
           },
-          "description": "Collection for campus gallery images, each linked to an image category via 'categoryId'. Documents are publicly readable and administrator-writable.",
+          "description": "Collection of metadata for campus gallery images, categorized by area. Publicly readable by all users. Only admin users can upload or manage gallery images.",
           "params": [
             {
               "name": "galleryImageId",
-              "description": "Unique identifier for a gallery image document."
+              "description": "The unique identifier for a gallery image document."
             }
           ]
         }
@@ -280,32 +343,64 @@
           "schema": {
             "$ref": "#/backend/entities/Event"
           },
-          "description": "Collection for college event details. Documents are publicly readable and administrator-writable.",
+          "description": "Collection of college events, including upcoming and past events. Publicly readable by all users. Only admin users can create, update, or delete events.",
           "params": [
             {
               "name": "eventId",
-              "description": "Unique identifier for an event document."
+              "description": "The unique identifier for an event document."
             }
           ]
         }
       },
       {
-        "path": "/admins/{adminId}",
+        "path": "/studentProfiles/{studentProfileId}",
         "definition": {
-          "entityName": "Admin",
+          "entityName": "StudentProfile",
           "schema": {
-            "$ref": "#/backend/entities/user"
+            "$ref": "#/backend/entities/StudentProfile"
           },
-          "description": "A dedicated collection storing UIDs of users designated as administrators. The existence of a document at this path (where adminId is the user's UID) grants administrative write privileges across the application. Only existing admins can add or remove other admins, and an admin can read their own entry.",
+          "description": "Collection storing detailed biographical and contact information for each student. Readable by the owning student (via 'userId'), by faculty, and by administrators. Updatable only by administrators after creation. Includes denormalized 'userId' for authorization independence.",
+          "params": [
+            {
+              "name": "studentProfileId",
+              "description": "The unique identifier for the student's profile document."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_admin/{adminId}",
+        "definition": {
+          "entityName": "AdminRole",
+          "schema": {
+            "$ref": "#/backend/entities/AdminRole"
+          },
+          "description": "Collection of marker documents. The existence of a document at this path grants the user with ID 'adminId' administrative privileges. Used for Authorization Independence in security rules via 'exists()'.",
           "params": [
             {
               "name": "adminId",
-              "description": "The Firebase Authentication UID of a user with administrator privileges."
+              "description": "The unique ID (UID) of the user who has been assigned the admin role."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/roles_faculty/{facultyId}",
+        "definition": {
+          "entityName": "FacultyRole",
+          "schema": {
+            "$ref": "#/backend/entities/FacultyRole"
+          },
+          "description": "Collection of marker documents. The existence of a document at this path grants the user with ID 'facultyId' faculty privileges. Used for Authorization Independence in security rules via 'exists()'.",
+          "params": [
+            {
+              "name": "facultyId",
+              "description": "The unique ID (UID) of the user who has been assigned the faculty role."
             }
           ]
         }
       }
     ],
-    "reasoning": "The recommended Firestore structure for StudyConnect prioritizes secure, scalable, and debuggable access control, especially concerning the admin portal requirements and public data visibility. All public-facing content (CollegeProfile, Achievements, ImageCategories, GalleryImages, Events) is stored in top-level collections, ensuring a homogeneous security posture: publicly readable by all authenticated and unauthenticated users, but exclusively writable by designated administrators. This approach simplifies security rules significantly.\n\nAuthorization Independence is achieved for the primary content data by having all necessary authorization context (global read access) built into the collection structure itself. There are no subcollections whose authorization relies on fetching attributes from a parent document. For write operations, administrator access is determined by checking the existence of the requesting user's UID in a dedicated `/admins` collection. While this involves a `get()` call within the security rules, it's a `get()` on a static role collection, not a hierarchical data dependency. This adheres to the principle of avoiding complex, data-dependent `get()` calls for authorization, allowing for atomic operations and easier debugging. The admin role itself is managed via DBAC (Database Access Control).\n\nQueryability and Authorization Performance (QAPs) are fully supported. Since all content collections are publicly readable, `list` operations (queries) can be performed without any filtering in the security rules, as all documents within these collections are intended for public consumption. This ensures efficient data retrieval. The segregation into distinct collections based on entity type further aids in clear data management and rule definition. Denormalization for authorization is not explicitly required for the public data in this specific schema because the authorization model is 'public-read, admin-write' for all main content, and not based on individual user ownership of these specific content types (like an individual user's posts or notes)."
+    "reasoning": "The Firestore data structure is designed to support the StudyConnect application's features with a strong emphasis on security, scalability, and debuggability, adhering strictly to the provided CORE DESIGN PRINCIPLES and DESIGN STRATEGY MANDATES.  \n\n**Authorization Independence via Denormalization:**\n1.  **StudentProfile Authorization:** The `StudentProfile` entity includes a denormalized `userId` field directly within the document. This critical design choice ensures that authorization rules for a student accessing their own profile do not require a `get()` operation to a parent user document. Instead, rules can atomically check `request.auth.uid == resource.data.userId`, fulfilling the Authorization Independence mandate. Furthermore, the `lastUpdatedByAdminId` and `lastUpdatedAt` fields provide an auditable trail, enhancing data integrity without impacting real-time authorization logic.\n2.  **Role-Based Access Control (DBAC):** Admin and faculty roles are implemented using dedicated top-level collections: `/roles_admin/{adminId}` and `/roles_faculty/{facultyId}`. The presence of a document (even an empty one) at `roles_admin/$(request.auth.uid)` or `roles_faculty/$(request.auth.uid)` signifies that the authenticated user possesses that role. This strategy eliminates `get()` calls for role verification, allowing security rules to use `exists()` checks, which are atomic, performant, and independent of other document hierarchies. This ensures that a user's role can be verified efficiently without fetching additional documents.\n\n**Support for Query-as-Permissions (QAPs):**\n1.  **Public Collections (`/collegeInfo`, `/achievements`, `/galleryImages`, `/events`):** These collections are designed for public read access. Security rules will simply allow reads for all users, enabling efficient `list` operations without client-side filtering. Write operations are restricted to authenticated administrators, verified through an `exists()` check on the `/roles_admin/{adminId}` collection.\n2.  **StudentProfile Collection (`/studentProfiles/{studentProfileId}`):**\n    *   **Student Self-Access:** A student can read their own profile. The security rule will verify `request.auth.uid == resource.data.userId`. When a student queries the `/studentProfiles` collection, Firestore's security rules will automatically filter results to only include documents where the `userId` matches the `request.auth.uid`, effectively enforcing ownership as a permission for `list` operations (assuming a client-side query filters by `userId`).\n    *   **Faculty/Admin Access (List):** Faculty and administrators need to view *all* student profiles. Because their roles are verified using `exists()` checks on `/roles_faculty/{facultyId}` or `/roles_admin/{adminId}` respectively, they can perform `list` operations on the `/studentProfiles` collection without requiring any client-side filtering by security rules. This directly supports QAPs for privileged users.\n    *   **Write/Update Access:** The initial creation of a student profile can be done by the student themselves (setting `userId` to `request.auth.uid`) or by an admin. However, subsequent updates are strictly limited to administrators (via `exists(/roles_admin/$(request.auth.uid))`), ensuring the integrity of student data as per the requirements.\n\n**Structural Segregation and Consistency:**\n*   Each collection maintains a homogeneous security posture. For example, `/studentProfiles` is distinct from public collections because it has different read/write access patterns.\n*   Path parameters are consistently named (e.g., `{achievementId}`, `{studentProfileId}`, `{adminId}`) to improve clarity and debuggability. The `CollegeInfo` is structured as a singleton document at `/collegeInfo/main` for efficient global configuration access.\n\nThis architecture minimizes rule complexity by moving authorization logic from rules to the data structure and denormalization, leading to robust, scalable, and easily auditable security."
   }
 }
