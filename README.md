@@ -19,27 +19,75 @@ The platform is built on a **Hierarchical Academic Model**, ensuring data integr
 
 ---
 
+## 🗺️ System Sitemap
+
+### 🌐 Public Access
+*   **Home (`/`):** Hero, institutional stats, facilities, and testimonials.
+*   **Achievements (`/achievements`):** Historical milestones and awards.
+*   **Gallery (`/gallery`):** Visual tour of campus facilities and labs.
+*   **Events (`/events`):** Upcoming workshops, cultural meets, and past events.
+*   **Login (`/login`):** Unified role-based authentication portal.
+
+### 👑 Admin & HOD Portal (`/admin`)
+*   **Dashboard:** Institutional oversight with enrollment distributions and growth trends.
+*   **Institutional Architecture:**
+    *   `Division Hub`: Manage specific departments, faculty impact, and class sections.
+    *   `Class Portal`: Deep-dive into student performance ledgers and subject handler ratings.
+*   **Identity Hub (Users):** Centralized directory for access control.
+    *   `Faculty Directory`: Staff profiles and departmental mapping.
+    *   `Student Directory`: Enrollment status and performance overview.
+    *   `Bio-Data Registry`: Access to verified student identity records.
+*   **Academic Results:** Performance leaderboard ranked by department scores.
+*   **Operations:**
+    *   `Attendance Hub`: Real-time trends and bulk log processing.
+    *   `Curriculum`: Course credit and degree requirements management.
+    *   `Analytics`: Deep-dive placement and student retention reports.
+    *   `System Logs`: Comprehensive audit trail of admin activity.
+
+### 👨‍🏫 Faculty Portal (`/faculty`)
+*   **Teaching Hub:**
+    *   `My Classes`: Assigned sections, timings, and classroom allocations.
+    *   `Students`: Directory of students enrolled in handler's subjects.
+*   **Academics:**
+    *   `Attendance`: Session-wise presence recording.
+    *   `Grades`: CAT-1, CAT-2, and Model exam mark entry.
+    *   `Assignments`: Task creation, deadline management, and grading.
+    *   `Resources`: Study material repository for student downloads.
+*   **Engagement:**
+    *   `Announcements`: Broadcast alerts directly to student dashboards.
+    *   `Calendar`: Personal teaching schedule and deadlines.
+
+### 🎓 Student Portal (`/student`)
+*   **My Identity:**
+    *   `Profile`: Verified institutional record.
+    *   `Bio Data`: Self-service biographical registry (Family, ID, Contact).
+*   **Academic Journey:**
+    *   `Curriculum`: Active courses, syllabus details, and faculty handlers.
+    *   `Attendance`: Real-time monitoring with "At-Risk" alerts.
+    *   `Marks`: Internal assessment scorecards.
+    *   `Results`: Official end-semester grade cards.
+*   **Materials & Tasks:**
+    *   `Assignments`: Digital submission portal.
+    *   `Resources`: Downloadable notes and reference materials.
+    *   `Broadcasts`: Institutional announcement feed.
+
+---
+
 ## 🔑 Access Roles
 
 ### 1. Master Administrator
 *   **Permissions:** Full system oversight.
-*   **Modules:** Global Identity Hub (Users), Institutional Architecture (Departments), Curricula Management, System Logs, and Global Configuration.
 *   **Key Feature:** Can provision the entire academic hierarchy using the **Bulk Data System**.
 
 ### 2. HOD (Head of Department) - Sub-Admin
 *   **Permissions:** Department-restricted management.
 *   **Scope:** Only visible data and controls pertaining to their assigned `departmentId`.
-*   **Workflow:** Manages faculty performance, class sections, and departmental results without accessing global system settings.
 
 ### 3. Faculty Portal
-*   **Scope:** Management of assigned academic loads.
-*   **Modules:** Attendance Registry, Grade Ledger, Course Assignments, Study Resource Repository, and Broadcast Announcements.
-*   **Analytics:** Comparative class success charts and student risk alerts.
+*   **Scope:** Management of assigned academic loads and student success tracking.
 
 ### 4. Student Portal
-*   **Scope:** Personal academic journey.
-*   **Modules:** Subject Overview, Presence Tracking, Internal Marks, End-Sem Results, Assignment Submissions, and Biographical Registry.
-*   **Analytics:** SGPA progression and credit weightage distribution.
+*   **Scope:** Personal academic journey, bio-data management, and performance analytics.
 
 ---
 
@@ -63,9 +111,6 @@ Integrated **Recharts** visualizations across all dashboards:
 Standardized CSV system for high-volume operations:
 *   **Downloadable Templates:** Every admin module provides a format guide.
 *   **Smart Imports:** Bulk onboard thousands of users, students, or grades in seconds.
-
-### 🔍 Institutional Command Center
-The header search bar dynamically indexes every portal module. Simply type "Bio," "Grades," or "Dept" to instantly navigate to deep management paths.
 
 ---
 
