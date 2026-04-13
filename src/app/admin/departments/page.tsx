@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -13,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Building2, Plus, Loader2, ArrowRight, Users, BookOpen, GraduationCap } from 'lucide-react';
 import Link from 'next/link';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
+import { cn } from '@/lib/utils';
 
 const collegeId = 'study-connect-college';
 
