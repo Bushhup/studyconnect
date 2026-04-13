@@ -24,7 +24,6 @@ import {
   Loader2,
   AlertCircle,
   FileUser,
-  FileSpreadsheet
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -40,7 +39,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/dialog";
+} from "@/components/ui/dialog";
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 import { StudentBioHover } from '@/components/StudentBioHover';
 
@@ -153,7 +152,7 @@ export default function StudentManagementPage() {
             </CardDescription>
             <CardTitle className="text-2xl text-foreground font-headline">{students.length}</CardTitle>
           </CardHeader>
-        </div>
+        </Card>
       </div>
 
       <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
