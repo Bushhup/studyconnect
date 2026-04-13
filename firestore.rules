@@ -16,26 +16,31 @@ service cloud.firestore {
     }
 
     function getUserData() {
-      return get(/databases/$(database)/documents/colleges/study-connect-college/users/$(request.auth.uid)).data;
+      let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(request.auth.uid);
+      return exists(path) ? get(path).data : null;
     }
 
     function isAdmin() {
+      let data = getUserData();
       return isSignedIn() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        getUserData().role == 'admin'
+        (data != null && data.role == 'admin')
       );
     }
 
     function isHOD() {
-      return isSignedIn() && getUserData().role == 'hod';
+      let data = getUserData();
+      return isSignedIn() && data != null && data.role == 'hod';
     }
 
     function hodDept() {
-      return getUserData().departmentId;
+      let data = getUserData();
+      return data != null ? data.departmentId : null;
     }
 
     function isFaculty() {
-      return isSignedIn() && getUserData().role == 'faculty';
+      let data = getUserData();
+      return isSignedIn() && data != null && data.role == 'faculty';
     }
 
     function isOwner(userId) {
@@ -63,12 +68,12 @@ service cloud.firestore {
       
       match /classes/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || (isHOD() && get(/databases/$(database)/documents/colleges/$(collegeId)/classes/$(id)).data.departmentId == hodDept()); 
+        allow write: if isAdmin() || (isHOD() && hodDept() != null && exists(/databases/$(database)/documents/colleges/$(collegeId)/classes/$(id)) && get(/databases/$(database)/documents/colleges/$(collegeId)/classes/$(id)).data.departmentId == hodDept()); 
       }
       
       match /courses/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || (isHOD() && get(/databases/$(database)/documents/colleges/$(collegeId)/courses/$(id)).data.departmentId == hodDept()); 
+        allow write: if isAdmin() || (isHOD() && hodDept() != null && exists(/databases/$(database)/documents/colleges/$(collegeId)/courses/$(id)) && get(/databases/$(database)/documents/colleges/$(collegeId)/courses/$(id)).data.departmentId == hodDept()); 
       }
       
       /**
@@ -78,7 +83,9 @@ service cloud.firestore {
        * - Only staff roles can write.
        */
       match /academicRecords/{id} {
-        allow read: if isAdmin() || isHOD() || isFaculty() || (isSignedIn() && resource.data.studentId == request.auth.uid);
+        // Staff can list everything for analytics. Students can only 'get' if they are the owner.
+        allow list: if isAdmin() || isHOD() || isFaculty();
+        allow get: if isAdmin() || isHOD() || isFaculty() || (isSignedIn() && resource.data.studentId == request.auth.uid);
         allow write: if isAdmin() || isHOD() || isFaculty();
       }
 
