@@ -1,6 +1,6 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { 
   useDoc, 
@@ -49,6 +49,7 @@ const TIME_SLOTS = [
 
 export default function ClassViewClient() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const id = searchParams.get('id');
   const firestore = useFirestore();
   const { user } = useUser();
@@ -96,6 +97,50 @@ export default function ClassViewClient() {
     );
   }
 
+  const handleExportRoster = () => {
+    if (!students || students.length === 0) {
+      toast({
+        variant: 'destructive',
+        title: 'Export Failed',
+        description: 'No students found in this roster to export.'
+      });
+      return;
+    }
+
+    const headers = ['Student ID', 'First Name', 'Last Name', 'Email', 'Attendance Rate'];
+    const rows = students.map(s => [
+      s.id,
+      s.firstName,
+      s.lastName,
+      s.email,
+      `${s.attendanceRate || 0}%`
+    ]);
+
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${classData?.name || 'Class'}_Roster.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: 'Roster Exported',
+      description: `CSV generated for ${students.length} students in ${classData?.name}.`
+    });
+  };
+
+  const handleAttendanceRegistry = () => {
+    toast({
+      title: 'Syncing Registry',
+      description: 'Redirecting to the institutional attendance management module.'
+    });
+    router.push('/admin/attendance');
+  };
+
   const handleUpdateTimetable = (day: string, slot: string, subjectId: string) => {
     if (!classRef) return;
     const currentTimetable = classData?.timetable || {};
@@ -129,8 +174,19 @@ export default function ClassViewClient() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 bg-card rounded-full shadow-sm"><Download className="h-4 w-4" /> Export Roster</Button>
-          <Button className="gap-2 rounded-full shadow-lg shadow-primary/20"><ClipboardCheck className="h-4 w-4" /> Attendance Registry</Button>
+          <Button 
+            onClick={handleExportRoster}
+            variant="outline" 
+            className="gap-2 bg-card rounded-full shadow-sm"
+          >
+            <Download className="h-4 w-4" /> Export Roster
+          </Button>
+          <Button 
+            onClick={handleAttendanceRegistry}
+            className="gap-2 rounded-full shadow-lg shadow-primary/20"
+          >
+            <ClipboardCheck className="h-4 w-4" /> Attendance Registry
+          </Button>
         </div>
       </div>
 
