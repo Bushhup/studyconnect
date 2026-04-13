@@ -78,7 +78,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       if (theme.navStyle === 'wheel') {
         setRotation(prev => (prev + 0.1) % 360);
       } else {
-        setLoopProgress(prev => (prev + 0.01) % studentLinks.length);
+        // Increased loop speed
+        setLoopProgress(prev => (prev + 0.03) % studentLinks.length);
       }
     }, 30);
     return () => clearInterval(interval);
@@ -187,10 +188,14 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     const isAtLeft = position.x < 100;
     const isAtRight = position.x > window.innerWidth - 100;
 
-    if (isAtBottom) return `translateX(-${offset}px)`;
-    if (isAtTop) return `translateY(${offset}px)`;
-    if (isAtLeft || isAtRight) return `translateY(-${offset}px)`;
-    return `translateY(-${offset}px)`;
+    // Parallel offset distance from the hub
+    const lineOffset = isMobile ? 60 : 80;
+
+    if (isAtBottom) return `translateY(-${lineOffset}px) translateX(-${offset}px)`;
+    if (isAtTop) return `translateY(${lineOffset}px) translateX(-${offset}px)`;
+    if (isAtLeft) return `translateX(${lineOffset}px) translateY(-${offset}px)`;
+    if (isAtRight) return `translateX(-${lineOffset}px) translateY(-${offset}px)`;
+    return `translateY(-${lineOffset}px) translateX(-${offset}px)`;
   };
 
   return (

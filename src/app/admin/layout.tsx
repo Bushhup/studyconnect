@@ -78,7 +78,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (theme.navStyle === 'wheel') {
         setRotation(prev => (prev + 0.15) % 360);
       } else {
-        setLoopProgress(prev => (prev + 0.01) % adminLinks.length);
+        // Increased loop speed
+        setLoopProgress(prev => (prev + 0.03) % adminLinks.length);
       }
     }, 30);
     return () => clearInterval(interval);
@@ -188,16 +189,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const isAtLeft = position.x < 100;
     const isAtRight = position.x > window.innerWidth - 100;
 
+    // Parallel offset distance from the hub
+    const lineOffset = isMobile ? 60 : 80;
+
     if (isAtBottom) {
-      return `translateX(-${offset}px)`;
+      return `translateY(-${lineOffset}px) translateX(-${offset}px)`;
     } else if (isAtTop) {
-      return `translateY(${offset}px)`;
+      return `translateY(${lineOffset}px) translateX(-${offset}px)`;
     } else if (isAtLeft) {
-      return `translateY(-${offset}px)`;
+      return `translateX(${lineOffset}px) translateY(-${offset}px)`;
     } else if (isAtRight) {
-      return `translateY(-${offset}px)`;
+      return `translateX(-${lineOffset}px) translateY(-${offset}px)`;
     }
-    return `translateY(-${offset}px)`;
+    return `translateY(-${lineOffset}px) translateX(-${offset}px)`;
   };
 
   return (
