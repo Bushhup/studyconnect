@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { 
   Search, Users, Filter, Eye, 
   ArrowUpRight, TrendingUp, BookOpen, Clock,
-  MoreVertical, GraduationCap, Award
+  MoreVertical, GraduationCap, Award, Loader2,
+  FileUser
 } from 'lucide-react';
 import {
   Select,
@@ -28,25 +29,46 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-const MOCK_STUDENTS = [
-  { id: 'S101', name: 'Alex Johnson', email: 'alex.j@college.edu', dept: 'Engineering', sem: '5', program: 'UG', attendance: 92, performance: 'O' },
-  { id: 'S102', name: 'Sarah Miller', email: 'sarah.m@college.edu', dept: 'Engineering', sem: '5', program: 'UG', attendance: 98, performance: 'O' },
-  { id: 'S103', name: 'James Wilson', email: 'james.w@college.edu', dept: 'Arts', sem: '3', program: 'UG', attendance: 85, performance: 'A+' },
-  { id: 'S104', name: 'Emily Davis', email: 'emily.d@college.edu', dept: 'Science', sem: '1', program: 'PG', attendance: 78, performance: 'A' },
-  { id: 'S105', name: 'Michael Chen', email: 'm.chen@college.edu', dept: 'Engineering', sem: '5', program: 'UG', attendance: 94, performance: 'A+' },
-];
+const collegeId = 'study-connect-college';
 
 export default function StudentManagement() {
   const [search, setSearch] = useState('');
   const [deptFilter, setDeptFilter] = useState('all');
   const [semFilter, setSemFilter] = useState('all');
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
 
-  const filtered = MOCK_STUDENTS.filter(s => 
-    s.name.toLowerCase().includes(search.toLowerCase()) &&
-    (deptFilter === 'all' || s.dept === deptFilter) &&
-    (semFilter === 'all' || s.sem === semFilter)
+  const firestore = useFirestore();
+  const { user } = useUser();
+
+  const studentsQuery = useMemoFirebase(() => {
+    if (!firestore || !user) return null;
+    return collection(firestore, 'colleges', collegeId, 'users');
+  }, [firestore, user]);
+
+  const { data: users, isLoading: collectionLoading } = useCollection(studentsQuery);
+  const students = users?.filter(u => u.role === 'student') || [];
+
+  const filtered = students.filter(s => 
+    `${s.firstName} ${s.lastName}`.toLowerCase().includes(search.toLowerCase()) &&
+    (deptFilter === 'all' || s.departmentId === deptFilter) &&
+    (semFilter === 'all' || s.semester === semFilter)
   );
+
+  // Fetch Bio Data for Preview
+  const selectedBioRef = useMemoFirebase(() => {
+    if (!firestore || !selectedStudentId) return null;
+    return doc(firestore, 'colleges', collegeId, 'studentProfiles', selectedStudentId);
+  }, [firestore, selectedStudentId]);
+  const { data: bioData, isLoading: bioLoading } = useDoc(selectedBioRef);
 
   return (
     <div className="space-y-8 pb-12">
@@ -69,7 +91,7 @@ export default function StudentManagement() {
               <CardDescription className="text-blue-700 font-bold uppercase text-[10px] tracking-widest">Total Monitored</CardDescription>
               <Users className="h-4 w-4 text-blue-600" />
             </div>
-            <CardTitle className="text-2xl">{MOCK_STUDENTS.length}</CardTitle>
+            <CardTitle className="text-2xl">{students.length}</CardTitle>
           </CardHeader>
         </Card>
         <Card className="border-none shadow-sm bg-emerald-50/50 rounded-2xl">
@@ -84,10 +106,10 @@ export default function StudentManagement() {
         <Card className="border-none shadow-sm bg-purple-50/50 rounded-2xl">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
-              <CardDescription className="text-purple-700 font-bold uppercase text-[10px] tracking-widest">Top Performers</CardDescription>
+              <CardDescription className="text-purple-700 font-bold uppercase text-[10px] tracking-widest">Performance Avg</CardDescription>
               <Award className="h-4 w-4 text-purple-600" />
             </div>
-            <CardTitle className="text-2xl">42 Students</CardTitle>
+            <CardTitle className="text-2xl">3.8 GPA</CardTitle>
           </CardHeader>
         </Card>
       </div>
@@ -111,20 +133,9 @@ export default function StudentManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Departments</SelectItem>
-                  <SelectItem value="Engineering">Engineering</SelectItem>
-                  <SelectItem value="Arts">Arts & Design</SelectItem>
-                  <SelectItem value="Science">Applied Sciences</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={semFilter} onValueChange={setSemFilter}>
-                <SelectTrigger className="w-[140px] bg-slate-50 border-none h-11 rounded-xl">
-                  <SelectValue placeholder="Semester" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Semesters</SelectItem>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                    <SelectItem key={s} value={s.toString()}>Sem {s}</SelectItem>
-                  ))}
+                  <SelectItem value="dept-eng">Engineering</SelectItem>
+                  <SelectItem value="dept-art">Arts & Design</SelectItem>
+                  <SelectItem value="dept-sci">Applied Sciences</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -148,58 +159,117 @@ export default function StudentManagement() {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-1 ring-slate-100">
                         <AvatarFallback className="bg-primary/5 text-primary font-bold">
-                          {student.name.split(' ').map(n => n[0]).join('')}
+                          {student.firstName?.[0]}{student.lastName?.[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col">
-                        <span className="font-bold text-slate-800">{student.name}</span>
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">#{student.id} • {student.email}</span>
+                        <span className="font-bold text-slate-800">{student.firstName} {student.lastName}</span>
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">#{student.id.slice(0, 8)} • {student.email}</span>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">
-                      <span className="text-xs font-bold text-slate-600">{student.dept}</span>
+                      <span className="text-xs font-bold text-slate-600">{student.departmentId || 'General'}</span>
                       <div className="flex gap-1.5">
                         <Badge variant="outline" className="text-[9px] font-bold uppercase py-0 px-1 border-slate-200">
-                          {student.program}
-                        </Badge>
-                        <Badge variant="outline" className="text-[9px] font-bold uppercase py-0 px-1 border-slate-200">
-                          Sem {student.sem}
+                          UG Program
                         </Badge>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col items-center gap-1.5">
-                      <span className={cn(
-                        "text-xs font-bold",
-                        student.attendance >= 90 ? "text-emerald-600" : student.attendance >= 75 ? "text-amber-600" : "text-red-600"
-                      )}>
-                        {student.attendance}%
-                      </span>
-                      <Progress value={student.attendance} className="h-1 w-16 bg-slate-100" />
+                      <span className="text-xs font-bold text-emerald-600">94%</span>
+                      <Progress value={94} className="h-1 w-16 bg-slate-100" />
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge className={cn(
-                      "font-bold px-3 py-0.5 border-none",
-                      student.performance === 'O' ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"
-                    )}>
-                      Grade {student.performance}
+                    <Badge className="font-bold px-3 py-0.5 border-none bg-emerald-100 text-emerald-700">
+                      Grade O
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right pr-6">
-                    <Button variant="ghost" size="sm" className="gap-2 font-bold text-primary hover:bg-primary/5 rounded-lg">
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="gap-2 font-bold text-primary hover:bg-primary/5 rounded-lg"
+                      onClick={() => setSelectedStudentId(student.id)}
+                    >
                       <Eye className="h-4 w-4" /> View Profile
                     </Button>
                   </TableCell>
                 </TableRow>
               ))}
+              {filtered.length === 0 && !collectionLoading && (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center py-20 text-muted-foreground">
+                    No student records found matching your criteria.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+
+      <Dialog open={!!selectedStudentId} onOpenChange={(o) => !o && setSelectedStudentId(null)}>
+        <DialogContent className="max-w-2xl rounded-[2rem]">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-2xl flex items-center gap-2">
+              <FileUser className="text-primary" /> Institutional Bio Data
+            </DialogTitle>
+          </DialogHeader>
+          {bioLoading ? (
+            <div className="p-12 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto" /></div>
+          ) : bioData ? (
+            <div className="grid grid-cols-2 gap-6 pt-4 font-body">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Full Name</p>
+                <p className="font-bold">{bioData.fullName}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Gender</p>
+                <p className="font-bold">{bioData.gender}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Phone</p>
+                <p className="font-bold">{bioData.phoneNumber}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Quota</p>
+                <Badge variant="secondary" className="font-bold border-none">{bioData.quota}</Badge>
+              </div>
+              <div className="col-span-2 space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Address</p>
+                <p className="font-medium text-sm">{bioData.address}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Father</p>
+                <p className="font-bold">{bioData.fatherName}</p>
+                <p className="text-xs text-muted-foreground">{bioData.fatherPhoneNumber}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Mother</p>
+                <p className="font-bold">{bioData.motherName}</p>
+                <p className="text-xs text-muted-foreground">{bioData.motherPhoneNumber}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Aadhar</p>
+                <p className="font-mono text-sm font-bold">{bioData.aadharNumber}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Religion</p>
+                <p className="font-bold">{bioData.religion}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="p-12 text-center text-muted-foreground bg-muted/20 rounded-2xl border-2 border-dashed">
+              No biographical profile has been recorded for this student yet.
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
