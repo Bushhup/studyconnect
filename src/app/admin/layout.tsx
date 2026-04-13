@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
@@ -26,19 +27,16 @@ import { useAppTheme } from '@/components/theme-provider';
 
 const adminLinks = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, keywords: 'overview, stats, analytics' },
-  { href: '/admin/users', label: 'Institutional Directory', icon: UserCog, keywords: 'users, management, accounts' },
-  { href: '/admin/faculty', label: 'Faculty Directory', icon: Users, keywords: 'staff, teachers, professors' },
-  { href: '/admin/students', label: 'Student Directory', icon: BookOpen, keywords: 'enrollment, records' },
-  { href: '/admin/departments', label: 'Departments', icon: Building2, keywords: 'divisions, faculty' },
-  { href: '/admin/classes', label: 'Classes', icon: Calendar, keywords: 'schedules, sections' },
-  { href: '/admin/courses', label: 'Courses', icon: BookOpen, keywords: 'curriculum, subjects' },
-  { href: '/admin/marks', label: 'Marks', icon: FileSpreadsheet, keywords: 'grading, results' },
+  { href: '/admin/departments', label: 'Departments', icon: Building2, keywords: 'divisions, faculty, students, restructure' },
+  { href: '/admin/users', label: 'Identity Hub', icon: UserCog, keywords: 'users, management, accounts, faculty, students' },
+  { href: '/admin/courses', label: 'Curriculum', icon: BookOpen, keywords: 'subjects, modules' },
+  { href: '/admin/marks', label: 'Marks Ledger', icon: FileSpreadsheet, keywords: 'grading, results' },
   { href: '/admin/attendance', label: 'Attendance', icon: ClipboardCheck, keywords: 'presence, monitoring' },
   { href: '/admin/reports', label: 'Analytics', icon: BarChart3, keywords: 'performance, data' },
-  { href: '/admin/resources', label: 'Resources', icon: FileText, keywords: 'documents, policies' },
-  { href: '/admin/notifications', label: 'Announcements', icon: Bell, keywords: 'broadcasts, alerts' },
-  { href: '/admin/logs', label: 'Logs', icon: Activity, keywords: 'audit, security, history' },
-  { href: '/admin/settings', label: 'Settings', icon: Settings, keywords: 'configuration, theme, layout' },
+  { href: '/admin/resources', label: 'Repository', icon: FileText, keywords: 'documents, policies' },
+  { href: '/admin/notifications', label: 'Broadcasts', icon: Bell, keywords: 'announcements, alerts' },
+  { href: '/admin/logs', label: 'System Logs', icon: Activity, keywords: 'audit, security, history' },
+  { href: '/admin/settings', label: 'Config', icon: Settings, keywords: 'configuration, theme, layout' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -269,7 +267,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search modules (e.g. Users, Attendance)..." 
+                placeholder="Institutional Search (e.g. Dept, Section)..." 
                 className="pl-10 bg-muted/50 border-none h-10 rounded-xl"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}

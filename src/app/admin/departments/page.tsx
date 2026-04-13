@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -8,9 +9,9 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Plus, Loader2, FileSpreadsheet } from 'lucide-react';
+import { Building2, Plus, Loader2, ArrowRight, Users, BookOpen, GraduationCap } from 'lucide-react';
+import Link from 'next/link';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 
 const collegeId = 'study-connect-college';
@@ -22,7 +23,7 @@ const DEPT_CSV_COLUMNS: CsvColumn[] = [
 
 export default function DepartmentManagement() {
   const firestore = useFirestore();
-  const { user, isUserLoading: userLoading } = useUser();
+  const { user } = useUser();
   const { toast } = useToast();
   const [name, setName] = useState('');
   const [hod, setHod] = useState('');
@@ -32,7 +33,7 @@ export default function DepartmentManagement() {
     return collection(firestore, 'colleges', collegeId, 'departments');
   }, [firestore, user]);
 
-  const { data: departments, isLoading: collectionLoading } = useCollection(deptQuery);
+  const { data: departments, isLoading } = useCollection(deptQuery);
 
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,87 +44,113 @@ export default function DepartmentManagement() {
       id: crypto.randomUUID(),
       name,
       headOfDept: hod,
+      createdAt: new Date().toISOString()
     });
 
-    toast({ title: 'Department Created', description: `${name} has been added.` });
+    toast({ title: 'Department Created', description: `${name} has been added to the institution.` });
     setName(''); setHod('');
   };
 
-  const isLoading = userLoading || collectionLoading;
-
   return (
-    <div className="space-y-8">
-      <div className="flex justify-between items-center">
+    <div className="space-y-8 pb-12">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-foreground">Department Management</h1>
-          <p className="text-muted-foreground">Manage academic divisions and faculty assignments.</p>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Institutional Architecture</h1>
+          <p className="text-muted-foreground mt-1">Manage academic divisions and their assigned resources.</p>
         </div>
-        <CsvImportDialog 
-          title="Bulk Create Departments"
-          description="Import multiple academic divisions at once by uploading a list of names and heads of departments."
-          columns={DEPT_CSV_COLUMNS}
-        />
+        <div className="flex gap-2">
+          <CsvImportDialog 
+            title="Bulk Create Departments"
+            description="Import multiple academic divisions at once."
+            columns={DEPT_CSV_COLUMNS}
+          />
+          <Button onClick={() => (document.getElementById('deptName') as any)?.focus()} className="gap-2 shadow-lg shadow-primary/20">
+            <Plus className="h-4 w-4" /> New Division
+          </Button>
+        </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-8">
-        <Card className="h-fit bg-card border-none shadow-sm rounded-2xl">
+      <div className="grid lg:grid-cols-4 gap-8">
+        <Card className="h-fit bg-card border-none shadow-sm rounded-2xl lg:sticky lg:top-8">
           <CardHeader>
-            <CardTitle className="text-lg">Add New Department</CardTitle>
+            <CardTitle className="text-lg">Register Department</CardTitle>
+            <CardDescription>Add a new academic node to the system.</CardDescription>
           </CardHeader>
           <form onSubmit={handleCreate}>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="deptName">Department Name</Label>
-                <Input id="deptName" value={name} onChange={(e) => setName(e.target.value)} required className="bg-muted border-none shadow-none" />
+                <Label htmlFor="deptName">Division Name</Label>
+                <Input id="deptName" value={name} onChange={(e) => setName(e.target.value)} required className="bg-muted border-none shadow-none h-11" placeholder="e.g. Mechanical Engineering" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="hod">Head of Department</Label>
-                <Input id="hod" value={hod} onChange={(e) => setHod(e.target.value)} placeholder="e.g., Dr. James Wilson" className="bg-muted border-none shadow-none" />
+                <Input id="hod" value={hod} onChange={(e) => setHod(e.target.value)} placeholder="e.g. Dr. Jane Doe" className="bg-muted border-none shadow-none h-11" />
               </div>
-              <Button type="submit" className="w-full h-11 font-bold">
-                <Plus className="mr-2 h-4 w-4" /> Create Department
+              <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight">
+                <Plus className="mr-2 h-4 w-4" /> Create Node
               </Button>
             </CardContent>
           </form>
         </Card>
 
-        <Card className="lg:col-span-2 bg-card border-none shadow-sm rounded-2xl overflow-hidden">
-          <CardHeader>
-            <CardTitle className="text-lg">Academic Departments</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-20 text-center"><Loader2 className="animate-spin mx-auto h-8 w-8 text-primary" /></div>
-            ) : (
-              <Table>
-                <TableHeader className="bg-muted/50">
-                  <TableRow className="border-none">
-                    <TableHead className="pl-6 font-bold text-foreground">Name</TableHead>
-                    <TableHead className="font-bold text-foreground">H.O.D</TableHead>
-                    <TableHead className="text-right pr-6 font-bold text-foreground">Action</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {departments?.map((dept) => (
-                    <TableRow key={dept.id} className="border-border hover:bg-muted/30">
-                      <TableCell className="pl-6 font-bold text-foreground">{dept.name}</TableCell>
-                      <TableCell className="text-muted-foreground">{dept.headOfDept || 'Not Assigned'}</TableCell>
-                      <TableCell className="text-right pr-6">
-                        <Button variant="ghost" size="sm" className="text-primary font-bold">Edit</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                  {departments?.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={3} className="text-center py-20 text-muted-foreground">No departments found.</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        <div className="lg:col-span-3">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center p-20 gap-4">
+              <Loader2 className="animate-spin h-10 w-10 text-primary" />
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Syncing Divisions...</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {departments?.map((dept) => (
+                <Card key={dept.id} className="group hover:shadow-md transition-all border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
+                  <div className="h-2 w-full bg-primary/10 group-hover:bg-primary transition-colors" />
+                  <CardHeader>
+                    <div className="flex justify-between items-start">
+                      <div className="p-3 bg-primary/5 rounded-2xl">
+                        <Building2 className="h-6 w-6 text-primary" />
+                      </div>
+                      <Badge variant="secondary" className="bg-muted text-muted-foreground border-none font-bold text-[9px] uppercase tracking-tighter">ID: {dept.id.slice(0, 6)}</Badge>
+                    </div>
+                    <CardTitle className="text-xl font-headline mt-4">{dept.name}</CardTitle>
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">H.O.D: {dept.headOfDept || 'TBD'}</p>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="flex flex-col items-center p-2 bg-muted/50 rounded-xl">
+                        <Users className="h-4 w-4 text-muted-foreground mb-1" />
+                        <span className="text-[10px] font-bold">Faculty</span>
+                      </div>
+                      <div className="flex flex-col items-center p-2 bg-muted/50 rounded-xl">
+                        <GraduationCap className="h-4 w-4 text-muted-foreground mb-1" />
+                        <span className="text-[10px] font-bold">Students</span>
+                      </div>
+                      <div className="flex flex-col items-center p-2 bg-muted/50 rounded-xl">
+                        <BookOpen className="h-4 w-4 text-muted-foreground mb-1" />
+                        <span className="text-[10px] font-bold">Subjects</span>
+                      </div>
+                    </div>
+                    <Button asChild variant="outline" className="w-full rounded-xl h-11 font-bold group-hover:bg-primary group-hover:text-white transition-all">
+                      <Link href={`/admin/departments/${dept.id}`}>
+                        Manage Division <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+              {departments?.length === 0 && (
+                <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[3rem] bg-muted/20">
+                  <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/20" />
+                  <p className="font-bold text-muted-foreground">No departments registered yet.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
+}
+
+function Badge({ children, className, variant = "default" }: any) {
+  return <span className={`px-2 py-0.5 rounded-full text-[10px] border ${className}`}>{children}</span>;
 }

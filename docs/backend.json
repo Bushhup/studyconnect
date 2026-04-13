@@ -1,57 +1,64 @@
+
 {
   "entities": {
-    "CollegeInfo": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "CollegeInfo",
+    "Department": {
+      "title": "Department",
       "type": "object",
-      "description": "Stores general information and configuration details for the college displayed in the application.",
+      "description": "An academic division managing courses, faculty, and students.",
       "properties": {
         "id": { "type": "string" },
         "name": { "type": "string" },
-        "logoUrl": { "type": "string", "format": "uri" },
-        "tagline": { "type": "string" },
-        "facilityOverview": { "type": "string" },
-        "statisticalHighlights": { "type": "array", "items": { "type": "string" } }
-      },
-      "required": ["id", "name", "logoUrl", "tagline", "facilityOverview", "statisticalHighlights"]
+        "headOfDept": { "type": "string" },
+        "description": { "type": "string" }
+      }
     },
-    "Achievement": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Achievement",
+    "Class": {
+      "title": "Class (Section)",
       "type": "object",
-      "description": "Represents an academic, research, or extracurricular achievement of the college or its students.",
+      "description": "A specific section/batch of students within a department.",
       "properties": {
         "id": { "type": "string" },
-        "title": { "type": "string" },
-        "description": { "type": "string" },
-        "category": { "type": "string" },
-        "year": { "type": "number" },
-        "imageUrl": { "type": "string", "format": "uri" }
-      },
-      "required": ["id", "title", "description", "category", "year"]
+        "name": { "type": "string" },
+        "departmentId": { "type": "string" },
+        "semester": { "type": "string" },
+        "studentIds": { "type": "array", "items": { "type": "string" } },
+        "subjectHandlers": { 
+          "type": "object", 
+          "description": "Map of SubjectID to FacultyID",
+          "additionalProperties": { "type": "string" }
+        }
+      }
     },
-    "StudentProfile": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "StudentProfile",
+    "InstitutionalUser": {
+      "title": "InstitutionalUser",
       "type": "object",
-      "description": "Stores detailed biographical and contact information for each student.",
+      "description": "User profile with role-specific data.",
       "properties": {
         "id": { "type": "string" },
-        "userId": { "type": "string" },
-        "fullName": { "type": "string" },
-        "gender": { "type": "string" },
-        "phoneNumber": { "type": "string" },
-        "address": { "type": "string" },
-        "fatherName": { "type": "string" },
-        "fatherPhoneNumber": { "type": "string" },
-        "motherName": { "type": "string" },
-        "motherPhoneNumber": { "type": "string" },
-        "religion": { "type": "string" },
-        "aadharNumber": { "type": "string" },
-        "quota": { "type": "string", "enum": ["Government", "Management"] },
-        "updatedAt": { "type": "string", "format": "date-time" }
-      },
-      "required": ["id", "userId", "fullName", "gender", "phoneNumber", "address", "fatherName", "motherName", "aadharNumber", "quota"]
+        "role": { "type": "string", "enum": ["student", "faculty", "admin"] },
+        "departmentId": { "type": "string" },
+        "performanceScore": { "type": "number", "description": "0-100 score based on metrics." },
+        "attendanceRate": { "type": "number" }
+      }
+    },
+    "AcademicRecord": {
+      "title": "AcademicRecord",
+      "type": "object",
+      "description": "Stores attendance and marks for a student in a specific class and subject.",
+      "properties": {
+        "studentId": { "type": "string" },
+        "classId": { "type": "string" },
+        "subjectId": { "type": "string" },
+        "attendance": { "type": "number" },
+        "marks": { 
+          "type": "object",
+          "properties": {
+            "cat1": { "type": "number" },
+            "cat2": { "type": "number" },
+            "final": { "type": "number" }
+          }
+        }
+      }
     }
   },
   "auth": {
@@ -60,24 +67,20 @@
   "firestore": {
     "structure": [
       {
+        "path": "/colleges/{collegeId}/departments/{deptId}",
+        "definition": { "entityName": "Department", "description": "Academic divisions." }
+      },
+      {
+        "path": "/colleges/{collegeId}/classes/{classId}",
+        "definition": { "entityName": "Class", "description": "Academic sections." }
+      },
+      {
         "path": "/colleges/{collegeId}/users/{userId}",
-        "definition": {
-          "entityName": "InstitutionalUser",
-          "description": "Directory of all institutional users including students, faculty, and admins."
-        }
+        "definition": { "entityName": "InstitutionalUser", "description": "Staff and student directory." }
       },
       {
-        "path": "/colleges/{collegeId}/studentProfiles/{userId}",
-        "definition": {
-          "entityName": "StudentProfile",
-          "description": "Biographical data for students. Locked for students after creation."
-        }
-      },
-      {
-        "path": "/admins/{userId}",
-        "definition": {
-          "description": "Root administrative access markers."
-        }
+        "path": "/colleges/{collegeId}/academicRecords/{recordId}",
+        "definition": { "entityName": "AcademicRecord", "description": "Aggregated performance data." }
       }
     ]
   }
