@@ -2,12 +2,15 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
 import { 
   useDoc, 
   useCollection, 
   useMemoFirebase, 
   useFirestore, 
-  useUser 
+  useUser,
+  addDocumentNonBlocking,
+  updateDocumentNonBlocking
 } from '@/firebase';
 import { doc, collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -15,13 +18,26 @@ import { Button } from '@/components/ui/button';
 import { 
   Building2, Users, GraduationCap, BookOpen, 
   Calendar, ArrowLeft, Loader2, Plus, 
-  ChevronRight, TrendingUp
+  ChevronRight, TrendingUp, CheckCircle2,
+  UserPlus, BookPlus, LayoutGrid
 } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogHeader, 
+  DialogTitle, 
+  DialogTrigger 
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 const collegeId = 'study-connect-college';
@@ -31,12 +47,19 @@ export default function DepartmentViewClient() {
   const id = searchParams.get('id');
   const firestore = useFirestore();
   const { user } = useUser();
+  const { toast } = useToast();
+
+  // Dialog States
+  const [isAddClassOpen, setIsAddClassOpen] = useState(false);
+  const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
+  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
+  const [newUserRole, setNewUserRole] = useState<'student' | 'faculty'>('student');
 
   // Fetch Dept
   const deptRef = useMemoFirebase(() => id ? doc(firestore, 'colleges', collegeId, 'departments', id) : null, [firestore, id]);
   const { data: dept, isLoading: deptLoading } = useDoc(deptRef);
 
-  // Fetch Dept-linked Entities
+  // Fetch Entities
   const usersQuery = useMemoFirebase(() => 
     id ? query(collection(firestore, 'colleges', collegeId, 'users'), where('departmentId', '==', id)) : null
   , [firestore, id]);
@@ -67,6 +90,70 @@ export default function DepartmentViewClient() {
   const students = users?.filter(u => u.role === 'student') || [];
   const faculty = users?.filter(u => u.role === 'faculty') || [];
 
+  const handleCreateClass = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const semester = formData.get('semester') as string;
+
+    const ref = collection(firestore, 'colleges', collegeId, 'classes');
+    addDocumentNonBlocking(ref, {
+      id: crypto.randomUUID(),
+      name,
+      semester,
+      departmentId: id,
+      createdAt: new Date().toISOString()
+    });
+
+    toast({ title: 'Section Created', description: `${name} has been added to the department.` });
+    setIsAddClassOpen(false);
+  };
+
+  const handleCreateSubject = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const code = formData.get('code') as string;
+    const credits = Number(formData.get('credits'));
+
+    const ref = collection(firestore, 'colleges', collegeId, 'courses');
+    addDocumentNonBlocking(ref, {
+      id: crypto.randomUUID(),
+      name,
+      code,
+      credits,
+      departmentId: id,
+      createdAt: new Date().toISOString()
+    });
+
+    toast({ title: 'Subject Provisioned', description: `${code}: ${name} is now in the curriculum.` });
+    setIsAddSubjectOpen(false);
+  };
+
+  const handleAddUser = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const firstName = formData.get('firstName') as string;
+    const lastName = formData.get('lastName') as string;
+    const email = formData.get('email') as string;
+
+    const userId = crypto.randomUUID();
+    const ref = doc(firestore, 'colleges', collegeId, 'users', userId);
+    updateDocumentNonBlocking(ref, {
+      id: userId,
+      firstName,
+      lastName,
+      email,
+      role: newUserRole,
+      departmentId: id,
+      status: 'active',
+      createdAt: new Date().toISOString()
+    });
+
+    toast({ title: 'User Registered', description: `${firstName} has been added as ${newUserRole}.` });
+    setIsAddUserOpen(false);
+  };
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -80,8 +167,8 @@ export default function DepartmentViewClient() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-full bg-card">Division Reports</Button>
-          <Button className="rounded-full shadow-lg shadow-primary/20">Edit Division</Button>
+          <Button variant="outline" className="rounded-full bg-card shadow-sm">Division Reports</Button>
+          <Button className="rounded-full shadow-lg shadow-primary/20">Sync Architecture</Button>
         </div>
       </div>
 
@@ -93,20 +180,83 @@ export default function DepartmentViewClient() {
       </div>
 
       <Tabs defaultValue="classes" className="w-full">
-        <TabsList className="bg-card border h-14 p-1.5 rounded-2xl mb-8 flex justify-start overflow-x-auto">
-          <TabsTrigger value="classes" className="gap-2 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white">
-            <Calendar className="h-4 w-4" /> Academic Sections
-          </TabsTrigger>
-          <TabsTrigger value="faculty" className="gap-2 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white">
-            <Users className="h-4 w-4" /> Faculty Handlers
-          </TabsTrigger>
-          <TabsTrigger value="students" className="gap-2 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white">
-            <GraduationCap className="h-4 w-4" /> Student Roster
-          </TabsTrigger>
-          <TabsTrigger value="subjects" className="gap-2 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white">
-            <BookOpen className="h-4 w-4" /> Curriculum
-          </TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
+          <TabsList className="bg-card border h-14 p-1.5 rounded-2xl flex justify-start overflow-x-auto w-full sm:w-auto">
+            <TabsTrigger value="classes" className="gap-2 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white">
+              <Calendar className="h-4 w-4" /> Academic Sections
+            </TabsTrigger>
+            <TabsTrigger value="faculty" className="gap-2 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white">
+              <Users className="h-4 w-4" /> Faculty Handlers
+            </TabsTrigger>
+            <TabsTrigger value="students" className="gap-2 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white">
+              <GraduationCap className="h-4 w-4" /> Student Roster
+            </TabsTrigger>
+            <TabsTrigger value="subjects" className="gap-2 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white">
+              <BookOpen className="h-4 w-4" /> Curriculum
+            </TabsTrigger>
+          </TabsList>
+
+          <div className="flex gap-2">
+            <Dialog open={isAddClassOpen} onOpenChange={setIsAddClassOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 border-primary/20 text-primary">
+                  <Plus className="h-3 w-3" /> Provision Section
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-[2rem]">
+                <DialogHeader>
+                  <DialogTitle>Provision New Academic Section</DialogTitle>
+                  <DialogDescription>Define a batch/class for this department.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreateClass} className="space-y-4 pt-4">
+                  <div className="space-y-2">
+                    <Label>Section Name</Label>
+                    <Input name="name" placeholder="e.g. CSE - Section A" required className="bg-muted border-none h-12" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Target Semester</Label>
+                    <Select name="semester" required>
+                      <SelectTrigger className="bg-muted border-none h-12"><SelectValue placeholder="Select Semester" /></SelectTrigger>
+                      <SelectContent>{[1,2,3,4,5,6,7,8].map(s => <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>)}</SelectContent>
+                    </Select>
+                  </div>
+                  <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight shadow-lg shadow-primary/20">Confirm Creation</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+
+            <Dialog open={isAddSubjectOpen} onOpenChange={setIsAddSubjectOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 border-emerald-200 text-emerald-600">
+                  <BookPlus className="h-3 w-3" /> Provision Subject
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-[2rem]">
+                <DialogHeader>
+                  <DialogTitle>Add Subject to Curriculum</DialogTitle>
+                  <DialogDescription>Define a new course module for this division.</DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleCreateSubject} className="space-y-4 pt-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Subject Name</Label>
+                      <Input name="name" placeholder="e.g. Machine Learning" required className="bg-muted border-none h-12" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Course Code</Label>
+                      <Input name="code" placeholder="e.g. CS402" required className="bg-muted border-none h-12 font-mono" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Academic Credits</Label>
+                    <Input name="credits" type="number" defaultValue="4" required className="bg-muted border-none h-12" />
+                  </div>
+                  <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700">Add to Syllabus</Button>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
 
         <TabsContent value="classes">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -116,32 +266,39 @@ export default function DepartmentViewClient() {
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">{cls.name}</CardTitle>
-                    <Badge className="bg-primary/5 text-primary border-none">Sem {cls.semester || 'N/A'}</Badge>
+                    <Badge className="bg-primary/5 text-primary border-none font-bold uppercase text-[10px]">Sem {cls.semester || 'N/A'}</Badge>
                   </div>
-                  <CardDescription>Active cohort management</CardDescription>
+                  <CardDescription>Section Management Portal</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                    <span>Performance Avg</span>
-                    <span className="text-foreground">84%</span>
+                    <span>Active Enrollment</span>
+                    <span className="text-foreground">{cls.studentIds?.length || 0} Students</span>
                   </div>
                   <Progress value={84} className="h-1" />
                   <Button asChild className="w-full rounded-xl h-11 font-bold group-hover:shadow-lg transition-all">
-                    <Link href={`/admin/classes/view?id=${cls.id}`}>
+                    <Link href={`/admin/class-portal?id=${cls.id}`}>
                       Open Class Portal <ChevronRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
                 </CardContent>
               </Card>
             ))}
-            <button className="h-full min-h-[200px] border-2 border-dashed rounded-[2rem] flex flex-col items-center justify-center gap-2 hover:bg-muted/30 transition-all text-muted-foreground">
-              <Plus className="h-8 w-8" />
-              <span className="font-bold uppercase text-[10px] tracking-widest">Provision New Section</span>
-            </button>
+            {classes?.length === 0 && (
+              <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[2rem] bg-muted/20">
+                <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground/20" />
+                <p className="font-bold text-muted-foreground">No sections provisioned yet.</p>
+              </div>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="faculty">
+          <div className="flex justify-end mb-4">
+            <Button size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 shadow-lg shadow-blue-500/20" onClick={() => {setNewUserRole('faculty'); setIsAddUserOpen(true);}}>
+              <UserPlus className="h-3 w-3" /> Add Faculty Member
+            </Button>
+          </div>
           <Card className="border-none shadow-sm rounded-[2rem] bg-card overflow-hidden">
             <CardContent className="p-0">
               <div className="divide-y border-t mt-4">
@@ -176,13 +333,18 @@ export default function DepartmentViewClient() {
         </TabsContent>
 
         <TabsContent value="students">
+          <div className="flex justify-end mb-4">
+            <Button size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 shadow-lg shadow-purple-500/20 bg-purple-600 hover:bg-purple-700" onClick={() => {setNewUserRole('student'); setIsAddUserOpen(true);}}>
+              <UserPlus className="h-3 w-3" /> Enroll Student
+            </Button>
+          </div>
           <Card className="border-none shadow-sm rounded-[2rem] bg-card overflow-hidden">
             <CardContent className="p-0">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-6 gap-4">
                 {students.map(s => (
-                  <div key={s.id} className="p-4 rounded-2xl bg-muted/30 flex items-center justify-between">
+                  <div key={s.id} className="p-4 rounded-2xl bg-muted/30 flex items-center justify-between group hover:bg-primary/5 transition-all cursor-pointer">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-card border flex items-center justify-center font-bold text-xs">
+                      <div className="h-10 w-10 rounded-full bg-card border flex items-center justify-center font-bold text-xs group-hover:bg-primary group-hover:text-white transition-colors">
                         {s.firstName?.[0]}{s.lastName?.[0]}
                       </div>
                       <div>
@@ -190,7 +352,7 @@ export default function DepartmentViewClient() {
                         <p className="text-[9px] font-mono text-muted-foreground">#{s.id.slice(0, 8).toUpperCase()}</p>
                       </div>
                     </div>
-                    <Badge className="bg-emerald-50 text-emerald-700 border-none font-bold">Active</Badge>
+                    <Badge className="bg-emerald-50 text-emerald-700 border-none font-bold text-[9px] uppercase">Active</Badge>
                   </div>
                 ))}
               </div>
@@ -201,15 +363,15 @@ export default function DepartmentViewClient() {
         <TabsContent value="subjects">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {courses?.map(course => (
-              <Card key={course.id} className="border-none shadow-sm rounded-2xl bg-card">
+              <Card key={course.id} className="border-none shadow-sm rounded-2xl bg-card hover:shadow-md transition-all">
                 <CardHeader className="pb-3">
-                  <Badge variant="outline" className="w-fit border-primary/20 text-primary font-bold mb-2">{course.code}</Badge>
+                  <Badge variant="outline" className="w-fit border-primary/20 text-primary font-bold mb-2 uppercase text-[9px]">{course.code}</Badge>
                   <CardTitle className="text-base font-headline">{course.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground font-medium">Academic Credits</span>
-                    <span className="font-bold">{course.credits} Units</span>
+                    <span className="text-muted-foreground font-medium uppercase text-[10px] tracking-tight">Credits</span>
+                    <span className="font-bold text-foreground">{course.credits} Units</span>
                   </div>
                 </CardContent>
               </Card>
@@ -217,6 +379,33 @@ export default function DepartmentViewClient() {
           </div>
         </TabsContent>
       </Tabs>
+
+      {/* Shared User Creation Dialog */}
+      <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
+        <DialogContent className="rounded-[2rem]">
+          <DialogHeader>
+            <DialogTitle>Register New {newUserRole}</DialogTitle>
+            <DialogDescription>Assign an institutional identity to this academic division.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAddUser} className="space-y-4 pt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>First Name</Label>
+                <Input name="firstName" required className="bg-muted border-none h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label>Last Name</Label>
+                <Input name="lastName" required className="bg-muted border-none h-12" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label>System Email</Label>
+              <Input name="email" type="email" placeholder="user@college.edu" required className="bg-muted border-none h-12" />
+            </div>
+            <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight shadow-lg shadow-primary/20 mt-2">Confirm Registration</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
