@@ -30,7 +30,7 @@ import {
 import { 
   Users, Search, MoreHorizontal, Plus, 
   GraduationCap, ShieldCheck, UserCog, Edit3, 
-  Eye, Trash2, Loader2, CheckCircle2, Lock, AlertCircle,
+  Eye, EyeOff, Trash2, Loader2, CheckCircle2, Lock, AlertCircle,
   AtSign, ArrowRight, FileUser, Sparkles, RefreshCcw,
   Key
 } from 'lucide-react';
@@ -79,6 +79,7 @@ export default function UserManagementPage() {
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
+  const [visiblePasswords, setVisiblePasswords] = useState<Set<string>>(new Set());
 
   // Dialog States
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -131,6 +132,18 @@ export default function UserManagementPage() {
   }) || [];
 
   const isAdmin = profile?.role === 'admin';
+
+  const togglePasswordVisibility = (userId: string) => {
+    setVisiblePasswords((prev) => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  };
 
   const handleDeduplicate = () => {
     if (!users || users.length === 0) return;
@@ -527,9 +540,21 @@ export default function UserManagementPage() {
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Key className="h-3 w-3 text-muted-foreground" />
-                          <code className="text-xs font-mono font-bold text-foreground bg-muted px-2 py-0.5 rounded">
-                            {u.password || '********'}
+                          <code className="text-xs font-mono font-bold text-foreground bg-muted px-2 py-0.5 rounded min-w-[80px] inline-block">
+                            {visiblePasswords.has(u.id) ? (u.password || 'N/A') : '••••••••'}
                           </code>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 rounded-full"
+                            onClick={() => togglePasswordVisibility(u.id)}
+                          >
+                            {visiblePasswords.has(u.id) ? (
+                              <EyeOff className="h-3 w-3 text-muted-foreground" />
+                            ) : (
+                              <Eye className="h-3 w-3 text-muted-foreground" />
+                            )}
+                          </Button>
                         </div>
                       </TableCell>
                       <TableCell>
