@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
@@ -51,6 +52,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   
   const [isOpen, setIsOpen] = useState(false);
   const [rotation, setRotation] = useState(0);
+  const [loopProgress, setLoopProgress] = useState(0);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
@@ -70,10 +72,15 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   }, [isMobile, EDGE_MARGIN]);
 
   useEffect(() => {
-    if (!isOpen || isRotating || isDragging || theme.navStyle === 'straight') return;
+    if (!isOpen || isRotating || isDragging) return;
+    
     const interval = setInterval(() => {
-      setRotation(prev => (prev + 0.1) % 360);
-    }, 50);
+      if (theme.navStyle === 'wheel') {
+        setRotation(prev => (prev + 0.1) % 360);
+      } else {
+        setLoopProgress(prev => (prev + 0.01) % studentLinks.length);
+      }
+    }, 30);
     return () => clearInterval(interval);
   }, [isOpen, isRotating, isDragging, theme.navStyle]);
 
@@ -170,7 +177,10 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
   const getLinearTransform = (index: number) => {
     const spacing = isMobile ? 48 : 56;
-    const offset = (index + 1) * spacing;
+    const count = studentLinks.length;
+    // Modulo logic for smooth looping
+    const effectiveIndex = (index + loopProgress) % count;
+    const offset = (effectiveIndex + 1) * spacing;
     
     const isAtBottom = position.y > window.innerHeight - 100;
     const isAtTop = position.y < 100;

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
@@ -51,6 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   
   const [isOpen, setIsOpen] = useState(false);
   const [rotation, setRotation] = useState(0);
+  const [loopProgress, setLoopProgress] = useState(0);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
@@ -70,10 +72,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [isMobile, EDGE_MARGIN]);
 
   useEffect(() => {
-    if (!isOpen || isRotating || isDragging || theme.navStyle === 'straight') return;
+    if (!isOpen || isRotating || isDragging) return;
+    
     const interval = setInterval(() => {
-      setRotation(prev => (prev + 0.15) % 360);
-    }, 50);
+      if (theme.navStyle === 'wheel') {
+        setRotation(prev => (prev + 0.15) % 360);
+      } else {
+        setLoopProgress(prev => (prev + 0.01) % adminLinks.length);
+      }
+    }, 30);
     return () => clearInterval(interval);
   }, [isOpen, isRotating, isDragging, theme.navStyle]);
 
@@ -169,31 +176,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const hubDimensions = isMobile ? 300 : 440;
   const hubRadius = isMobile ? 120 : 170;
 
-  // Determine dynamic orientation for "Straight" mode
   const getLinearTransform = (index: number) => {
     const spacing = isMobile ? 48 : 56;
-    const offset = (index + 1) * spacing;
+    const count = adminLinks.length;
+    // Calculate effective index based on loop progress
+    const effectiveIndex = (index + loopProgress) % count;
+    const offset = (effectiveIndex + 1) * spacing;
     
-    // Snapping Logic Check
     const isAtBottom = position.y > window.innerHeight - 100;
     const isAtTop = position.y < 100;
     const isAtLeft = position.x < 100;
     const isAtRight = position.x > window.innerWidth - 100;
 
     if (isAtBottom) {
-      // Bottom Edge: Right to Left
       return `translateX(-${offset}px)`;
     } else if (isAtTop) {
-      // Top Edge: Left to Right (or Right to Left based on preference, using Left to Right)
       return `translateY(${offset}px)`;
     } else if (isAtLeft) {
-      // Side (Left): Bottom to Top
       return `translateY(-${offset}px)`;
     } else if (isAtRight) {
-      // Side (Right): Bottom to Top
       return `translateY(-${offset}px)`;
     }
-    return `translateY(-${offset}px)`; // Default
+    return `translateY(-${offset}px)`;
   };
 
   return (
