@@ -47,6 +47,14 @@ export default function FacultyAttendance() {
     });
   };
 
+  const handleMarkAllPresent = () => {
+    setAttendance(prev => prev.map(s => ({ ...s, status: 'present' })));
+    toast({
+      title: 'Roster Updated',
+      description: 'All students in this section marked as present.'
+    });
+  };
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -118,7 +126,7 @@ export default function FacultyAttendance() {
                   <p className="text-sm font-bold text-emerald-600">{attendance.filter(s => s.status === 'present').length} / {attendance.length}</p>
                 </div>
                 <div className="h-8 w-px bg-slate-100" />
-                <Button variant="outline" size="sm" className="rounded-full h-8 text-[10px] font-bold uppercase">Mark All Present</Button>
+                <Button onClick={handleMarkAllPresent} variant="outline" size="sm" className="rounded-full h-8 text-[10px] font-bold uppercase">Mark All Present</Button>
              </div>
           </div>
         </CardHeader>

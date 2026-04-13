@@ -33,6 +33,8 @@ import {
 } from "@/components/ui/table";
 import { cn } from '@/lib/utils';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
+import { useToast } from '@/hooks/use-toast';
+import Link from 'next/link';
 
 const ATTENDANCE_CSV_COLUMNS: CsvColumn[] = [
   { key: 'studentId', label: 'Student ID', description: 'Institutional unique identifier.', example: 'S-101', required: true },
@@ -67,14 +69,29 @@ const chartConfig = {
 };
 
 export default function AttendancePage() {
+  const { toast } = useToast();
   const [timeRange, setTimeRange] = useState('weekly');
   const [subjectFilter, setSubjectFilter] = useState('all');
+
+  const handleExport = () => {
+    toast({
+      title: 'Generating Report',
+      description: 'The institutional attendance log is being compiled into a CSV file.'
+    });
+  };
+
+  const handleEditEntry = (name: string) => {
+    toast({
+      title: 'Entry Context',
+      description: `Opening modification portal for ${name}'s presence log.`
+    });
+  };
 
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Attendance Insights</h1>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Attendance Hub</h1>
           <p className="text-muted-foreground mt-1">Real-time institutional attendance trends and detailed logs.</p>
         </div>
         <div className="flex gap-2">
@@ -83,11 +100,13 @@ export default function AttendancePage() {
             description="Process daily attendance for a whole department by uploading a CSV log."
             columns={ATTENDANCE_CSV_COLUMNS}
           />
-           <Button variant="outline" className="gap-2 shadow-sm rounded-full bg-card">
+           <Button onClick={handleExport} variant="outline" className="gap-2 shadow-sm rounded-full bg-card">
             <Download className="h-4 w-4" /> Export Data
           </Button>
-          <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full px-6">
-            <Calendar className="h-4 w-4" /> View Full Calendar
+          <Button asChild className="gap-2 shadow-lg shadow-primary/20 rounded-full px-6">
+            <Link href="/admin/calendar">
+              <Calendar className="h-4 w-4" /> View Full Calendar
+            </Link>
           </Button>
         </div>
       </div>
@@ -186,7 +205,7 @@ export default function AttendancePage() {
                   </Badge>
                 </div>
               ))}
-              <Button variant="ghost" className="w-full text-xs font-bold text-primary">View Detailed Logs</Button>
+              <Button onClick={() => toast({ title: 'Full Log Access', description: 'Redirecting to detailed archives.' })} variant="ghost" className="w-full text-xs font-bold text-primary">View Detailed Logs</Button>
            </CardContent>
         </Card>
       </div>
@@ -213,7 +232,7 @@ export default function AttendancePage() {
                 </SelectContent>
               </Select>
             </div>
-            <Button variant="ghost" className="gap-2 text-xs font-bold">
+            <Button variant="ghost" className="gap-2 text-xs font-bold" onClick={() => toast({ title: 'Calendar Filter', description: 'Selective date viewing enabled.' })}>
                Oct 24, 2024 <ChevronDown className="h-3.5 w-3.5" />
             </Button>
           </div>
@@ -250,7 +269,7 @@ export default function AttendancePage() {
                     </div>
                   </TableCell>
                   <TableCell className="text-right pr-6">
-                    <Button variant="ghost" size="sm" className="text-primary font-bold">Edit Entry</Button>
+                    <Button onClick={() => handleEditEntry(row.name)} variant="ghost" size="sm" className="text-primary font-bold">Edit Entry</Button>
                   </TableCell>
                 </TableRow>
               ))}

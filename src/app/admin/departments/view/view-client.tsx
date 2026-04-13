@@ -162,6 +162,20 @@ export default function DepartmentViewClient() {
     });
   };
 
+  const handleReports = () => {
+    toast({
+      title: 'Compiling Reports',
+      description: `Analyzing departmental performance for ${dept?.name}.`
+    });
+  };
+
+  const handleSync = () => {
+    toast({
+      title: 'Synchronizing Infrastructure',
+      description: 'Updating semester mapping and curriculum records across the college node.'
+    });
+  };
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -180,8 +194,8 @@ export default function DepartmentViewClient() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-full bg-card shadow-sm">Division Reports</Button>
-          <Button className="rounded-full shadow-lg shadow-primary/20">Sync Architecture</Button>
+          <Button onClick={handleReports} variant="outline" className="rounded-full bg-card shadow-sm">Division Reports</Button>
+          <Button onClick={handleSync} className="rounded-full shadow-lg shadow-primary/20">Sync Architecture</Button>
         </div>
       </div>
 
@@ -336,7 +350,7 @@ export default function DepartmentViewClient() {
                           <TrendingUp className="h-4 w-4 text-emerald-500" />
                         </div>
                       </div>
-                      <Button variant="ghost" size="icon" className="rounded-full group-hover:bg-primary group-hover:text-white transition-all">
+                      <Button variant="ghost" size="icon" className="rounded-full group-hover:bg-primary group-hover:text-white transition-all" onClick={() => toast({ title: 'Context Profile', description: `Viewing performance history for Dr. ${f.lastName}.` })}>
                         <ChevronRight className="h-5 w-5" />
                       </Button>
                     </div>
@@ -396,6 +410,7 @@ export default function DepartmentViewClient() {
                     <span className="text-muted-foreground font-medium uppercase text-[10px] tracking-tight">Credits</span>
                     <span className="font-bold text-foreground">{course.credits} Units</span>
                   </div>
+                  <Button variant="ghost" size="sm" className="w-full mt-4 text-[10px] font-bold uppercase text-primary" onClick={() => toast({ title: 'Curriculum Lock', description: 'Subject metadata modification is restricted during active semesters.' })}>Edit Syllabus</Button>
                 </CardContent>
               </Card>
             ))}

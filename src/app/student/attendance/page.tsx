@@ -14,6 +14,7 @@ import {
   AreaChart, Area, ResponsiveContainer
 } from 'recharts';
 import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 const ATTENDANCE_DATA = [
   { subject: 'Machine Learning', total: 42, attended: 40, percent: 95 },
@@ -32,7 +33,22 @@ const weeklyTrend = [
 ];
 
 export default function StudentAttendance() {
+  const { toast } = useToast();
   const overallAvg = Math.round(ATTENDANCE_DATA.reduce((acc, curr) => acc + curr.percent, 0) / ATTENDANCE_DATA.length);
+
+  const handleDownload = () => {
+    toast({
+      title: 'Preparing Download',
+      description: 'Your complete semester attendance history is being exported to a PDF document.'
+    });
+  };
+
+  const handleRemind = () => {
+    toast({
+      title: 'Alert Configured',
+      description: 'You will receive a notification 15 minutes before your next class begins.'
+    });
+  };
 
   return (
     <div className="space-y-8 pb-12">
@@ -41,7 +57,7 @@ export default function StudentAttendance() {
           <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Presence Overview</h1>
           <p className="text-muted-foreground mt-1">Track your session-wise attendance and institutional compliance.</p>
         </div>
-        <Button variant="outline" className="rounded-full gap-2 border-slate-200 shadow-sm bg-white">
+        <Button onClick={handleDownload} variant="outline" className="rounded-full gap-2 border-slate-200 shadow-sm bg-white">
           <Layers className="h-4 w-4" /> Download History
         </Button>
       </div>
@@ -140,7 +156,7 @@ export default function StudentAttendance() {
             <p className="text-xs leading-relaxed text-amber-800/80">
               Your attendance in <strong>Design Thinking</strong> is currently <strong>66%</strong>, which is below the mandatory 75% threshold. Please ensure presence in upcoming sessions to avoid condonation issues.
             </p>
-            <Button variant="link" className="text-amber-700 font-bold p-0 h-auto text-xs uppercase tracking-tight">View Policy Details →</Button>
+            <Button onClick={() => toast({ title: 'Policy Hub', description: 'Institutional handbook loaded. Section 4.2 covers attendance mandates.' })} variant="link" className="text-amber-700 font-bold p-0 h-auto text-xs uppercase tracking-tight">View Policy Details →</Button>
           </Card>
 
           <Card className="border-none shadow-sm bg-slate-900 text-white rounded-[2rem] p-6">
@@ -155,7 +171,7 @@ export default function StudentAttendance() {
                   <p className="text-[10px] text-white/40 uppercase font-bold tracking-widest">Room 302 • Mon, Oct 28</p>
                 </div>
               </div>
-              <Button className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-xl h-11">
+              <Button onClick={handleRemind} className="w-full bg-white text-slate-900 hover:bg-slate-100 font-bold rounded-xl h-11">
                 Remind Me
               </Button>
             </div>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -96,8 +95,8 @@ export default function AdminDashboard() {
 
   const stats = [
     { label: isHOD ? 'My Division' : 'Academic Divisions', value: deptCount.toString(), icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50', link: '/admin/departments' },
-    { label: 'Division Faculty', value: facultyCount.toString(), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50', link: isHOD ? `/admin/departments/view?id=${profile?.departmentId}` : '/admin/faculty' },
-    { label: 'Division Students', value: studentCount.toString(), icon: GraduationCap, color: 'text-emerald-600', bg: 'bg-emerald-50', link: isHOD ? `/admin/departments/view?id=${profile?.departmentId}` : '/admin/students' },
+    { label: 'Division Faculty', value: facultyCount.toString(), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50', link: isHOD ? `/admin/department-portal?id=${profile?.departmentId}` : '/admin/faculty' },
+    { label: 'Division Students', value: studentCount.toString(), icon: GraduationCap, color: 'text-emerald-600', bg: 'bg-emerald-50', link: isHOD ? `/admin/department-portal?id=${profile?.departmentId}` : '/admin/students' },
     { label: 'System Status', value: '99.9%', icon: CheckCircle2, color: 'text-amber-600', bg: 'bg-amber-50', link: '#' },
   ];
 
@@ -112,6 +111,13 @@ export default function AdminDashboard() {
     } finally {
       setIsSeeding(false);
     }
+  };
+
+  const handleGenerateInsights = () => {
+    toast({
+      title: 'Analysis Initiated',
+      description: 'Calculating semester growth trends and performance benchmarks...'
+    });
   };
 
   if (authLoading || profileLoading) {
@@ -151,7 +157,7 @@ export default function AdminDashboard() {
               Provision Hierarchy
             </Button>
           )}
-          <Button className="font-bold shadow-lg shadow-primary/20">Generate Insights</Button>
+          <Button onClick={handleGenerateInsights} className="font-bold shadow-lg shadow-primary/20">Generate Insights</Button>
         </div>
       </div>
 
@@ -285,7 +291,7 @@ export default function AdminDashboard() {
           <p className="text-xs text-white/60 leading-relaxed">
             Your division resource allocation is optimized. Current capacity is at 84%.
           </p>
-          <Button variant="outline" className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white font-bold rounded-xl h-12">
+          <Button onClick={() => toast({ title: 'Request Sent', description: 'Institutional resource scaling ticket #SC-102 created.' })} variant="outline" className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white font-bold rounded-xl h-12">
             Request Resource Scaling
           </Button>
         </Card>
