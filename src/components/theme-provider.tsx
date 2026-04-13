@@ -35,18 +35,25 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const saved = localStorage.getItem('app-modular-theme');
     if (saved) {
-      const parsed = JSON.parse(saved) as ThemeConfig;
-      // Ensure navStyle exists for legacy saved themes
-      if (!parsed.navStyle) parsed.navStyle = 'wheel';
-      setThemeState(parsed);
-      applyTheme(parsed);
+      try {
+        const parsed = JSON.parse(saved) as ThemeConfig;
+        if (!parsed.navStyle) parsed.navStyle = 'wheel';
+        setThemeState(parsed);
+        // Attributes are already set by the blocking script in head, 
+        // but we ensure consistency here.
+        applyTheme(parsed);
+      } catch (e) {
+        console.error("Theme restoration failed", e);
+      }
     }
   }, []);
 
   const applyTheme = (config: ThemeConfig) => {
-    document.body.setAttribute('data-bg', config.bg);
-    document.body.setAttribute('data-primary', config.primary);
-    document.body.setAttribute('data-text', config.text);
+    if (typeof document !== 'undefined') {
+      document.body.setAttribute('data-bg', config.bg);
+      document.body.setAttribute('data-primary', config.primary);
+      document.body.setAttribute('data-text', config.text);
+    }
   };
 
   const setBg = (bg: BackgroundTheme) => {

@@ -47,6 +47,23 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
         <meta name="mobile-web-app-capable" content="yes" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const saved = localStorage.getItem('app-modular-theme');
+                  if (saved) {
+                    const theme = JSON.parse(saved);
+                    if (theme.bg) document.body.setAttribute('data-bg', theme.bg);
+                    if (theme.primary) document.body.setAttribute('data-primary', theme.primary);
+                    if (theme.text) document.body.setAttribute('data-text', theme.text);
+                  }
+                } catch (e) {}
+              })();
+            `,
+          }}
+        />
       </head>
       <body
         className={cn(
