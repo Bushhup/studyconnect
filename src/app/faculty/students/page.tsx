@@ -37,6 +37,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { StudentBioHover } from '@/components/StudentBioHover';
 
 const collegeId = 'study-connect-college';
 
@@ -156,17 +157,19 @@ export default function StudentManagement() {
               {filtered.map((student) => (
                 <TableRow key={student.id} className="group hover:bg-slate-50/50 border-slate-100 transition-colors">
                   <TableCell className="pl-6 py-4">
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-1 ring-slate-100">
-                        <AvatarFallback className="bg-primary/5 text-primary font-bold">
-                          {student.firstName?.[0]}{student.lastName?.[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex flex-col">
-                        <span className="font-bold text-slate-800">{student.firstName} {student.lastName}</span>
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">#{student.id.slice(0, 8)} • {student.email}</span>
+                    <StudentBioHover student={student}>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10 border-2 border-white shadow-sm ring-1 ring-slate-100">
+                          <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                            {student.firstName?.[0]}{student.lastName?.[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col">
+                          <span className="font-bold text-slate-800">{student.firstName} {student.lastName}</span>
+                          <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tight">#{student.id.slice(0, 8)} • {student.email}</span>
+                        </div>
                       </div>
-                    </div>
+                    </StudentBioHover>
                   </TableCell>
                   <TableCell>
                     <div className="flex flex-col gap-1">

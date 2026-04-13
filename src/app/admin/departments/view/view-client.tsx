@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useSearchParams } from 'next/navigation';
@@ -40,6 +39,7 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { StudentBioHover } from '@/components/StudentBioHover';
 
 const collegeId = 'study-connect-college';
 
@@ -360,18 +360,20 @@ export default function DepartmentViewClient() {
             <CardContent className="p-0">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 p-6 gap-4">
                 {students.map(s => (
-                  <div key={s.id} className="p-4 rounded-2xl bg-muted/30 flex items-center justify-between group hover:bg-primary/5 transition-all cursor-pointer">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-card border flex items-center justify-center font-bold text-xs group-hover:bg-primary group-hover:text-white transition-colors uppercase">
-                        {s.firstName?.[0]}{s.lastName?.[0]}
+                  <StudentBioHover key={s.id} student={s}>
+                    <div className="p-4 rounded-2xl bg-muted/30 flex items-center justify-between group hover:bg-primary/5 transition-all cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-full bg-card border flex items-center justify-center font-bold text-xs group-hover:bg-primary group-hover:text-white transition-colors uppercase">
+                          {s.firstName?.[0]}{s.lastName?.[0]}
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold">{s.firstName} {s.lastName}</p>
+                          <p className="text-[9px] font-mono text-muted-foreground uppercase">#{s.id.slice(0, 8)}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-sm font-bold">{s.firstName} {s.lastName}</p>
-                        <p className="text-[9px] font-mono text-muted-foreground uppercase">#{s.id.slice(0, 8)}</p>
-                      </div>
+                      <Badge className="bg-emerald-50 text-emerald-700 border-none font-bold text-[9px] uppercase">Active</Badge>
                     </div>
-                    <Badge className="bg-emerald-50 text-emerald-700 border-none font-bold text-[9px] uppercase">Active</Badge>
-                  </div>
+                  </StudentBioHover>
                 ))}
                 {students.length === 0 && (
                   <div className="col-span-full p-20 text-center text-muted-foreground italic">No students currently enrolled in this division.</div>

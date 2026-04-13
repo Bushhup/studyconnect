@@ -40,8 +40,9 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+} from "@/dialog";
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
+import { StudentBioHover } from '@/components/StudentBioHover';
 
 const collegeId = 'study-connect-college';
 
@@ -81,7 +82,7 @@ export default function StudentManagementPage() {
     s.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Fetch Bio Data for Preview
+  // Fetch Bio Data for Preview (Used in the manual detailed dialog)
   const selectedBioRef = useMemoFirebase(() => {
     if (!firestore || !selectedStudentId) return null;
     return doc(firestore, 'colleges', collegeId, 'studentProfiles', selectedStudentId);
@@ -152,7 +153,7 @@ export default function StudentManagementPage() {
             </CardDescription>
             <CardTitle className="text-2xl text-foreground font-headline">{students.length}</CardTitle>
           </CardHeader>
-        </Card>
+        </div>
       </div>
 
       <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
@@ -188,17 +189,19 @@ export default function StudentManagementPage() {
                 {filteredStudents.map((student) => (
                   <TableRow key={student.id} className="group transition-colors hover:bg-muted/50 border-border">
                     <TableCell className="py-4 pl-6">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-10 w-10 border-2 border-background shadow-sm ring-1 ring-border">
-                          <AvatarFallback className="bg-primary/5 text-primary font-bold">
-                            {student.firstName?.[0]}{student.lastName?.[0]}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex flex-col">
-                          <span className="font-bold text-foreground">{student.firstName} {student.lastName}</span>
-                          <span className="text-[10px] text-muted-foreground">{student.email}</span>
+                      <StudentBioHover student={student}>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-10 w-10 border-2 border-background shadow-sm ring-1 ring-border">
+                            <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                              {student.firstName?.[0]}{student.lastName?.[0]}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-foreground">{student.firstName} {student.lastName}</span>
+                            <span className="text-[10px] text-muted-foreground">{student.email}</span>
+                          </div>
                         </div>
-                      </div>
+                      </StudentBioHover>
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-col">
