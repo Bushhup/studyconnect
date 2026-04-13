@@ -119,10 +119,10 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
               {columns.map((col) => (
                 <div key={col.key} className="flex items-start justify-between group">
                   <div className="space-y-0.5">
-                    <p className="text-sm font-bold flex items-center gap-2">
+                    <div className="text-sm font-bold flex items-center gap-2">
                       {col.label}
                       {col.required && <Badge variant="secondary" className="text-[8px] bg-red-500/10 text-red-500 border-none uppercase h-4 px-1">Required</Badge>}
-                    </p>
+                    </div>
                     <p className="text-xs text-muted-foreground">{col.description}</p>
                   </div>
                   <code className="text-[10px] bg-muted px-2 py-1 rounded font-mono text-primary opacity-60 group-hover:opacity-100 transition-opacity">
