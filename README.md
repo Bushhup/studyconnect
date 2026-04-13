@@ -1,116 +1,86 @@
 # 🎓 StudyConnect: Enterprise Academic Ecosystem
 
-[![Next.js](https://img.shields.io/badge/Next.js-15-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
-[![Firebase](https://img.shields.io/badge/Firebase-11-FFCA28?style=for-the-badge&logo=firebase)](https://firebase.google.com/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4-38B2AC?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
-[![Capacitor](https://img.shields.io/badge/Capacitor-7-blue?style=for-the-badge&logo=capacitor)](https://capacitorjs.com/)
-
 StudyConnect is a high-performance, hierarchical institutional management platform designed for modern academic environments. It provides a unified command center for Administrators, specialized sub-management for HODs, professional tools for Faculty, and a data-rich experience for Students.
 
 ---
 
-## 🏛️ System Architecture & Hierarchy
+## 🏛️ Institutional Architecture & Hierarchy
 
 The platform is built on a **Hierarchical Academic Model**, ensuring data integrity and logical navigation from the top-level institution down to individual student performance.
 
-1.  **Departments (Divisions):** The primary organizational unit. Manages assigned Faculty, Students, Classes, and Curriculum.
-2.  **Classes (Sections):** Academic cohorts within a department. Maps specific students to subject handlers (faculty).
-3.  **Rosters & Ledgers:** The final node where individual attendance, marks, and biographical data (Bio-Data) are managed.
+1.  **Academic Divisions (Departments):** The primary organizational unit. Manages assigned Faculty, Students, Classes, and Curriculum.
+2.  **Academic Sections (Classes):** Academic cohorts within a department. Maps specific students to subject handlers (faculty).
+3.  **Rosters & Ledgers:** The final node where individual attendance, marks, and verified biographical data (Bio-Data) are managed.
 
 ---
 
-## 🗺️ System Sitemap
-
-### 🌐 Public Access
-*   **Home (`/`):** Hero, institutional stats, facilities, and testimonials.
-*   **Achievements (`/achievements`):** Historical milestones and awards.
-*   **Gallery (`/gallery`):** Visual tour of campus facilities and labs.
-*   **Events (`/events`):** Upcoming workshops, cultural meets, and past events.
-*   **Login (`/login`):** Unified role-based authentication portal.
+## 🗺️ Portal Modules & Functions
 
 ### 👑 Admin & HOD Portal (`/admin`)
-*   **Dashboard:** Institutional oversight with enrollment distributions and growth trends.
-*   **Institutional Architecture:**
-    *   `Division Hub`: Manage specific departments, faculty impact, and class sections.
-    *   `Class Portal`: Deep-dive into student performance ledgers and subject handler ratings.
-*   **Identity Hub (Users):** Centralized directory for access control.
-    *   `Faculty Directory`: Staff profiles and departmental mapping.
-    *   `Student Directory`: Enrollment status and performance overview.
-    *   `Bio-Data Registry`: Access to verified student identity records.
-*   **Academic Results:** Performance leaderboard ranked by department scores.
-*   **Operations:**
-    *   `Attendance Hub`: Real-time trends and bulk log processing.
-    *   `Curriculum`: Course credit and degree requirements management.
-    *   `Analytics`: Deep-dive placement and student retention reports.
-    *   `System Logs`: Comprehensive audit trail of admin activity.
+The master management suite. HODs (Head of Departments) access a version of this portal filtered specifically to their `departmentId`.
+
+*   **Institutional Dashboard:** High-level oversight using Recharts. Tracks enrollment distributions (Pie Chart) and institutional growth trends (Area Chart).
+*   **Architecture Hub (Departments):** The root of the hierarchy. Used to provision new divisions and assign HODs.
+*   **Identity Hub (Users):** A centralized directory for access control.
+    *   *Faculty Directory:* Manage staff profiles and departmental mapping.
+    *   *Student Directory:* Access enrollment status and student identities.
+    *   *Bio-Data Registry:* View verified biographical records (Family, ID, Contact).
+*   **Academic Results (Marks):** A hierarchical leaderboard. Ranks departments by performance; drills down into class-wise and student-wise ledgers.
+*   **Attendance Hub:** Real-time monitoring of institutional presence with "At-Risk" threshold alerts.
+*   **Curriculum Management:** Define course credits, syllabus codes, and degree requirements.
+*   **System Operations:** Access system logs (audit trail), broadcast institutional notifications, and manage visual configurations.
 
 ### 👨‍🏫 Faculty Portal (`/faculty`)
+Designed for handling daily academic loads and student success tracking.
+
 *   **Teaching Hub:**
-    *   `My Classes`: Assigned sections, timings, and classroom allocations.
-    *   `Students`: Directory of students enrolled in handler's subjects.
-*   **Academics:**
-    *   `Attendance`: Session-wise presence recording.
-    *   `Grades`: CAT-1, CAT-2, and Model exam mark entry.
-    *   `Assignments`: Task creation, deadline management, and grading.
-    *   `Resources`: Study material repository for student downloads.
-*   **Engagement:**
-    *   `Announcements`: Broadcast alerts directly to student dashboards.
-    *   `Calendar`: Personal teaching schedule and deadlines.
+    *   *My Classes:* View assigned sections, timings, and classroom allocations.
+    *   *Students:* Directory of students enrolled specifically in the faculty's handled subjects.
+*   **Academic Operations:**
+    *   *Attendance Ledger:* Session-wise presence recording with "Late" and "Absent" toggles.
+    *   *Grade Entry:* Portal for CAT-1, CAT-2, and Model exam mark entry.
+    *   *Assignment Center:* Create tasks, set deadlines, and manage student submissions.
+    *   *Study Resources:* Repository for uploading lecture notes and reference materials.
+*   **Engagement Tools:** Broadcast announcements to specific sections and manage a personal teaching calendar.
 
 ### 🎓 Student Portal (`/student`)
-*   **My Identity:**
-    *   `Profile`: Verified institutional record.
-    *   `Bio Data`: Self-service biographical registry (Family, ID, Contact).
+A personal academic workspace for the student's journey.
+
 *   **Academic Journey:**
-    *   `Curriculum`: Active courses, syllabus details, and faculty handlers.
-    *   `Attendance`: Real-time monitoring with "At-Risk" alerts.
-    *   `Marks`: Internal assessment scorecards.
-    *   `Results`: Official end-semester grade cards.
-*   **Materials & Tasks:**
-    *   `Assignments`: Digital submission portal.
-    *   `Resources`: Downloadable notes and reference materials.
-    *   `Broadcasts`: Institutional announcement feed.
+    *   *My Curriculum:* Interactive view of active courses and assigned faculty.
+    *   *Attendance Tracking:* Real-time monitoring of presence percentages per subject.
+    *   *Marks & Results:* View internal assessment scores and official end-semester grade cards.
+    *   *Performance Deep-Dive:* Analytical charts showing GPA progression and credit weightage.
+*   **Task Management:**
+    *   *Assignments:* Digital submission portal for academic tasks.
+    *   *Resources:* Download center for faculty-shared notes and lab manuals.
+*   **My Identity:** Self-service biographical registry (Bio Data) which locks after verified submission.
 
 ---
 
-## 🔑 Access Roles
+## 🚀 Key Platform Features
 
-### 1. Master Administrator
-*   **Permissions:** Full system oversight.
-*   **Key Feature:** Can provision the entire academic hierarchy using the **Bulk Data System**.
+### 📊 Beautiful Analytics
+Integrated **Recharts** visualizations across all dashboards:
+*   **Enrollment Split:** Multi-color Pie charts showing student distribution.
+*   **GPA Trends:** Area charts with lush gradients for performance tracking.
+*   **Leaderboards:** Vertical bar charts ranking departments by success score.
 
-### 2. HOD (Head of Department) - Sub-Admin
-*   **Permissions:** Department-restricted management.
-*   **Scope:** Only visible data and controls pertaining to their assigned `departmentId`.
-
-### 3. Faculty Portal
-*   **Scope:** Management of assigned academic loads and student success tracking.
-
-### 4. Student Portal
-*   **Scope:** Personal academic journey, bio-data management, and performance analytics.
-
----
-
-## 🚀 Key Features
+### 📂 Bulk Data Management
+Standardized CSV system for high-volume operations:
+*   **Downloadable Templates:** Every admin module provides a formatting guide.
+*   **Smart Imports:** Onboard thousands of users, students, or grades via CSV upload.
 
 ### 🎨 Modular Visual Identity
 Users can personalize their entire portal experience via the **Visual Builder**:
 *   **Workspace Backgrounds:** Stellar Black, Midnight Navy, Paper White, or Cloud Gray.
 *   **Primary Accents:** Ocean Blue, Forest Green, Deep Purple, Golden Sun, or Velvet Rose.
 *   **Nav Hub Styles:** 
-    *   *Orbital Wheel:* A circular carousel of icons.
+    *   *Orbital Wheel:* A circular rotating carousel of icons.
     *   *Linear Dynamic:* A draggable, looping track that aligns to the screen edge.
 
-### 📊 Beautiful Analytics
-Integrated **Recharts** visualizations across all dashboards:
-*   Enrollment distributions (Pie).
-*   GPA and Attendance growth trends (Area).
-*   Departmental Performance Leaderboards (Bar).
-
-### 📂 Bulk Data Management
-Standardized CSV system for high-volume operations:
-*   **Downloadable Templates:** Every admin module provides a format guide.
-*   **Smart Imports:** Bulk onboard thousands of users, students, or grades in seconds.
+### 🔍 Institutional Command Center
+The header search bar acts as a global index. Users can search for any portal module (e.g., "Grades," "Bio Data," "Syllabus") to navigate instantly.
 
 ---
 
@@ -118,12 +88,6 @@ Standardized CSV system for high-volume operations:
 *   **Frontend:** Next.js 15 (App Router), React 19, Tailwind CSS.
 *   **UI Components:** Shadcn UI (Radix Primitives).
 *   **Backend:** Firebase (Auth, Firestore).
-*   **Mobile:** Capacitor 7 integration for native Android/iOS builds.
-*   **Animations:** Framer Motion for high-fidelity transitions.
-
----
-
-## 🔑 Demonstration Access
-- **Portal:** [https://studyconnect-taupe.vercel.app/login](https://studyconnect-taupe.vercel.app/login)
-- **Admin:** `Admin01` | `minister123`
-- **Demo Mode:** Select Student/Faculty and enter `demo` | `demo123`
+*   **Data Flow:** Client-side Firestore hooks with non-blocking optimistic updates.
+*   **Mobile:** Capacitor 7 integration for native mobile builds.
+*   **Animations:** Framer Motion for high-fidelity interactive transitions.
