@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
@@ -59,6 +58,8 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [startAngle, setStartAngle] = useState(0);
   const [startRotation, setStartRotation] = useState(0);
+  const [startDragPos, setStartDragPos] = useState({ x: 0, y: 0 });
+  const [startLoopProgress, setStartLoopProgress] = useState(0);
 
   const EDGE_MARGIN = isMobile ? 40 : 48;
 
@@ -78,8 +79,8 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
       if (theme.navStyle === 'wheel') {
         setRotation(prev => (prev + 0.08) % 360);
       } else {
-        // Continuous kinetic loop speed
-        setLoopProgress(prev => (prev + 0.06) % facultyLinks.length);
+        // Reduced kinetic loop speed
+        setLoopProgress(prev => (prev + 0.04) % facultyLinks.length);
       }
     }, 30);
     return () => clearInterval(interval);
@@ -109,13 +110,19 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
   };
 
   const startRotating = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isOpen || isDragging || theme.navStyle === 'straight') return;
+    if (!isOpen || isDragging) return;
     e.stopPropagation();
     setIsRotating(true);
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    setStartAngle(getAngle(clientX, clientY));
-    setStartRotation(rotation);
+    
+    if (theme.navStyle === 'wheel') {
+      setStartAngle(getAngle(clientX, clientY));
+      setStartRotation(rotation);
+    } else {
+      setStartDragPos({ x: clientX, y: clientY });
+      setStartLoopProgress(loopProgress);
+    }
   };
 
   const onMove = useCallback((e: MouseEvent | TouchEvent) => {
@@ -130,11 +137,27 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
     }
 
     if (isRotating) {
-      const currentAngle = getAngle(clientX, clientY);
-      const angleDiff = currentAngle - startAngle;
-      setRotation(startRotation + angleDiff);
+      if (theme.navStyle === 'wheel') {
+        const currentAngle = getAngle(clientX, clientY);
+        const angleDiff = currentAngle - startAngle;
+        setRotation(startRotation + angleDiff);
+      } else {
+        const isAtBottom = position.y > window.innerHeight - 100;
+        const isAtTop = position.y < 100;
+        const count = facultyLinks.length;
+        
+        if (isAtBottom || isAtTop) {
+          const dx = clientX - startDragPos.x;
+          const units = dx / (window.innerWidth / count);
+          setLoopProgress(((startLoopProgress - units) % count + count) % count);
+        } else {
+          const dy = clientY - startDragPos.y;
+          const units = dy / (window.innerHeight / count);
+          setLoopProgress(((startLoopProgress - units) % count + count) % count);
+        }
+      }
     }
-  }, [isDragging, isRotating, dragOffset, startAngle, startRotation]);
+  }, [isDragging, isRotating, dragOffset, startAngle, startRotation, theme.navStyle, position, startDragPos, startLoopProgress, getAngle]);
 
   const onEnd = useCallback(() => {
     if (isDragging) {
@@ -181,7 +204,6 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
     if (typeof window === 'undefined') return '';
     
     const count = facultyLinks.length;
-    // Continuous seamless modulo
     const effectiveIndex = ((index - loopProgress) % count + count) % count;
     
     const isAtBottom = position.y > window.innerHeight - 100;
@@ -192,7 +214,6 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
     const lineOffset = isMobile ? 60 : 80;
 
     if (isAtBottom || isAtTop) {
-      // Horizontal Full-Screen distribution
       const totalWidth = window.innerWidth;
       const spacing = totalWidth / count;
       const xOnScreen = effectiveIndex * spacing;
@@ -200,7 +221,6 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
       const ty = isAtBottom ? -lineOffset : lineOffset;
       return `translate(${tx}px, ${ty}px)`;
     } else {
-      // Vertical Full-Screen distribution
       const totalHeight = window.innerHeight;
       const spacing = totalHeight / count;
       const yOnScreen = effectiveIndex * spacing;

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
@@ -59,6 +58,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [startAngle, setStartAngle] = useState(0);
   const [startRotation, setStartRotation] = useState(0);
+  const [startDragPos, setStartDragPos] = useState({ x: 0, y: 0 });
+  const [startLoopProgress, setStartLoopProgress] = useState(0);
 
   const EDGE_MARGIN = isMobile ? 40 : 48;
 
@@ -78,8 +79,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (theme.navStyle === 'wheel') {
         setRotation(prev => (prev + 0.15) % 360);
       } else {
-        // Continuous kinetic loop speed
-        setLoopProgress(prev => (prev + 0.06) % adminLinks.length);
+        // Reduced kinetic loop speed
+        setLoopProgress(prev => (prev + 0.04) % adminLinks.length);
       }
     }, 30);
     return () => clearInterval(interval);
@@ -109,13 +110,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   };
 
   const startRotating = (e: React.MouseEvent | React.TouchEvent) => {
-    if (!isOpen || isDragging || theme.navStyle === 'straight') return;
+    if (!isOpen || isDragging) return;
     e.stopPropagation();
     setIsRotating(true);
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : e.clientY;
-    setStartAngle(getAngle(clientX, clientY));
-    setStartRotation(rotation);
+    
+    if (theme.navStyle === 'wheel') {
+      setStartAngle(getAngle(clientX, clientY));
+      setStartRotation(rotation);
+    } else {
+      setStartDragPos({ x: clientX, y: clientY });
+      setStartLoopProgress(loopProgress);
+    }
   };
 
   const onMove = useCallback((e: MouseEvent | TouchEvent) => {
@@ -130,11 +137,28 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }
 
     if (isRotating) {
-      const currentAngle = getAngle(clientX, clientY);
-      const angleDiff = currentAngle - startAngle;
-      setRotation(startRotation + angleDiff);
+      if (theme.navStyle === 'wheel') {
+        const currentAngle = getAngle(clientX, clientY);
+        const angleDiff = currentAngle - startAngle;
+        setRotation(startRotation + angleDiff);
+      } else {
+        const isAtBottom = position.y > window.innerHeight - 100;
+        const isAtTop = position.y < 100;
+        const count = adminLinks.length;
+        
+        if (isAtBottom || isAtTop) {
+          const dx = clientX - startDragPos.x;
+          // One link width = totalWidth / count
+          const units = dx / (window.innerWidth / count);
+          setLoopProgress(((startLoopProgress - units) % count + count) % count);
+        } else {
+          const dy = clientY - startDragPos.y;
+          const units = dy / (window.innerHeight / count);
+          setLoopProgress(((startLoopProgress - units) % count + count) % count);
+        }
+      }
     }
-  }, [isDragging, isRotating, dragOffset, startAngle, startRotation]);
+  }, [isDragging, isRotating, dragOffset, startAngle, startRotation, theme.navStyle, position, startDragPos, startLoopProgress, getAngle]);
 
   const onEnd = useCallback(() => {
     if (isDragging) {
@@ -181,7 +205,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (typeof window === 'undefined') return '';
     
     const count = adminLinks.length;
-    // (index - loopProgress) ensures Right-to-Left or Bottom-to-Top flow
     const effectiveIndex = ((index - loopProgress) % count + count) % count;
     
     const isAtBottom = position.y > window.innerHeight - 100;
@@ -192,20 +215,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const lineOffset = isMobile ? 60 : 80;
 
     if (isAtBottom || isAtTop) {
-      // Horizontal Full-Screen distribution
       const totalWidth = window.innerWidth;
       const spacing = totalWidth / count;
       const xOnScreen = effectiveIndex * spacing;
-      // Convert screen X to relative offset from hub center
       const tx = xOnScreen - position.x + (spacing / 2);
       const ty = isAtBottom ? -lineOffset : lineOffset;
       return `translate(${tx}px, ${ty}px)`;
     } else {
-      // Vertical Full-Screen distribution
       const totalHeight = window.innerHeight;
       const spacing = totalHeight / count;
       const yOnScreen = effectiveIndex * spacing;
-      // Convert screen Y to relative offset from hub center
       const ty = yOnScreen - position.y + (spacing / 2);
       const tx = isAtLeft ? lineOffset : -lineOffset;
       return `translate(${tx}px, ${ty}px)`;
@@ -296,7 +315,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   key={link.href}
                   className={cn(
                     "absolute left-1/2 top-1/2 pointer-events-auto",
-                    // Disable transitions in linear mode to prevent "snapping back" during wrap
                     theme.navStyle === 'wheel' ? "transition-transform duration-500" : "transition-none"
                   )}
                   style={style}
