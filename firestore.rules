@@ -72,6 +72,17 @@ service cloud.firestore {
       }
       
       /**
+       * Academic Records: 
+       * - Admins, HODs, and Faculty can read all records for analytics.
+       * - Students can read their own records.
+       * - Only staff roles can write.
+       */
+      match /academicRecords/{id} {
+        allow read: if isAdmin() || isHOD() || isFaculty() || (isSignedIn() && resource.data.studentId == request.auth.uid);
+        allow write: if isAdmin() || isHOD() || isFaculty();
+      }
+
+      /**
        * Achievements & Events: 
        * - Publicly readable.
        * - Editable by Admin.
