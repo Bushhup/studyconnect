@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -81,7 +82,7 @@ export default function MarksManagementPage() {
   const { data: classes, isLoading: classesLoading } = useCollection(classesQuery);
   const { data: students, isLoading: studentsLoading } = useCollection(studentsQuery);
 
-  // Auto-select department for HOD - Fixed render loop by using useEffect
+  // Auto-select department for HOD
   useEffect(() => {
     if (isHOD && profile?.departmentId && viewState === 'depts') {
       setViewState('classes');

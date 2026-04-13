@@ -1,8 +1,9 @@
 
-// This file is deprecated due to static export constraints.
-// Dynamic logic has moved to /admin/departments/view?id=...
+// This dynamic route is deprecated to support static exports.
+// Use /admin/department-portal?id=... instead.
+
 export function generateStaticParams() {
-  return [{ id: 'deprecated' }];
+  return [{ id: 'static' }];
 }
 
 export default function Page() {

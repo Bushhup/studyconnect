@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -30,6 +31,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from '@/hooks/use-toast';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
+import Link from 'next/link';
 
 const collegeId = 'study-connect-college';
 
@@ -253,8 +255,8 @@ export default function ClassManagementPage() {
                     </div>
                   </div>
                   
-                  <Button variant="outline" className="w-full mt-2 font-bold text-xs h-10 rounded-xl group-hover:bg-primary group-hover:text-white transition-all border-border bg-transparent">
-                    View Full Roster
+                  <Button asChild variant="outline" className="w-full mt-2 font-bold text-xs h-10 rounded-xl group-hover:bg-primary group-hover:text-white transition-all border-border bg-transparent">
+                    <Link href={`/admin/class-portal?id=${item.id}`}>View Full Roster</Link>
                   </Button>
                 </CardContent>
               </Card>

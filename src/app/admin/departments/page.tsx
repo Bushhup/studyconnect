@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -146,7 +147,7 @@ export default function DepartmentManagement() {
                       </div>
                     </div>
                     <Button asChild variant="outline" className="w-full rounded-xl h-11 font-bold group-hover:bg-primary group-hover:text-white transition-all">
-                      <Link href={`/admin/departments/view?id=${dept.id}`}>
+                      <Link href={`/admin/department-portal?id=${dept.id}`}>
                         Manage Division <ArrowRight className="ml-2 h-4 w-4" />
                       </Link>
                     </Button>
