@@ -96,8 +96,8 @@ export default function AdminDashboard() {
 
   const stats = [
     { label: isHOD ? 'My Division' : 'Academic Divisions', value: deptCount.toString(), icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50', link: '/admin/departments' },
-    { label: 'Division Faculty', value: facultyCount.toString(), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50', link: isHOD ? `/admin/departments/${profile?.departmentId}` : '/admin/faculty' },
-    { label: 'Division Students', value: studentCount.toString(), icon: GraduationCap, color: 'text-emerald-600', bg: 'bg-emerald-50', link: isHOD ? `/admin/departments/${profile?.departmentId}` : '/admin/students' },
+    { label: 'Division Faculty', value: facultyCount.toString(), icon: Users, color: 'text-purple-600', bg: 'bg-purple-50', link: isHOD ? `/admin/departments/view?id=${profile?.departmentId}` : '/admin/faculty' },
+    { label: 'Division Students', value: studentCount.toString(), icon: GraduationCap, color: 'text-emerald-600', bg: 'bg-emerald-50', link: isHOD ? `/admin/departments/view?id=${profile?.departmentId}` : '/admin/students' },
     { label: 'System Status', value: '99.9%', icon: CheckCircle2, color: 'text-amber-600', bg: 'bg-amber-50', link: '#' },
   ];
 

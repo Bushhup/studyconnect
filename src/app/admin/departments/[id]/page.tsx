@@ -1,3 +1,4 @@
+
 // This file is deprecated due to static export constraints.
 // Dynamic logic has moved to /admin/departments/view?id=...
 export function generateStaticParams() {
