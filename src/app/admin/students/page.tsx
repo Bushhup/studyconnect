@@ -22,7 +22,8 @@ import {
   Clock,
   BookOpen,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  FileUser
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -33,11 +34,18 @@ import {
 import { cn } from '@/lib/utils';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const collegeId = 'study-connect-college';
 
 export default function StudentManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
   const firestore = useFirestore();
   const { user, isUserLoading: authLoading } = useUser();
 
@@ -62,6 +70,13 @@ export default function StudentManagementPage() {
     s.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
     s.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  // Fetch Bio Data for Preview
+  const selectedBioRef = useMemoFirebase(() => {
+    if (!firestore || !selectedStudentId) return null;
+    return doc(firestore, 'colleges', collegeId, 'studentProfiles', selectedStudentId);
+  }, [firestore, selectedStudentId]);
+  const { data: bioData, isLoading: bioLoading } = useDoc(selectedBioRef);
 
   if (authLoading || profileLoading) {
     return (
@@ -89,47 +104,47 @@ export default function StudentManagementPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Student Directory</h1>
-          <p className="text-muted-foreground mt-1">Live institutional records and performance monitoring.</p>
+          <p className="text-muted-foreground mt-1 font-body">Live institutional records and performance monitoring.</p>
         </div>
-        <Button className="gap-2 shadow-lg shadow-primary/20">
+        <Button className="gap-2 shadow-lg shadow-primary/20 rounded-xl px-6">
           <Plus className="h-4 w-4" /> Add Student
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm bg-primary/5">
+        <Card className="border-none shadow-sm bg-primary/5 rounded-2xl">
           <CardHeader className="pb-2">
             <CardDescription className="text-primary font-bold uppercase text-[10px] tracking-widest flex items-center gap-2">
               <TrendingUp className="h-3 w-3" /> Average GPA
             </CardDescription>
-            <CardTitle className="text-2xl text-foreground">3.73 / 4.0</CardTitle>
+            <CardTitle className="text-2xl text-foreground font-headline">3.73 / 4.0</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="border-none shadow-sm bg-accent/5">
+        <Card className="border-none shadow-sm bg-accent/5 rounded-2xl">
           <CardHeader className="pb-2">
             <CardDescription className="text-accent-foreground font-bold uppercase text-[10px] tracking-widest flex items-center gap-2">
               <Clock className="h-3 w-3" /> Avg Attendance
             </CardDescription>
-            <CardTitle className="text-2xl text-foreground">94.1%</CardTitle>
+            <CardTitle className="text-2xl text-foreground font-headline">94.1%</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="border-none shadow-sm bg-primary/10">
+        <Card className="border-none shadow-sm bg-primary/10 rounded-2xl">
           <CardHeader className="pb-2">
             <CardDescription className="text-primary font-bold uppercase text-[10px] tracking-widest flex items-center gap-2">
               <BookOpen className="h-3 w-3" /> Active Enrollment
             </CardDescription>
-            <CardTitle className="text-2xl text-foreground">{students.length}</CardTitle>
+            <CardTitle className="text-2xl text-foreground font-headline">{students.length}</CardTitle>
           </CardHeader>
         </Card>
       </div>
 
-      <Card className="border-none shadow-sm bg-card">
+      <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
         <CardHeader className="border-b pb-6">
           <div className="relative w-full lg:w-96">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder="Search students..." 
-              className="pl-10 bg-muted border-none h-11 shadow-none"
+              className="pl-10 bg-muted border-none h-11 shadow-none rounded-xl"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -194,8 +209,10 @@ export default function StudentManagementPage() {
                             <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
                           </Button>
                         </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-card border-border shadow-xl">
-                          <DropdownMenuItem>View Profile</DropdownMenuItem>
+                        <DropdownMenuContent align="end" className="bg-card border-border shadow-xl rounded-xl">
+                          <DropdownMenuItem className="gap-2" onClick={() => setSelectedStudentId(student.id)}>
+                            <FileUser className="h-4 w-4" /> View Bio Data
+                          </DropdownMenuItem>
                           <DropdownMenuItem>Attendance History</DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -214,6 +231,64 @@ export default function StudentManagementPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!selectedStudentId} onOpenChange={(o) => !o && setSelectedStudentId(null)}>
+        <DialogContent className="max-w-2xl rounded-[2rem]">
+          <DialogHeader>
+            <DialogTitle className="font-headline text-2xl flex items-center gap-2">
+              <FileUser className="text-primary" /> Institutional Bio Data
+            </DialogTitle>
+          </DialogHeader>
+          {bioLoading ? (
+            <div className="p-12 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto" /></div>
+          ) : bioData ? (
+            <div className="grid grid-cols-2 gap-6 pt-4 font-body">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Full Name</p>
+                <p className="font-bold">{bioData.fullName}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Gender</p>
+                <p className="font-bold">{bioData.gender}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Phone</p>
+                <p className="font-bold">{bioData.phoneNumber}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Quota</p>
+                <Badge variant="secondary" className="font-bold">{bioData.quota}</Badge>
+              </div>
+              <div className="col-span-2 space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Address</p>
+                <p className="font-medium text-sm">{bioData.address}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Father</p>
+                <p className="font-bold">{bioData.fatherName}</p>
+                <p className="text-xs text-muted-foreground">{bioData.fatherPhoneNumber}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Mother</p>
+                <p className="font-bold">{bioData.motherName}</p>
+                <p className="text-xs text-muted-foreground">{bioData.motherPhoneNumber}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Aadhar</p>
+                <p className="font-mono text-sm font-bold">{bioData.aadharNumber}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Religion</p>
+                <p className="font-bold">{bioData.religion}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="p-12 text-center text-muted-foreground bg-muted/20 rounded-2xl border-2 border-dashed">
+              No bio data profile found for this student.
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

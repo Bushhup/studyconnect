@@ -6,7 +6,7 @@ import {
   LayoutDashboard, User, BookOpen, ClipboardCheck, 
   FileSpreadsheet, TrendingUp, FileText, Briefcase, 
   Megaphone, Calendar, Bell, Award, Settings,
-  Search, LogOut, Menu, X, GripHorizontal
+  Search, LogOut, Menu, X, GripHorizontal, FileUser
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -25,7 +25,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 const studentLinks = [
   { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/student/profile', label: 'My Profile', icon: User },
+  { href: '/student/profile', label: 'Identity', icon: User },
+  { href: '/student/bio', label: 'Bio Data', icon: FileUser },
   { href: '/student/subjects', label: 'Subjects', icon: BookOpen },
   { href: '/student/attendance', label: 'Attendance', icon: ClipboardCheck },
   { href: '/student/marks', label: 'Marks', icon: FileSpreadsheet },
