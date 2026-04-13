@@ -135,6 +135,27 @@ export default function DepartmentViewClient() {
     setIsAddClassOpen(false);
   };
 
+  const handleCreateSubject = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get('name') as string;
+    const code = formData.get('code') as string;
+    const credits = parseInt(formData.get('credits') as string);
+
+    const ref = collection(firestore, 'colleges', collegeId, 'courses');
+    addDocumentNonBlocking(ref, {
+      id: crypto.randomUUID(),
+      name,
+      code,
+      credits,
+      departmentId: id,
+      createdAt: new Date().toISOString()
+    });
+
+    toast({ title: 'Subject Provisioned', description: `${name} (${code}) added to curriculum.` });
+    setIsAddSubjectOpen(false);
+  };
+
   const handleBatchOperation = () => {
     if (!selectedBatch) return;
 
@@ -259,35 +280,70 @@ export default function DepartmentViewClient() {
           </TabsList>
 
           <div className="flex gap-2">
-            <Dialog open={isAddClassOpen} onOpenChange={setIsAddClassOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 border-primary/20 text-primary">
-                  <Plus className="h-3 w-3" /> Provision Section
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="rounded-[2rem]">
-                <DialogHeader>
-                  <DialogTitle>Provision New Academic Section</DialogTitle>
-                  <DialogDescription>Define a batch for the {dept?.programType} program.</DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleCreateClass} className="space-y-4 pt-4">
-                  <div className="space-y-2">
-                    <Label>Section Name</Label>
-                    <Input name="name" placeholder="e.g. CSE - Section A" required className="bg-muted border-none h-12" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Target Semester</Label>
-                    <Select name="semester" required>
-                      <SelectTrigger className="bg-muted border-none h-12"><SelectValue placeholder="Select Semester" /></SelectTrigger>
-                      <SelectContent>
-                        {semesterOptions.map(s => <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight shadow-lg shadow-primary/20">Confirm Creation</Button>
-                </form>
-              </DialogContent>
-            </Dialog>
+            <TabsContent value="classes" className="m-0" forceMount>
+              <Dialog open={isAddClassOpen} onOpenChange={setIsAddClassOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 border-primary/20 text-primary">
+                    <Plus className="h-3 w-3" /> Provision Section
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="rounded-[2rem]">
+                  <DialogHeader>
+                    <DialogTitle>Provision New Academic Section</DialogTitle>
+                    <DialogDescription>Define a batch for the {dept?.programType} program.</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateClass} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label>Section Name</Label>
+                      <Input name="name" placeholder="e.g. CSE - Section A" required className="bg-muted border-none h-12" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Target Semester</Label>
+                      <Select name="semester" required>
+                        <SelectTrigger className="bg-muted border-none h-12"><SelectValue placeholder="Select Semester" /></SelectTrigger>
+                        <SelectContent>
+                          {semesterOptions.map(s => <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight shadow-lg shadow-primary/20">Confirm Creation</Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </TabsContent>
+
+            <TabsContent value="subjects" className="m-0" forceMount>
+              <Dialog open={isAddSubjectOpen} onOpenChange={setIsAddSubjectOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 border-primary/20 text-primary">
+                    <BookPlus className="h-3 w-3" /> New Subject
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="rounded-[2rem]">
+                  <DialogHeader>
+                    <DialogTitle>Provision Subject Node</DialogTitle>
+                    <DialogDescription>Add a new course module to the department curriculum.</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleCreateSubject} className="space-y-4 pt-4">
+                    <div className="space-y-2">
+                      <Label>Subject Name</Label>
+                      <Input name="name" placeholder="e.g. Advanced Machine Learning" required className="bg-muted border-none h-12" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Course Code</Label>
+                        <Input name="code" placeholder="CS-402" required className="bg-muted border-none h-12 font-mono" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Credits</Label>
+                        <Input name="credits" type="number" defaultValue="4" required className="bg-muted border-none h-12" />
+                      </div>
+                    </div>
+                    <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight shadow-lg shadow-primary/20">Archive Subject Node</Button>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </TabsContent>
           </div>
         </div>
 

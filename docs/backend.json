@@ -24,11 +24,24 @@
         "departmentId": { "type": "string" },
         "semester": { "type": "string" },
         "studentIds": { "type": "array", "items": { "type": "string" } },
+        "timetable": { "type": "object", "description": "Day-wise slot-to-subject mapping" },
         "subjectHandlers": { 
           "type": "object", 
           "description": "Map of SubjectID to FacultyID",
           "additionalProperties": { "type": "string" }
         }
+      }
+    },
+    "Course": {
+      "title": "Course (Subject)",
+      "type": "object",
+      "description": "An academic subject with credit weightage.",
+      "properties": {
+        "id": { "type": "string" },
+        "code": { "type": "string" },
+        "name": { "type": "string" },
+        "credits": { "type": "number" },
+        "departmentId": { "type": "string" }
       }
     },
     "InstitutionalUser": {
@@ -42,7 +55,8 @@
         "performanceScore": { "type": "number", "description": "0-100 score based on metrics." },
         "attendanceRate": { "type": "number" },
         "batchYear": { "type": "string", "description": "Grouping for students, e.g., Batch-2026." },
-        "status": { "type": "string", "enum": ["active", "inactive", "alumni"] }
+        "status": { "type": "string", "enum": ["active", "inactive", "alumni"] },
+        "semester": { "type": "string" }
       }
     },
     "AcademicRecord": {
@@ -110,6 +124,10 @@
         "definition": { "entityName": "Class", "description": "Academic sections." }
       },
       {
+        "path": "/colleges/{collegeId}/courses/{courseId}",
+        "definition": { "entityName": "Course", "description": "Subject master list." }
+      },
+      {
         "path": "/colleges/{collegeId}/users/{userId}",
         "definition": { "entityName": "InstitutionalUser", "description": "Staff and student directory." }
       },
@@ -124,6 +142,10 @@
       {
         "path": "/colleges/{collegeId}/events/{eventId}",
         "definition": { "entityName": "Event", "description": "Campus calendar events." }
+      },
+      {
+        "path": "/colleges/{collegeId}/studentProfiles/{userId}",
+        "definition": { "entityName": "InstitutionalUser", "description": "Verified bio data." }
       }
     ]
   }
