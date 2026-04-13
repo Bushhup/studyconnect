@@ -53,7 +53,7 @@ service cloud.firestore {
       // User Directory: Allow lookup by username for login, full access for Admin
       match /users/{userId} {
         allow get: if isSignedIn();
-        allow list: if isAdmin() || (isSignedIn() && request.query.limit <= 1);
+        allow list: if true; // Required for client-side username -> email lookup
         allow write: if isAdmin();
       }
 
@@ -69,9 +69,10 @@ service cloud.firestore {
        * - Creatable by Owner (once).
        * - Updatable ONLY by Admin.
        */
-      match /studentProfiles/{profileId} {
-        allow get, list: if isAdmin() || isFaculty() || (isSignedIn() && resource != null && resource.data.userId == request.auth.uid);
-        allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+      match /studentProfiles/{userId} {
+        allow get: if isOwner(userId) || isAdmin() || isFaculty();
+        allow list: if isAdmin() || isFaculty();
+        allow create: if isOwner(userId);
         allow update, delete: if isAdmin();
       }
     }
