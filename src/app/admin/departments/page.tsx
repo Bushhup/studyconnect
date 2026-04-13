@@ -1,19 +1,29 @@
-
 'use client';
 
 import { useState } from 'react';
 import { useCollection, useMemoFirebase, useFirestore, useUser, useDoc } from '@/firebase';
 import { collection, doc, query, where } from 'firebase/firestore';
-import { addDocumentNonBlocking } from '@/firebase';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Plus, Loader2, ArrowRight, Users, BookOpen, GraduationCap } from 'lucide-react';
+import { Building2, Plus, Loader2, ArrowRight, Users, BookOpen, GraduationCap, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 import { cn } from '@/lib/utils';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const collegeId = 'study-connect-college';
 
@@ -62,6 +72,16 @@ export default function DepartmentManagement() {
 
     toast({ title: 'Department Created', description: `${name} has been added to the institution.` });
     setName(''); setHod('');
+  };
+
+  const handleDelete = (deptId: string, deptName: string) => {
+    if (!isAdmin) return;
+    const deptRef = doc(firestore, 'colleges', collegeId, 'departments', deptId);
+    deleteDocumentNonBlocking(deptRef);
+    toast({ 
+      title: 'Division Removed', 
+      description: `${deptName} and its primary record have been deleted.` 
+    });
   };
 
   return (
@@ -126,7 +146,35 @@ export default function DepartmentManagement() {
                       <div className="p-3 bg-primary/5 rounded-2xl">
                         <Building2 className="h-6 w-6 text-primary" />
                       </div>
-                      <Badge variant="secondary" className="bg-muted text-muted-foreground border-none font-bold text-[9px] uppercase tracking-tighter">ID: {dept.id.slice(0, 6)}</Badge>
+                      <div className="flex gap-2">
+                        <Badge variant="secondary" className="bg-muted text-muted-foreground border-none font-bold text-[9px] uppercase tracking-tighter">ID: {dept.id.slice(0, 6)}</Badge>
+                        {isAdmin && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent className="rounded-[2rem]">
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Delete Division?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Confirm deletion of <strong>{dept.name}</strong>. This will remove the department record from the institutional hierarchy. Linked data like classes and users may become orphaned.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  className="bg-destructive hover:bg-destructive/90 rounded-xl"
+                                  onClick={() => handleDelete(dept.id, dept.name)}
+                                >
+                                  Delete Department
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                      </div>
                     </div>
                     <CardTitle className="text-xl font-headline mt-4">{dept.name}</CardTitle>
                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest">H.O.D: {dept.headOfDept || 'TBD'}</p>
