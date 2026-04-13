@@ -31,7 +31,7 @@ import {
   Users, Search, MoreHorizontal, Plus, 
   GraduationCap, ShieldCheck, UserCog, Edit3, 
   Eye, Trash2, Loader2, CheckCircle2, Lock, AlertCircle,
-  AtSign, ArrowRight, FileUser
+  AtSign, ArrowRight, FileUser, Sparkles, RefreshCcw
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -131,11 +131,89 @@ export default function UserManagementPage() {
 
   const isAdmin = profile?.role === 'admin';
 
+  const handleDeduplicate = () => {
+    if (!users || users.length === 0) return;
+    
+    const emailMap = new Map<string, any>();
+    const usernameMap = new Map<string, any>();
+    const toDeleteIds = new Set<string>();
+
+    users.forEach(u => {
+      const email = u.email?.toLowerCase();
+      const username = u.username?.toLowerCase();
+
+      // Check Email Duplicates
+      if (email) {
+        if (emailMap.has(email)) {
+          const existing = emailMap.get(email);
+          // Keep the one that is bootstrapped or simply newer
+          if (u.authBootstrapped && !existing.authBootstrapped) {
+            toDeleteIds.add(existing.id);
+            emailMap.set(email, u);
+          } else {
+            toDeleteIds.add(u.id);
+          }
+        } else {
+          emailMap.set(email, u);
+        }
+      }
+
+      // Check Username Duplicates
+      if (username) {
+        if (usernameMap.has(username)) {
+          const existing = usernameMap.get(username);
+          if (u.authBootstrapped && !existing.authBootstrapped) {
+            toDeleteIds.add(existing.id);
+            usernameMap.set(username, u);
+          } else if (!toDeleteIds.has(existing.id)) {
+            toDeleteIds.add(u.id);
+          }
+        } else {
+          usernameMap.set(username, u);
+        }
+      }
+    });
+
+    if (toDeleteIds.size === 0) {
+      toast({
+        title: 'Directory is Clean',
+        description: 'No duplicate usernames or emails detected in the system.'
+      });
+      return;
+    }
+
+    // Perform deletions
+    Array.from(toDeleteIds).forEach(id => {
+      const ref = doc(firestore, 'colleges', collegeId, 'users', id);
+      deleteDocumentNonBlocking(ref);
+    });
+
+    toast({
+      title: 'Cleanup Complete',
+      description: `Successfully removed ${toDeleteIds.size} duplicate institutional records.`
+    });
+  };
+
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore || !user || !isAdmin) return;
     if (!formData.username || !formData.email || !formData.password) {
       toast({ variant: 'destructive', title: 'Validation Error', description: 'Institutional Username, Email, and Password are required.' });
+      return;
+    }
+
+    // Duplicate Prevention check
+    const isConflict = users?.some(u => 
+      u.username?.toLowerCase() === formData.username.toLowerCase() || 
+      u.email?.toLowerCase() === formData.email.toLowerCase()
+    );
+
+    if (isConflict) {
+      toast({
+        variant: 'destructive',
+        title: 'Identity Conflict',
+        description: 'A user with this username or email already exists in the institutional directory.'
+      });
       return;
     }
 
@@ -219,6 +297,9 @@ export default function UserManagementPage() {
         
         {isAdmin && (
           <div className="flex gap-2">
+            <Button variant="outline" className="gap-2 rounded-full border-primary/20 text-primary font-bold hover:bg-primary/5" onClick={handleDeduplicate}>
+              <RefreshCcw className="h-4 w-4" /> Clean Directory
+            </Button>
             <CsvImportDialog 
               title="Bulk Provision Users"
               description="Upload a CSV file to register multiple students, faculty, or staff at once."
@@ -237,61 +318,61 @@ export default function UserManagementPage() {
                 </DialogHeader>
                 <form onSubmit={handleCreateUser} className="space-y-4 pt-4">
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <AtSign className="h-3.5 w-3.5 text-muted-foreground" /> Unique Username
+                    <Label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <AtSign className="h-3 w-3 text-primary" /> Unique Username
                     </Label>
                     <Input 
                       placeholder="e.g. student_2024_01"
                       value={formData.username} 
                       onChange={(e) => setFormData({...formData, username: e.target.value})} 
-                      className="bg-muted border-none" required 
+                      className="bg-muted border-none h-12 rounded-xl" required 
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>First Name</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">First Name</Label>
                       <Input 
                         value={formData.firstName} 
                         onChange={(e) => setFormData({...formData, firstName: e.target.value})} 
-                        className="bg-muted border-none" required 
+                        className="bg-muted border-none h-12 rounded-xl" required 
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Last Name</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Last Name</Label>
                       <Input 
                         value={formData.lastName} 
                         onChange={(e) => setFormData({...formData, lastName: e.target.value})} 
-                        className="bg-muted border-none" required 
+                        className="bg-muted border-none h-12 rounded-xl" required 
                       />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label>Email Address (For System Auth)</Label>
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Email Address (For System Auth)</Label>
                     <Input 
                       type="email" 
                       value={formData.email} 
                       onChange={(e) => setFormData({...formData, email: e.target.value})} 
-                      className="bg-muted border-none" required 
+                      className="bg-muted border-none h-12 rounded-xl" required 
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <Lock className="h-3.5 w-3.5 text-muted-foreground" /> Initial Password
+                    <Label className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <Lock className="h-3 w-3 text-primary" /> Initial Password
                     </Label>
                     <Input 
                       type="password" 
                       value={formData.password} 
                       onChange={(e) => setFormData({...formData, password: e.target.value})} 
-                      className="bg-muted border-none" required 
+                      className="bg-muted border-none h-12 rounded-xl" required 
                       placeholder="Min 6 characters"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Portal Role</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Portal Role</Label>
                       <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
-                        <SelectTrigger className="bg-muted border-none shadow-none"><SelectValue /></SelectTrigger>
-                        <SelectContent>
+                        <SelectTrigger className="bg-muted border-none shadow-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                        <SelectContent className="rounded-xl">
                           <SelectItem value="student">Student</SelectItem>
                           <SelectItem value="faculty">Faculty</SelectItem>
                           <SelectItem value="admin">Administrator</SelectItem>
@@ -299,17 +380,17 @@ export default function UserManagementPage() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Status</Label>
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</Label>
                       <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
-                        <SelectTrigger className="bg-muted border-none shadow-none"><SelectValue /></SelectTrigger>
-                        <SelectContent>
+                        <SelectTrigger className="bg-muted border-none shadow-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                        <SelectContent className="rounded-xl">
                           <SelectItem value="active">Active</SelectItem>
                           <SelectItem value="inactive">Inactive</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
-                  <Button type="submit" className="w-full h-12 font-bold shadow-lg shadow-primary/20 mt-2">
+                  <Button type="submit" className="w-full h-12 font-bold shadow-lg shadow-primary/20 mt-2 rounded-xl">
                     Confirm Provisioning
                   </Button>
                 </form>
@@ -379,7 +460,7 @@ export default function UserManagementPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder="Search by name or username..." 
-              className="pl-10 bg-card border shadow-sm h-11 rounded-xl"
+              className="pl-10 bg-card border shadow-sm h-11 rounded-xl focus-visible:ring-primary/20"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -494,30 +575,30 @@ export default function UserManagementPage() {
           </DialogHeader>
           <form onSubmit={handleUpdateUser} className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label>Institutional Username</Label>
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Institutional Username</Label>
               <Input 
                 value={formData.username} 
                 onChange={(e) => setFormData({...formData, username: e.target.value})} 
-                className="bg-muted border-none font-bold text-primary" 
+                className="bg-muted border-none h-12 rounded-xl font-bold text-primary" 
                 required 
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>First Name</Label>
-                <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none" required />
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">First Name</Label>
+                <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required />
               </div>
               <div className="space-y-2">
-                <Label>Last Name</Label>
-                <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none" required />
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Last Name</Label>
+                <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Portal Role</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Portal Role</Label>
                 <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
-                  <SelectTrigger className="bg-muted border-none shadow-none"><SelectValue /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger className="bg-muted border-none shadow-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent className="rounded-xl">
                     <SelectItem value="student">Student</SelectItem>
                     <SelectItem value="faculty">Faculty</SelectItem>
                     <SelectItem value="admin">Administrator</SelectItem>
@@ -525,17 +606,17 @@ export default function UserManagementPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Status</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</Label>
                 <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
-                  <SelectTrigger className="bg-muted border-none shadow-none"><SelectValue /></SelectTrigger>
-                  <SelectContent>
+                  <SelectTrigger className="bg-muted border-none shadow-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent className="rounded-xl">
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            <Button type="submit" className="w-full h-12 font-bold shadow-lg shadow-primary/20 mt-2">
+            <Button type="submit" className="w-full h-12 font-bold shadow-lg shadow-primary/20 mt-2 rounded-xl">
               <CheckCircle2 className="mr-2 h-4 w-4" /> Apply Changes
             </Button>
           </form>
@@ -546,34 +627,34 @@ export default function UserManagementPage() {
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="rounded-[2rem] bg-card border-none">
           <DialogHeader>
-            <DialogTitle>Institutional Identity Card</DialogTitle>
+            <DialogTitle className="font-headline text-2xl">Institutional Identity Card</DialogTitle>
           </DialogHeader>
           <div className="space-y-6 pt-4">
-            <div className="flex items-center gap-4 p-4 bg-muted rounded-2xl border border-border">
-              <Avatar className="h-16 w-16">
-                <AvatarFallback className="bg-primary/10 text-primary text-xl font-bold">
+            <div className="flex items-center gap-4 p-6 bg-primary/5 rounded-[2rem] border border-primary/10">
+              <Avatar className="h-20 w-20 border-4 border-white shadow-xl ring-1 ring-primary/10">
+                <AvatarFallback className="bg-white text-primary text-2xl font-bold">
                   {selectedUser?.firstName?.[0]}{selectedUser?.lastName?.[0]}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h3 className="text-xl font-bold text-foreground">{selectedUser?.firstName} {selectedUser?.lastName}</h3>
-                <p className="text-xs font-bold text-primary uppercase">@{selectedUser?.username}</p>
-                <p className="text-xs text-muted-foreground">{selectedUser?.email}</p>
+                <h3 className="text-2xl font-bold text-foreground leading-tight">{selectedUser?.firstName} {selectedUser?.lastName}</h3>
+                <p className="text-sm font-bold text-primary uppercase tracking-widest">@{selectedUser?.username}</p>
+                <p className="text-xs text-muted-foreground mt-1">{selectedUser?.email}</p>
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4 text-sm font-medium">
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Portal Access</p>
-                <p className="capitalize text-foreground">{selectedUser?.role}</p>
+              <div className="space-y-1 p-4 bg-muted/30 rounded-2xl">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Portal Access</p>
+                <p className="capitalize text-foreground font-bold">{selectedUser?.role}</p>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Status</p>
-                <Badge className={cn(selectedUser?.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-muted text-muted-foreground', "border-none")}>
+              <div className="space-y-1 p-4 bg-muted/30 rounded-2xl">
+                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">Account Status</p>
+                <Badge className={cn(selectedUser?.status === 'active' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-muted text-muted-foreground', "border-none font-bold uppercase text-[10px] h-6 px-3")}>
                   {selectedUser?.status}
                 </Badge>
               </div>
             </div>
-            <Button className="w-full h-11" variant="outline" onClick={() => setIsViewOpen(false)}>Close Identity View</Button>
+            <Button className="w-full h-12 rounded-xl" variant="outline" onClick={() => setIsViewOpen(false)}>Close Identity View</Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -582,14 +663,14 @@ export default function UserManagementPage() {
       <AlertDialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
         <AlertDialogContent className="rounded-[2rem] bg-card border-none">
           <AlertDialogHeader>
-            <AlertDialogTitle>Institutional De-provisioning</AlertDialogTitle>
-            <AlertDialogDescription>
-              Confirm removal of <strong>@{selectedUser?.username}</strong> ({selectedUser?.firstName} {selectedUser?.lastName}). This action permanently deletes their institutional record.
+            <AlertDialogTitle className="text-2xl font-headline">Institutional De-provisioning</AlertDialogTitle>
+            <AlertDialogDescription className="text-base">
+              Confirm removal of <strong>@{selectedUser?.username}</strong> ({selectedUser?.firstName} {selectedUser?.lastName}). This action permanently deletes their institutional record and revokes portal access.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-xl" onClick={handleDeleteUser}>
+          <AlertDialogFooter className="pt-4">
+            <AlertDialogCancel className="rounded-xl h-12 font-bold border-none bg-muted/50">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 rounded-xl h-12 font-bold" onClick={handleDeleteUser}>
               Confirm Removal
             </AlertDialogAction>
           </AlertDialogFooter>

@@ -63,20 +63,29 @@ export default function LoginPage() {
         return;
       }
 
-      // 1. Hardcoded Admin Logic
+      // 1. Hardcoded Admin Logic (Singleton fix)
       const adminUser = 'Admin01';
       const adminPass = 'minister123';
 
       if (selectedRole === 'admin') {
         if (normalizedUsername.toLowerCase() === adminUser.toLowerCase() && password === adminPass) {
+          // Check if we already have a document for this admin username to avoid duplicates
+          const adminQuery = query(
+            collection(firestore, 'colleges', collegeId, 'users'), 
+            where('username', '==', 'Admin01')
+          );
+          const adminSnap = await getDocs(adminQuery);
+          
           const userCredential = await signInAnonymously(auth);
           const newUser = userCredential.user;
+          
+          // Use a deterministic logic: if an Admin01 exists, we sync to THAT doc if it's currently linked to this UID
+          // Otherwise, we create/update the document using the new anonymous UID
           
           // Set in root admins collection for security rules
           const rootAdminRef = doc(firestore, 'admins', newUser.uid);
           await setDoc(rootAdminRef, { id: newUser.uid }, { merge: true });
 
-          // Set in institutional users collection
           const adminDocRef = doc(firestore, 'colleges', collegeId, 'users', newUser.uid);
           const adminData = {
             id: newUser.uid,
@@ -89,6 +98,16 @@ export default function LoginPage() {
             status: 'active',
             updatedAt: new Date().toISOString()
           };
+          
+          // Clean up old redundant admin documents if they exist with different IDs
+          if (!adminSnap.empty) {
+            for (const oldDoc of adminSnap.docs) {
+              if (oldDoc.id !== newUser.uid) {
+                await deleteDoc(doc(firestore, 'colleges', collegeId, 'users', oldDoc.id));
+              }
+            }
+          }
+
           await setDoc(adminDocRef, adminData, { merge: true });
 
           toast({ title: 'System Access Granted', description: 'Administrative session established.' });
@@ -140,7 +159,7 @@ export default function LoginPage() {
         }
       } catch (authError: any) {
         // If user exists in DB but not in Firebase Auth, we attempt to "bootstrap" them
-        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
+        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential' || authError.code === 'auth/invalid-email') {
           if (userData.password === password) {
             const userCredential = await createUserWithEmailAndPassword(auth, userEmail, password);
             const newUser = userCredential.user;
