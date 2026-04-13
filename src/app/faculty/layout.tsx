@@ -26,25 +26,26 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAppTheme } from '@/components/theme-provider';
 
 const facultyLinks = [
-  { href: '/faculty/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/faculty/classes', label: 'My Classes', icon: Building2 },
-  { href: '/faculty/students', label: 'Students', icon: Users },
-  { href: '/faculty/attendance', label: 'Attendance', icon: ClipboardCheck },
-  { href: '/faculty/marks', label: 'Grades', icon: FileSpreadsheet },
-  { href: '/faculty/subjects', label: 'Subjects', icon: BookOpen },
-  { href: '/faculty/resources', label: 'Notes', icon: FileText },
-  { href: '/faculty/assignments', label: 'Assignments', icon: Briefcase },
-  { href: '/faculty/announcements', label: 'Announcements', icon: Megaphone },
-  { href: '/faculty/reports', label: 'Performance', icon: BarChart3 },
-  { href: '/faculty/calendar', label: 'Calendar', icon: Calendar },
-  { href: '/faculty/notifications', label: 'Alerts', icon: Bell },
-  { href: '/faculty/settings', label: 'Settings', icon: Settings },
+  { href: '/faculty/dashboard', label: 'Dashboard', icon: LayoutDashboard, keywords: 'main, overview' },
+  { href: '/faculty/classes', label: 'My Classes', icon: Building2, keywords: 'sections, room' },
+  { href: '/faculty/students', label: 'Students', icon: Users, keywords: 'roster, directory' },
+  { href: '/faculty/attendance', label: 'Attendance', icon: ClipboardCheck, keywords: 'presence, entry' },
+  { href: '/faculty/marks', label: 'Grades', icon: FileSpreadsheet, keywords: 'results, scores' },
+  { href: '/faculty/subjects', label: 'Subjects', icon: BookOpen, keywords: 'curriculum, teaching' },
+  { href: '/faculty/resources', label: 'Notes', icon: FileText, keywords: 'study, upload' },
+  { href: '/faculty/assignments', label: 'Assignments', icon: Briefcase, keywords: 'tasks, grading' },
+  { href: '/faculty/announcements', label: 'Announcements', icon: Megaphone, keywords: 'broadcast, updates' },
+  { href: '/faculty/reports', label: 'Performance', icon: BarChart3, keywords: 'analytics, data' },
+  { href: '/faculty/calendar', label: 'Calendar', icon: Calendar, keywords: 'schedule, events' },
+  { href: '/faculty/notifications', label: 'Alerts', icon: Bell, keywords: 'inbox, system' },
+  { href: '/faculty/settings', label: 'Settings', icon: Settings, keywords: 'theme, profile' },
 ];
 
 export default function FacultyLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const hubRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
   const { auth } = useFirebase();
   const isMobile = useIsMobile();
   const { theme } = useAppTheme();
@@ -60,6 +61,11 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
   const [startRotation, setStartRotation] = useState(0);
   const [startDragPos, setStartDragPos] = useState({ x: 0, y: 0 });
   const [startLoopProgress, setStartLoopProgress] = useState(0);
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<typeof facultyLinks>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const EDGE_MARGIN = isMobile ? 40 : 48;
 
@@ -79,12 +85,36 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
       if (theme.navStyle === 'wheel') {
         setRotation(prev => (prev + 0.08) % 360);
       } else {
-        // Reduced kinetic loop speed
         setLoopProgress(prev => (prev + 0.04) % facultyLinks.length);
       }
     }, 30);
     return () => clearInterval(interval);
   }, [isOpen, isRotating, isDragging, theme.navStyle]);
+
+  // Search Logic
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      const filtered = facultyLinks.filter(link => 
+        link.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        link.keywords?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setSearchResults(filtered);
+      setIsSearchOpen(true);
+    } else {
+      setSearchResults([]);
+      setIsSearchOpen(false);
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     signOut(auth).then(() => {
@@ -234,10 +264,52 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
     <div className="flex min-h-screen bg-background text-foreground overflow-hidden relative">
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <header className="h-16 border-b bg-card/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
-          <div className="flex-1 max-w-md hidden md:block">
+          <div className="flex-1 max-w-md hidden md:block" ref={searchRef}>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search portal modules..." className="pl-10 bg-muted/50 border-none h-10 rounded-xl" />
+              <Input 
+                placeholder="Search modules (e.g. Grades, Students)..." 
+                className="pl-10 bg-muted/50 border-none h-10 rounded-xl"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => searchQuery.trim().length > 0 && setIsSearchOpen(true)}
+              />
+
+              {isSearchOpen && (
+                <div className="absolute top-12 left-0 w-full bg-card border shadow-xl rounded-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="p-2 border-b bg-muted/30">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2">Quick Navigation</p>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                    {searchResults.length > 0 ? (
+                      searchResults.map(link => (
+                        <button
+                          key={link.href}
+                          onClick={() => {
+                            router.push(link.href);
+                            setIsSearchOpen(false);
+                            setSearchQuery('');
+                          }}
+                          className="w-full flex items-center gap-3 p-3 hover:bg-primary/5 transition-colors group text-left"
+                        >
+                          <div className="p-2 bg-primary/10 rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
+                            <link.icon className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-foreground">{link.label}</p>
+                            <p className="text-[10px] text-muted-foreground capitalize">Faculty Portal</p>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center">
+                        <Search className="h-8 w-8 text-muted-foreground/20 mx-auto mb-2" />
+                        <p className="text-xs text-muted-foreground">No matching modules found.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-4">

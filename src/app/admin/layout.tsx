@@ -6,7 +6,7 @@ import {
   LayoutDashboard, Building2, 
   BookOpen, Calendar, FileSpreadsheet, ClipboardCheck, 
   BarChart3, FileText, Settings, Bell, Activity, UserCog,
-  Search, LogOut, Menu, X, GripHorizontal
+  Search, LogOut, Menu, X, GripHorizontal, FileUser, Users
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -25,24 +25,27 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAppTheme } from '@/components/theme-provider';
 
 const adminLinks = [
-  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/admin/users', label: 'Users', icon: UserCog },
-  { href: '/admin/departments', label: 'Departments', icon: Building2 },
-  { href: '/admin/classes', label: 'Classes', icon: Calendar },
-  { href: '/admin/courses', label: 'Courses', icon: BookOpen },
-  { href: '/admin/marks', label: 'Marks', icon: FileSpreadsheet },
-  { href: '/admin/attendance', label: 'Attendance', icon: ClipboardCheck },
-  { href: '/admin/reports', label: 'Analytics', icon: BarChart3 },
-  { href: '/admin/resources', label: 'Resources', icon: FileText },
-  { href: '/admin/notifications', label: 'Announcements', icon: Bell },
-  { href: '/admin/logs', label: 'Logs', icon: Activity },
-  { href: '/admin/settings', label: 'Settings', icon: Settings },
+  { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, keywords: 'overview, stats, analytics' },
+  { href: '/admin/users', label: 'Institutional Directory', icon: UserCog, keywords: 'users, management, accounts' },
+  { href: '/admin/faculty', label: 'Faculty Directory', icon: Users, keywords: 'staff, teachers, professors' },
+  { href: '/admin/students', label: 'Student Directory', icon: BookOpen, keywords: 'enrollment, records' },
+  { href: '/admin/departments', label: 'Departments', icon: Building2, keywords: 'divisions, faculty' },
+  { href: '/admin/classes', label: 'Classes', icon: Calendar, keywords: 'schedules, sections' },
+  { href: '/admin/courses', label: 'Courses', icon: BookOpen, keywords: 'curriculum, subjects' },
+  { href: '/admin/marks', label: 'Marks', icon: FileSpreadsheet, keywords: 'grading, results' },
+  { href: '/admin/attendance', label: 'Attendance', icon: ClipboardCheck, keywords: 'presence, monitoring' },
+  { href: '/admin/reports', label: 'Analytics', icon: BarChart3, keywords: 'performance, data' },
+  { href: '/admin/resources', label: 'Resources', icon: FileText, keywords: 'documents, policies' },
+  { href: '/admin/notifications', label: 'Announcements', icon: Bell, keywords: 'broadcasts, alerts' },
+  { href: '/admin/logs', label: 'Logs', icon: Activity, keywords: 'audit, security, history' },
+  { href: '/admin/settings', label: 'Settings', icon: Settings, keywords: 'configuration, theme, layout' },
 ];
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const hubRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
   const { auth } = useFirebase();
   const isMobile = useIsMobile();
   const { theme } = useAppTheme();
@@ -58,6 +61,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [startRotation, setStartRotation] = useState(0);
   const [startDragPos, setStartDragPos] = useState({ x: 0, y: 0 });
   const [startLoopProgress, setStartLoopProgress] = useState(0);
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<typeof adminLinks>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const EDGE_MARGIN = isMobile ? 40 : 48;
 
@@ -82,6 +90,32 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     }, 30);
     return () => clearInterval(interval);
   }, [isOpen, isRotating, isDragging, theme.navStyle]);
+
+  // Search Logic
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      const filtered = adminLinks.filter(link => 
+        link.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        link.keywords?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setSearchResults(filtered);
+      setIsSearchOpen(true);
+    } else {
+      setSearchResults([]);
+      setIsSearchOpen(false);
+    }
+  }, [searchQuery]);
+
+  // Click outside search results
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     signOut(auth).then(() => {
@@ -231,10 +265,52 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     <div className="flex min-h-screen bg-background text-foreground overflow-hidden relative">
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <header className="h-16 border-b bg-card/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
-          <div className="flex-1 max-w-md hidden md:block">
+          <div className="flex-1 max-w-md hidden md:block" ref={searchRef}>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search campus directory..." className="pl-10 bg-muted/50 border-none h-10 rounded-xl" />
+              <Input 
+                placeholder="Search modules (e.g. Users, Attendance)..." 
+                className="pl-10 bg-muted/50 border-none h-10 rounded-xl"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => searchQuery.trim().length > 0 && setIsSearchOpen(true)}
+              />
+              
+              {isSearchOpen && (
+                <div className="absolute top-12 left-0 w-full bg-card border shadow-xl rounded-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="p-2 border-b bg-muted/30">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2">Quick Navigation</p>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                    {searchResults.length > 0 ? (
+                      searchResults.map(link => (
+                        <button
+                          key={link.href}
+                          onClick={() => {
+                            router.push(link.href);
+                            setIsSearchOpen(false);
+                            setSearchQuery('');
+                          }}
+                          className="w-full flex items-center gap-3 p-3 hover:bg-primary/5 transition-colors group text-left"
+                        >
+                          <div className="p-2 bg-primary/10 rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
+                            <link.icon className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-foreground">{link.label}</p>
+                            <p className="text-[10px] text-muted-foreground capitalize">Admin Module</p>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center">
+                        <Search className="h-8 w-8 text-muted-foreground/20 mx-auto mb-2" />
+                        <p className="text-xs text-muted-foreground">No matching modules found.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-4">

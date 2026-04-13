@@ -25,26 +25,27 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useAppTheme } from '@/components/theme-provider';
 
 const studentLinks = [
-  { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/student/profile', label: 'Identity', icon: User },
-  { href: '/student/bio', label: 'Bio Data', icon: FileUser },
-  { href: '/student/subjects', label: 'Subjects', icon: BookOpen },
-  { href: '/student/attendance', label: 'Attendance', icon: ClipboardCheck },
-  { href: '/student/marks', label: 'Marks', icon: FileSpreadsheet },
-  { href: '/student/performance', label: 'Performance', icon: TrendingUp },
-  { href: '/student/resources', label: 'Notes', icon: FileText },
-  { href: '/student/assignments', label: 'Assignments', icon: Briefcase },
-  { href: '/student/announcements', label: 'Broadcasts', icon: Megaphone },
-  { href: '/student/calendar', label: 'Calendar', icon: Calendar },
-  { href: '/student/notifications', label: 'Alerts', icon: Bell },
-  { href: '/student/results', label: 'Results', icon: Award },
-  { href: '/student/settings', label: 'Settings', icon: Settings },
+  { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard, keywords: 'main, stats' },
+  { href: '/student/profile', label: 'Identity', icon: User, keywords: 'account, profile' },
+  { href: '/student/bio', label: 'Bio Data', icon: FileUser, keywords: 'biographical, personal' },
+  { href: '/student/subjects', label: 'Subjects', icon: BookOpen, keywords: 'courses, study' },
+  { href: '/student/attendance', label: 'Attendance', icon: ClipboardCheck, keywords: 'presence, history' },
+  { href: '/student/marks', label: 'Marks', icon: FileSpreadsheet, keywords: 'grades, scores' },
+  { href: '/student/performance', label: 'Performance', icon: TrendingUp, keywords: 'gpa, analytics' },
+  { href: '/student/resources', label: 'Notes', icon: FileText, keywords: 'materials, study' },
+  { href: '/student/assignments', label: 'Assignments', icon: Briefcase, keywords: 'tasks, homework' },
+  { href: '/student/announcements', label: 'Broadcasts', icon: Megaphone, keywords: 'alerts, news' },
+  { href: '/student/calendar', label: 'Calendar', icon: Calendar, keywords: 'schedule, dates' },
+  { href: '/student/notifications', label: 'Alerts', icon: Bell, keywords: 'inbox, system' },
+  { href: '/student/results', label: 'Results', icon: Award, keywords: 'grade card, final' },
+  { href: '/student/settings', label: 'Settings', icon: Settings, keywords: 'theme, config' },
 ];
 
 export default function StudentLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const hubRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLDivElement>(null);
   const { auth } = useFirebase();
   const isMobile = useIsMobile();
   const { theme } = useAppTheme();
@@ -60,6 +61,11 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const [startRotation, setStartRotation] = useState(0);
   const [startDragPos, setStartDragPos] = useState({ x: 0, y: 0 });
   const [startLoopProgress, setStartLoopProgress] = useState(0);
+
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<typeof studentLinks>([]);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const EDGE_MARGIN = isMobile ? 40 : 48;
 
@@ -79,12 +85,36 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       if (theme.navStyle === 'wheel') {
         setRotation(prev => (prev + 0.1) % 360);
       } else {
-        // Reduced kinetic loop speed
         setLoopProgress(prev => (prev + 0.04) % studentLinks.length);
       }
     }, 30);
     return () => clearInterval(interval);
   }, [isOpen, isRotating, isDragging, theme.navStyle]);
+
+  // Search Logic
+  useEffect(() => {
+    if (searchQuery.trim().length > 0) {
+      const filtered = studentLinks.filter(link => 
+        link.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        link.keywords?.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setSearchResults(filtered);
+      setIsSearchOpen(true);
+    } else {
+      setSearchResults([]);
+      setIsSearchOpen(false);
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleLogout = () => {
     signOut(auth).then(() => {
@@ -233,10 +263,52 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
     <div className="flex min-h-screen bg-background text-foreground overflow-hidden relative">
       <div className="flex-1 flex flex-col overflow-hidden relative">
         <header className="h-16 border-b bg-card/80 backdrop-blur-md flex items-center justify-between px-4 md:px-8 sticky top-0 z-30">
-          <div className="flex-1 max-w-md hidden md:block">
+          <div className="flex-1 max-w-md hidden md:block" ref={searchRef}>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search your modules..." className="pl-10 bg-muted/50 border-none h-10 rounded-xl" />
+              <Input 
+                placeholder="Search modules (e.g. Bio Data, Grades)..." 
+                className="pl-10 bg-muted/50 border-none h-10 rounded-xl"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => searchQuery.trim().length > 0 && setIsSearchOpen(true)}
+              />
+
+              {isSearchOpen && (
+                <div className="absolute top-12 left-0 w-full bg-card border shadow-xl rounded-2xl overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="p-2 border-b bg-muted/30">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-2">Quick Navigation</p>
+                  </div>
+                  <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                    {searchResults.length > 0 ? (
+                      searchResults.map(link => (
+                        <button
+                          key={link.href}
+                          onClick={() => {
+                            router.push(link.href);
+                            setIsSearchOpen(false);
+                            setSearchQuery('');
+                          }}
+                          className="w-full flex items-center gap-3 p-3 hover:bg-primary/5 transition-colors group text-left"
+                        >
+                          <div className="p-2 bg-primary/10 rounded-xl group-hover:bg-primary group-hover:text-white transition-colors">
+                            <link.icon className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-foreground">{link.label}</p>
+                            <p className="text-[10px] text-muted-foreground capitalize">Student Portal</p>
+                          </div>
+                        </button>
+                      ))
+                    ) : (
+                      <div className="p-8 text-center">
+                        <Search className="h-8 w-8 text-muted-foreground/20 mx-auto mb-2" />
+                        <p className="text-xs text-muted-foreground">No matching modules found.</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-4">
