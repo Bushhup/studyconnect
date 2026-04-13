@@ -33,6 +33,11 @@ import { Input } from '@/components/ui/input';
 
 const collegeId = 'study-connect-college';
 
+// Required for output: export with dynamic routes
+export function generateStaticParams() {
+  return [];
+}
+
 export default function ClassDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const firestore = useFirestore();
