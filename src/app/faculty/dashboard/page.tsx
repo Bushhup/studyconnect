@@ -1,3 +1,4 @@
+
 'use client';
 
 import { 
@@ -13,11 +14,11 @@ import {
   Users, Calendar, ClipboardCheck, FileSpreadsheet, 
   TrendingUp, Clock, BookOpen, ChevronRight,
   Plus, ArrowUpRight, Award, MessageSquare, Megaphone,
-  CheckCircle2, AlertCircle, FileText, Loader2
+  CheckCircle2, AlertCircle, FileText, Loader2, BarChart3
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer, BarChart, Bar
+  Tooltip, ResponsiveContainer, BarChart, Bar, Cell
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +33,13 @@ const performanceData = [
   { month: 'Oct', marks: 85, attendance: 90 },
   { month: 'Nov', marks: 82, attendance: 94 },
   { month: 'Dec', marks: 88, attendance: 96 },
+];
+
+const classComparison = [
+  { name: 'ML Sec A', score: 84, color: '#3B82F6' },
+  { name: 'ML Sec B', score: 78, color: '#8B5CF6' },
+  { name: 'DS Lab 1', score: 92, color: '#10B981' },
+  { name: 'Algo Tut', score: 75, color: '#F59E0B' },
 ];
 
 const schedule = [
@@ -208,28 +216,26 @@ export default function FacultyDashboard() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 border-none shadow-sm bg-card rounded-2xl">
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-lg font-headline font-bold text-foreground">Quick Management</CardTitle>
+          <CardHeader>
+            <CardTitle className="text-lg font-headline font-bold flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" /> Class Success Comparison
+            </CardTitle>
+            <CardDescription>Average scores across active sections.</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button asChild variant="secondary" className="h-24 flex-col gap-2 rounded-2xl bg-primary/10 text-primary hover:bg-primary/20 border-none shadow-none">
-              <Link href="/faculty/attendance">
-                <ClipboardCheck className="h-6 w-6" />
-                <span className="text-xs font-bold">Mark Attendance</span>
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" className="h-24 flex-col gap-2 rounded-2xl bg-purple-500/10 text-purple-500 hover:bg-purple-500/20 border-none shadow-none">
-              <Link href="/faculty/resources">
-                <FileText className="h-6 w-6" />
-                <span className="text-xs font-bold">Upload Notes</span>
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" className="h-24 flex-col gap-2 rounded-2xl bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20 border-none shadow-none">
-              <Link href="/faculty/marks">
-                <FileSpreadsheet className="h-6 w-6" />
-                <span className="text-xs font-bold">Enter Marks</span>
-              </Link>
-            </Button>
+          <CardContent className="h-[200px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={classComparison}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                <YAxis hide />
+                <Tooltip cursor={{fill: 'transparent'}} />
+                <Bar dataKey="score" radius={[4, 4, 0, 0]} barSize={40}>
+                  {classComparison.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 

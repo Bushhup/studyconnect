@@ -14,11 +14,12 @@ import {
   BookOpen, ClipboardCheck, Award, Briefcase, 
   TrendingUp, Clock, CheckCircle2, AlertCircle,
   FileText, Calendar, MessageSquare, ArrowUpRight,
-  ChevronRight, Download, Bell, Megaphone, FileSpreadsheet, Loader2
+  ChevronRight, Download, Bell, Megaphone, FileSpreadsheet, Loader2,
+  BarChart3
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer
+  Tooltip, ResponsiveContainer, BarChart, Bar, Cell
 } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +33,14 @@ const performanceData = [
   { month: 'Sem 2', gpa: 3.6 },
   { month: 'Sem 3', gpa: 3.5 },
   { month: 'Sem 4', gpa: 3.8 },
+];
+
+const subjectGrades = [
+  { name: 'ML', score: 92, color: '#3B82F6' },
+  { name: 'Algo', score: 85, color: '#8B5CF6' },
+  { name: 'Physics', score: 88, color: '#10B981' },
+  { name: 'Math', score: 78, color: '#F59E0B' },
+  { name: 'Design', score: 72, color: '#EF4444' },
 ];
 
 const schedule = [
@@ -157,7 +166,7 @@ export default function StudentDashboard() {
         <div className="space-y-6">
           <Card className="border-none shadow-sm bg-white rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-lg font-headline font-bold">Today's Schedule</CardTitle>
+              <CardTitle className="text-lg font-headline font-bold text-foreground">Today's Schedule</CardTitle>
               <CardDescription>Upcoming classes and labs</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -183,19 +192,24 @@ export default function StudentDashboard() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm bg-slate-900 text-white rounded-2xl overflow-hidden relative">
-            <Megaphone className="absolute right-[-10px] top-[-10px] h-20 w-20 text-white/5 -rotate-12" />
+          <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-bold uppercase tracking-widest text-white/70">Campus Alerts</CardTitle>
+              <CardTitle className="text-sm font-headline font-bold flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 text-primary" /> Subject Success
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="space-y-1">
-                <p className="text-xs font-bold">Rescheduled: ML Practical</p>
-                <p className="text-[10px] text-white/50">Tuesday session moved to Lab 1.</p>
-              </div>
-              <Button variant="link" className="text-white p-0 h-auto text-xs font-bold" asChild>
-                <Link href="/student/announcements">View all broadcasts →</Link>
-              </Button>
+            <CardContent className="h-[150px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={subjectGrades}>
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                  <Tooltip cursor={{fill: 'transparent'}} />
+                  <Bar dataKey="score" radius={[4, 4, 0, 0]} barSize={25}>
+                    {subjectGrades.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>

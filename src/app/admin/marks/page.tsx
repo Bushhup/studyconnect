@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -17,7 +18,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Tooltip, Cell } from 'recharts';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -32,6 +33,8 @@ const MARKS_CSV_COLUMNS: CsvColumn[] = [
   { key: 'cat2', label: 'CAT-2', description: 'Continuous Assessment 2 score.', example: '45', required: true },
   { key: 'final', label: 'Final Exam', description: 'Main semester exam score.', example: '94', required: false },
 ];
+
+const COLORS = ['#3B82F6', '#8B5CF6', '#10B981', '#F59E0B', '#EF4444'];
 
 export default function MarksManagementPage() {
   const { toast } = useToast();
@@ -70,6 +73,12 @@ export default function MarksManagementPage() {
     performanceScore: Math.floor(Math.random() * (98 - 75) + 75), // Mocked for prototype sorting
     totalStudents: Math.floor(Math.random() * 500 + 100),
   })).sort((a, b) => b.performanceScore - a.performanceScore) || [];
+
+  const leaderboardChartData = departmentsWithPerformance.map((d, i) => ({
+    name: d.name,
+    score: d.performanceScore,
+    color: COLORS[i % COLORS.length]
+  }));
 
   const handleDeptClick = (id: string) => {
     setSelectedDeptId(id);
@@ -137,70 +146,94 @@ export default function MarksManagementPage() {
 
       {/* Leaderboard View */}
       {viewState === 'depts' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-6">
-            {deptsLoading ? (
-              <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>
-            ) : (
-              <div className="grid gap-4">
-                {departmentsWithPerformance.map((dept, index) => (
-                  <Card key={dept.id} className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer group bg-card rounded-2xl overflow-hidden" onClick={() => handleDeptClick(dept.id)}>
-                    <div className="flex items-center p-6 gap-6">
-                      <div className="flex flex-col items-center justify-center h-12 w-12 rounded-xl bg-primary/5 text-primary font-bold text-lg">
-                        #{index + 1}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-headline font-bold text-xl group-hover:text-primary transition-colors">{dept.name}</h3>
-                          <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-none font-bold text-[10px]">RANKED</Badge>
+        <div className="space-y-8">
+          <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
+            <CardHeader>
+              <CardTitle className="text-lg font-headline font-bold">Institutional Performance Leaderboard</CardTitle>
+              <CardDescription>Aggregate success scores per academic division.</CardDescription>
+            </CardHeader>
+            <CardContent className="h-[250px] pt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={leaderboardChartData} layout="vertical" margin={{ left: 40, right: 40 }}>
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} width={120} />
+                  <Tooltip cursor={{fill: 'transparent'}} />
+                  <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={20}>
+                    {leaderboardChartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              {deptsLoading ? (
+                <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>
+              ) : (
+                <div className="grid gap-4">
+                  {departmentsWithPerformance.map((dept, index) => (
+                    <Card key={dept.id} className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer group bg-card rounded-2xl overflow-hidden" onClick={() => handleDeptClick(dept.id)}>
+                      <div className="flex items-center p-6 gap-6">
+                        <div className="flex flex-col items-center justify-center h-12 w-12 rounded-xl bg-primary/5 text-primary font-bold text-lg">
+                          #{index + 1}
                         </div>
-                        <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
-                          <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {dept.totalStudents} Students</span>
-                          <span className="flex items-center gap-1"><Building2 className="h-3 w-3" /> HOD: {dept.headOfDept}</span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-headline font-bold text-xl group-hover:text-primary transition-colors">{dept.name}</h3>
+                            <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-none font-bold text-[10px]">RANKED</Badge>
+                          </div>
+                          <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                            <span className="flex items-center gap-1"><Users className="h-3 w-3" /> {dept.totalStudents} Students</span>
+                            <span className="flex items-center gap-1"><Building2 className="h-3 w-3" /> HOD: {dept.headOfDept}</span>
+                          </div>
                         </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-foreground">{dept.performanceScore}%</p>
+                          <p className="text-[10px] font-bold text-muted-foreground uppercase">Avg Performance</p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
                       </div>
-                      <div className="text-right">
-                        <p className="text-2xl font-bold text-foreground">{dept.performanceScore}%</p>
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase">Avg Performance</p>
-                      </div>
-                      <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                      <Progress value={dept.performanceScore} className="h-1 rounded-none bg-muted" />
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-6">
+              <Card className="border-none shadow-sm bg-primary text-white rounded-[2rem] p-8 space-y-6 overflow-hidden relative">
+                <Trophy className="absolute right-[-20px] bottom-[-20px] h-40 w-40 text-white/5 -rotate-12" />
+                <div className="relative z-10 space-y-2">
+                  <Badge className="bg-white/20 text-white border-none uppercase text-[9px] font-bold px-3">Top Performer</Badge>
+                  <h3 className="text-2xl font-headline font-bold">{departmentsWithPerformance[0]?.name || 'Fetching...'}</h3>
+                  <p className="text-sm text-white/70 leading-relaxed">
+                    Leading the institution with a consistent <strong>{departmentsWithPerformance[0]?.performanceScore || 0}%</strong> average score across all semesters.
+                  </p>
+                </div>
+                <Button className="w-full bg-white text-primary hover:bg-slate-100 font-bold rounded-xl h-12 relative z-10 shadow-lg">
+                  View Detailed Analytics
+                </Button>
+              </Card>
+
+              <Card className="border-none shadow-sm bg-card rounded-2xl p-6">
+                <CardHeader className="p-0 pb-4">
+                  <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Institutional Momentum</CardTitle>
+                </CardHeader>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
+                    <TrendingUp className="h-5 w-5 text-emerald-500" />
+                    <div>
+                      <p className="text-xs font-bold text-foreground">+4.2% Growth</p>
+                      <p className="text-[10px] text-muted-foreground">Institution average compared to last year.</p>
                     </div>
-                    <Progress value={dept.performanceScore} className="h-1 rounded-none bg-muted" />
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="space-y-6">
-            <Card className="border-none shadow-sm bg-primary text-white rounded-[2rem] p-8 space-y-6 overflow-hidden relative">
-              <Trophy className="absolute right-[-20px] bottom-[-20px] h-40 w-40 text-white/5 -rotate-12" />
-              <div className="relative z-10 space-y-2">
-                <Badge className="bg-white/20 text-white border-none uppercase text-[9px] font-bold px-3">Top Performer</Badge>
-                <h3 className="text-2xl font-headline font-bold">{departmentsWithPerformance[0]?.name || 'Fetching...'}</h3>
-                <p className="text-sm text-white/70 leading-relaxed">
-                  Leading the institution with a consistent <strong>{departmentsWithPerformance[0]?.performanceScore || 0}%</strong> average score across all semesters.
-                </p>
-              </div>
-              <Button className="w-full bg-white text-primary hover:bg-slate-100 font-bold rounded-xl h-12 relative z-10 shadow-lg">
-                View Detailed Analytics
-              </Button>
-            </Card>
-
-            <Card className="border-none shadow-sm bg-card rounded-2xl p-6">
-              <CardHeader className="p-0 pb-4">
-                <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Institutional Momentum</CardTitle>
-              </CardHeader>
-              <div className="space-y-4">
-                <div className="flex items-center gap-3 p-3 bg-muted/30 rounded-xl">
-                  <TrendingUp className="h-5 w-5 text-emerald-500" />
-                  <div>
-                    <p className="text-xs font-bold text-foreground">+4.2% Growth</p>
-                    <p className="text-[10px] text-muted-foreground">Institution average compared to last year.</p>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           </div>
         </div>
       )}
