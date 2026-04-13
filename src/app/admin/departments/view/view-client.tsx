@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useSearchParams } from 'next/navigation';
@@ -19,7 +20,7 @@ import {
   Calendar, ArrowLeft, Loader2, Plus, 
   ChevronRight, TrendingUp, CheckCircle2,
   UserPlus, BookPlus, LayoutGrid, Search,
-  Check
+  Check, Layers, RefreshCcw
 } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -54,8 +55,13 @@ export default function DepartmentViewClient() {
   const [isAddClassOpen, setIsAddClassOpen] = useState(false);
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
   const [isAssignUserOpen, setIsAssignUserOpen] = useState(false);
+  const [isBatchOpsOpen, setIsBatchOpsOpen] = useState(false);
   const [assignRole, setAssignRole] = useState<'student' | 'faculty'>('student');
   const [userSearchQuery, setUserSearchQuery] = useState('');
+
+  // Batch Ops State
+  const [selectedBatch, setSelectedBatch] = useState('');
+  const [batchAction, setBatchAction] = useState<'promote' | 'graduate'>('promote');
 
   // Fetch Dept
   const deptRef = useMemoFirebase(() => id ? doc(firestore, 'colleges', collegeId, 'departments', id) : null, [firestore, id]);
@@ -95,17 +101,18 @@ export default function DepartmentViewClient() {
     );
   }
 
-  const students = deptUsers?.filter(u => u.role === 'student') || [];
+  const students = deptUsers?.filter(u => u.role === 'student' && u.status !== 'alumni') || [];
   const faculty = deptUsers?.filter(u => u.role === 'faculty') || [];
 
-  // Filter global users for the picker (exclude those already in this dept and apply search)
+  // Extract unique batches from students
+  const batches = Array.from(new Set(students.map(s => s.batchYear).filter(Boolean))) as string[];
+
   const availableUsers = allGlobalUsers?.filter(u => {
     const isNotInDept = u.departmentId !== id;
     const nameMatch = `${u.firstName} ${u.lastName} ${u.username}`.toLowerCase().includes(userSearchQuery.toLowerCase());
     return isNotInDept && nameMatch;
   }) || [];
 
-  // Generate semester options based on department config
   const totalSemesters = dept?.totalSemesters || (dept?.programType === 'PG' ? 4 : 8);
   const semesterOptions = Array.from({ length: totalSemesters }, (_, i) => i + 1);
 
@@ -128,25 +135,31 @@ export default function DepartmentViewClient() {
     setIsAddClassOpen(false);
   };
 
-  const handleCreateSubject = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const name = formData.get('name') as string;
-    const code = formData.get('code') as string;
-    const credits = Number(formData.get('credits'));
+  const handleBatchOperation = () => {
+    if (!selectedBatch) return;
 
-    const ref = collection(firestore, 'colleges', collegeId, 'courses');
-    addDocumentNonBlocking(ref, {
-      id: crypto.randomUUID(),
-      name,
-      code,
-      credits,
-      departmentId: id,
-      createdAt: new Date().toISOString()
+    const batchStudents = students.filter(s => s.batchYear === selectedBatch);
+    if (batchStudents.length === 0) {
+      toast({ variant: 'destructive', title: 'Batch Empty', description: 'No students found in the selected batch.' });
+      return;
+    }
+
+    batchStudents.forEach(s => {
+      const userRef = doc(firestore, 'colleges', collegeId, 'users', s.id);
+      if (batchAction === 'promote') {
+        const currentSem = parseInt(s.semester || '1');
+        const nextSem = currentSem < totalSemesters ? currentSem + 1 : currentSem;
+        updateDocumentNonBlocking(userRef, { semester: nextSem.toString() });
+      } else {
+        updateDocumentNonBlocking(userRef, { status: 'alumni' });
+      }
     });
 
-    toast({ title: 'Subject Provisioned', description: `${code}: ${name} is now in the curriculum.` });
-    setIsAddSubjectOpen(false);
+    toast({ 
+      title: 'Batch Synchronized', 
+      description: `Bulk ${batchAction === 'promote' ? 'promotion' : 'graduation'} processed for ${batchStudents.length} students in ${selectedBatch}.` 
+    });
+    setIsBatchOpsOpen(false);
   };
 
   const handleAssignUser = (userId: string, userName: string) => {
@@ -159,20 +172,6 @@ export default function DepartmentViewClient() {
     toast({ 
       title: 'User Assigned', 
       description: `${userName} has been successfully mapped to ${dept?.name}.` 
-    });
-  };
-
-  const handleReports = () => {
-    toast({
-      title: 'Compiling Reports',
-      description: `Analyzing departmental performance for ${dept?.name}.`
-    });
-  };
-
-  const handleSync = () => {
-    toast({
-      title: 'Synchronizing Infrastructure',
-      description: 'Updating semester mapping and curriculum records across the college node.'
     });
   };
 
@@ -194,8 +193,44 @@ export default function DepartmentViewClient() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={handleReports} variant="outline" className="rounded-full bg-card shadow-sm">Division Reports</Button>
-          <Button onClick={handleSync} className="rounded-full shadow-lg shadow-primary/20">Sync Architecture</Button>
+          <Dialog open={isBatchOpsOpen} onOpenChange={setIsBatchOpsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="rounded-full gap-2 bg-card border-primary/20 text-primary font-bold">
+                <Layers className="h-4 w-4" /> Batch Operations
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="rounded-[2rem]">
+              <DialogHeader>
+                <DialogTitle>Batch Management</DialogTitle>
+                <DialogDescription>Promote or graduate students in bulk based on their batch year.</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label>Select Batch</Label>
+                  <Select onValueChange={setSelectedBatch} value={selectedBatch}>
+                    <SelectTrigger className="bg-muted border-none h-12"><SelectValue placeholder="Pick a Batch" /></SelectTrigger>
+                    <SelectContent>
+                      {batches.map(b => <SelectItem key={b} value={b}>{b}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Action</Label>
+                  <Select onValueChange={(v: any) => setBatchAction(v)} value={batchAction}>
+                    <SelectTrigger className="bg-muted border-none h-12"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="promote">Promote to Next Semester</SelectItem>
+                      <SelectItem value="graduate">Mark as Alumni (Graduate)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button onClick={handleBatchOperation} className="w-full h-12 font-bold uppercase tracking-tight">
+                  <RefreshCcw className="mr-2 h-4 w-4" /> Process Batch Changes
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button onClick={() => toast({ title: 'Division Sync', description: 'Institutional architecture synchronized.' })} className="rounded-full shadow-lg shadow-primary/20">Sync Node</Button>
         </div>
       </div>
 
@@ -253,37 +288,6 @@ export default function DepartmentViewClient() {
                 </form>
               </DialogContent>
             </Dialog>
-
-            <Dialog open={isAddSubjectOpen} onOpenChange={setIsAddSubjectOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 border-emerald-200 text-emerald-600">
-                  <BookPlus className="h-3 w-3" /> Provision Subject
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="rounded-[2rem]">
-                <DialogHeader>
-                  <DialogTitle>Add Subject to Curriculum</DialogTitle>
-                  <DialogDescription>Define a new course module for this division.</DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleCreateSubject} className="space-y-4 pt-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Subject Name</Label>
-                      <Input name="name" placeholder="e.g. Machine Learning" required className="bg-muted border-none h-12" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Course Code</Label>
-                      <Input name="code" placeholder="e.g. CS402" required className="bg-muted border-none h-12 font-mono" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Academic Credits</Label>
-                    <Input name="credits" type="number" defaultValue="4" required className="bg-muted border-none h-12" />
-                  </div>
-                  <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight shadow-lg shadow-emerald-500/20 bg-emerald-600 hover:bg-emerald-700">Add to Syllabus</Button>
-                </form>
-              </DialogContent>
-            </Dialog>
           </div>
         </div>
 
@@ -313,12 +317,6 @@ export default function DepartmentViewClient() {
                 </CardContent>
               </Card>
             ))}
-            {classes?.length === 0 && (
-              <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[2rem] bg-muted/20">
-                <Calendar className="h-12 w-12 mx-auto mb-4 text-muted-foreground/20" />
-                <p className="font-bold text-muted-foreground">No sections provisioned yet.</p>
-              </div>
-            )}
           </div>
         </TabsContent>
 
@@ -342,30 +340,23 @@ export default function DepartmentViewClient() {
                         <p className="text-[10px] font-bold text-muted-foreground uppercase">{f.designation || 'Faculty Member'}</p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-12">
-                      <div className="text-right">
-                        <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1">Impact Score</p>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold text-emerald-600">{f.performanceScore || 92}%</span>
-                          <TrendingUp className="h-4 w-4 text-emerald-500" />
-                        </div>
-                      </div>
-                      <Button variant="ghost" size="icon" className="rounded-full group-hover:bg-primary group-hover:text-white transition-all" onClick={() => toast({ title: 'Context Profile', description: `Viewing performance history for Dr. ${f.lastName}.` })}>
-                        <ChevronRight className="h-5 w-5" />
-                      </Button>
-                    </div>
+                    <Button variant="ghost" size="icon" className="rounded-full group-hover:bg-primary group-hover:text-white transition-all">
+                      <ChevronRight className="h-5 w-5" />
+                    </Button>
                   </div>
                 ))}
-                {faculty.length === 0 && (
-                  <div className="p-20 text-center text-muted-foreground italic">No faculty members assigned to this division.</div>
-                )}
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="students">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-between items-center mb-4">
+            <div className="flex gap-2">
+              {batches.map(b => (
+                <Badge key={b} className="bg-primary/5 text-primary border-none font-bold uppercase text-[9px] px-3">{b}</Badge>
+              ))}
+            </div>
             <Button size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 shadow-lg shadow-purple-500/20 bg-purple-600 hover:bg-purple-700" onClick={() => {setAssignRole('student'); setIsAssignUserOpen(true);}}>
               <UserPlus className="h-3 w-3" /> Enroll Students from Directory
             </Button>
@@ -377,21 +368,21 @@ export default function DepartmentViewClient() {
                   <StudentBioHover key={s.id} student={s}>
                     <div className="p-4 rounded-2xl bg-muted/30 flex items-center justify-between group hover:bg-primary/5 transition-all cursor-pointer">
                       <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-full bg-card border flex items-center justify-center font-bold text-xs group-hover:bg-primary group-hover:text-white transition-colors uppercase">
+                        <div className="h-10 w-10 rounded-full bg-card border flex items-center justify-center font-bold text-xs uppercase">
                           {s.firstName?.[0]}{s.lastName?.[0]}
                         </div>
                         <div>
                           <p className="text-sm font-bold">{s.firstName} {s.lastName}</p>
-                          <p className="text-[9px] font-mono text-muted-foreground uppercase">#{s.id.slice(0, 8)}</p>
+                          <div className="flex items-center gap-2">
+                            <p className="text-[9px] font-mono text-muted-foreground uppercase">Sem {s.semester}</p>
+                            <Badge className="h-3.5 px-1 bg-primary/10 text-primary text-[7px] font-bold border-none uppercase">{s.batchYear}</Badge>
+                          </div>
                         </div>
                       </div>
                       <Badge className="bg-emerald-50 text-emerald-700 border-none font-bold text-[9px] uppercase">Active</Badge>
                     </div>
                   </StudentBioHover>
                 ))}
-                {students.length === 0 && (
-                  <div className="col-span-full p-20 text-center text-muted-foreground italic">No students currently enrolled in this division.</div>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -400,86 +391,49 @@ export default function DepartmentViewClient() {
         <TabsContent value="subjects">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {courses?.map(course => (
-              <Card key={course.id} className="border-none shadow-sm rounded-2xl bg-card hover:shadow-md transition-all">
+              <Card key={course.id} className="border-none shadow-sm rounded-2xl bg-card">
                 <CardHeader className="pb-3">
                   <Badge variant="outline" className="w-fit border-primary/20 text-primary font-bold mb-2 uppercase text-[9px]">{course.code}</Badge>
                   <CardTitle className="text-base font-headline">{course.name}</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground font-medium uppercase text-[10px] tracking-tight">Credits</span>
-                    <span className="font-bold text-foreground">{course.credits} Units</span>
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <span className="text-muted-foreground uppercase text-[9px]">Credits</span>
+                    <span>{course.credits} Units</span>
                   </div>
-                  <Button variant="ghost" size="sm" className="w-full mt-4 text-[10px] font-bold uppercase text-primary" onClick={() => toast({ title: 'Curriculum Lock', description: 'Subject metadata modification is restricted during active semesters.' })}>Edit Syllabus</Button>
                 </CardContent>
               </Card>
             ))}
-            {courses?.length === 0 && (
-              <div className="col-span-full p-20 text-center text-muted-foreground italic border-2 border-dashed rounded-2xl">No subjects provisioned for this curriculum yet.</div>
-            )}
           </div>
         </TabsContent>
       </Tabs>
 
-      {/* User Assignment Picker Dialog */}
+      {/* User Picker Dialog */}
       <Dialog open={isAssignUserOpen} onOpenChange={setIsAssignUserOpen}>
         <DialogContent className="rounded-[2rem] max-w-2xl max-h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Assign {assignRole === 'student' ? 'Students' : 'Faculty'} to Division</DialogTitle>
-            <DialogDescription>Pick registered users from the institutional directory to map them to {dept?.name}.</DialogDescription>
-          </DialogHeader>
-          
+          <DialogHeader><DialogTitle>Directory Assignment</DialogTitle></DialogHeader>
           <div className="relative my-4">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search by name or username..." 
+              placeholder="Search directory..." 
               className="pl-10 bg-muted border-none h-12 rounded-xl"
               value={userSearchQuery}
               onChange={(e) => setUserSearchQuery(e.target.value)}
             />
           </div>
-
-          <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
-            {globalLoading ? (
-              <div className="p-12 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto text-primary" /></div>
-            ) : availableUsers.length > 0 ? (
-              availableUsers.map((u) => (
-                <div 
-                  key={u.id} 
-                  className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-primary/5 transition-all group border border-transparent hover:border-primary/10"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
-                      <AvatarFallback className="bg-white text-primary font-bold text-xs uppercase">{u.firstName?.[0]}{u.lastName?.[0]}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="text-sm font-bold">{u.firstName} {u.lastName}</p>
-                      <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">@{u.username}</span>
-                        {u.departmentId && (
-                          <Badge variant="outline" className="text-[8px] h-4 border-muted-foreground/20 text-muted-foreground uppercase">{u.departmentId}</Badge>
-                        )}
-                      </div>
-                    </div>
+          <div className="flex-1 overflow-y-auto space-y-2 pr-2">
+            {availableUsers.map(u => (
+              <div key={u.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-10 w-10"><AvatarFallback>{u.firstName?.[0]}</AvatarFallback></Avatar>
+                  <div>
+                    <p className="text-sm font-bold">{u.firstName} {u.lastName}</p>
+                    <p className="text-[10px] text-primary uppercase font-bold">@{u.username}</p>
                   </div>
-                  <Button 
-                    size="sm" 
-                    className="rounded-full gap-2 font-bold uppercase text-[9px] h-8"
-                    onClick={() => handleAssignUser(u.id, `${u.firstName} ${u.lastName}`)}
-                  >
-                    <Check className="h-3 w-3" /> Assign to Dept
-                  </Button>
                 </div>
-              ))
-            ) : (
-              <div className="p-12 text-center text-muted-foreground bg-muted/10 rounded-2xl border-2 border-dashed">
-                No available {assignRole}s found in the directory matching your search.
+                <Button size="sm" className="rounded-full text-[9px] font-bold" onClick={() => handleAssignUser(u.id, u.firstName)}>Assign</Button>
               </div>
-            )}
-          </div>
-          
-          <div className="pt-4 mt-auto border-t">
-            <Button variant="outline" className="w-full rounded-xl" onClick={() => setIsAssignUserOpen(false)}>Done Assigning</Button>
+            ))}
           </div>
         </DialogContent>
       </Dialog>

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
@@ -6,7 +7,7 @@ import {
   LayoutDashboard, Building2, 
   BookOpen, Calendar, FileSpreadsheet, ClipboardCheck, 
   BarChart3, FileText, Settings, Bell, Activity, UserCog,
-  Search, LogOut, Menu, X, GripHorizontal, FileUser, Users
+  Search, LogOut, Menu, X, GripHorizontal, FileUser, Users, GraduationCap
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,7 @@ const adminLinks = [
   { href: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, keywords: 'overview, stats, analytics' },
   { href: '/admin/departments', label: 'Departments', icon: Building2, keywords: 'divisions, faculty, students, restructure' },
   { href: '/admin/users', label: 'Identity Hub', icon: UserCog, keywords: 'users, management, accounts, faculty, students' },
+  { href: '/admin/alumni', label: 'Alumni Registry', icon: GraduationCap, keywords: 'graduates, completed, history' },
   { href: '/admin/courses', label: 'Curriculum', icon: BookOpen, keywords: 'subjects, modules' },
   { href: '/admin/marks', label: 'Marks Ledger', icon: FileSpreadsheet, keywords: 'grading, results' },
   { href: '/admin/attendance', label: 'Attendance', icon: ClipboardCheck, keywords: 'presence, monitoring' },

@@ -40,7 +40,9 @@
         "role": { "type": "string", "enum": ["student", "faculty", "admin", "hod"] },
         "departmentId": { "type": "string", "description": "Mandatory for HOD, Faculty, and Students." },
         "performanceScore": { "type": "number", "description": "0-100 score based on metrics." },
-        "attendanceRate": { "type": "number" }
+        "attendanceRate": { "type": "number" },
+        "batchYear": { "type": "string", "description": "Grouping for students, e.g., Batch-2026." },
+        "status": { "type": "string", "enum": ["active", "inactive", "alumni"] }
       }
     },
     "AcademicRecord": {
