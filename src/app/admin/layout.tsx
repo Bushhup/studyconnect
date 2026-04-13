@@ -78,8 +78,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (theme.navStyle === 'wheel') {
         setRotation(prev => (prev + 0.15) % 360);
       } else {
-        // Increased loop speed
-        setLoopProgress(prev => (prev + 0.03) % adminLinks.length);
+        // Continuous kinetic loop speed
+        setLoopProgress(prev => (prev + 0.06) % adminLinks.length);
       }
     }, 30);
     return () => clearInterval(interval);
@@ -178,30 +178,38 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const hubRadius = isMobile ? 120 : 170;
 
   const getLinearTransform = (index: number) => {
-    const spacing = isMobile ? 48 : 56;
+    if (typeof window === 'undefined') return '';
+    
     const count = adminLinks.length;
-    // Calculate effective index based on loop progress
-    const effectiveIndex = (index + loopProgress) % count;
-    const offset = (effectiveIndex + 1) * spacing;
+    // (index - loopProgress) ensures Right-to-Left or Bottom-to-Top flow
+    const effectiveIndex = ((index - loopProgress) % count + count) % count;
     
     const isAtBottom = position.y > window.innerHeight - 100;
     const isAtTop = position.y < 100;
     const isAtLeft = position.x < 100;
     const isAtRight = position.x > window.innerWidth - 100;
 
-    // Parallel offset distance from the hub
     const lineOffset = isMobile ? 60 : 80;
 
-    if (isAtBottom) {
-      return `translateY(-${lineOffset}px) translateX(-${offset}px)`;
-    } else if (isAtTop) {
-      return `translateY(${lineOffset}px) translateX(-${offset}px)`;
-    } else if (isAtLeft) {
-      return `translateX(${lineOffset}px) translateY(-${offset}px)`;
-    } else if (isAtRight) {
-      return `translateX(-${lineOffset}px) translateY(-${offset}px)`;
+    if (isAtBottom || isAtTop) {
+      // Horizontal Full-Screen distribution
+      const totalWidth = window.innerWidth;
+      const spacing = totalWidth / count;
+      const xOnScreen = effectiveIndex * spacing;
+      // Convert screen X to relative offset from hub center
+      const tx = xOnScreen - position.x + (spacing / 2);
+      const ty = isAtBottom ? -lineOffset : lineOffset;
+      return `translate(${tx}px, ${ty}px)`;
+    } else {
+      // Vertical Full-Screen distribution
+      const totalHeight = window.innerHeight;
+      const spacing = totalHeight / count;
+      const yOnScreen = effectiveIndex * spacing;
+      // Convert screen Y to relative offset from hub center
+      const ty = yOnScreen - position.y + (spacing / 2);
+      const tx = isAtLeft ? lineOffset : -lineOffset;
+      return `translate(${tx}px, ${ty}px)`;
     }
-    return `translateY(-${lineOffset}px) translateX(-${offset}px)`;
   };
 
   return (
@@ -286,7 +294,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               return (
                 <div
                   key={link.href}
-                  className="absolute left-1/2 top-1/2 pointer-events-auto transition-transform duration-500"
+                  className={cn(
+                    "absolute left-1/2 top-1/2 pointer-events-auto",
+                    // Disable transitions in linear mode to prevent "snapping back" during wrap
+                    theme.navStyle === 'wheel' ? "transition-transform duration-500" : "transition-none"
+                  )}
                   style={style}
                 >
                   <Link

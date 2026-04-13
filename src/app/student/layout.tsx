@@ -78,8 +78,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       if (theme.navStyle === 'wheel') {
         setRotation(prev => (prev + 0.1) % 360);
       } else {
-        // Increased loop speed
-        setLoopProgress(prev => (prev + 0.03) % studentLinks.length);
+        // Continuous kinetic loop speed
+        setLoopProgress(prev => (prev + 0.06) % studentLinks.length);
       }
     }, 30);
     return () => clearInterval(interval);
@@ -177,25 +177,36 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
   const hubRadius = isMobile ? 130 : 190;
 
   const getLinearTransform = (index: number) => {
-    const spacing = isMobile ? 48 : 56;
+    if (typeof window === 'undefined') return '';
+    
     const count = studentLinks.length;
-    // Modulo logic for smooth looping
-    const effectiveIndex = (index + loopProgress) % count;
-    const offset = (effectiveIndex + 1) * spacing;
+    // Continuous seamless modulo
+    const effectiveIndex = ((index - loopProgress) % count + count) % count;
     
     const isAtBottom = position.y > window.innerHeight - 100;
     const isAtTop = position.y < 100;
     const isAtLeft = position.x < 100;
     const isAtRight = position.x > window.innerWidth - 100;
 
-    // Parallel offset distance from the hub
     const lineOffset = isMobile ? 60 : 80;
 
-    if (isAtBottom) return `translateY(-${lineOffset}px) translateX(-${offset}px)`;
-    if (isAtTop) return `translateY(${lineOffset}px) translateX(-${offset}px)`;
-    if (isAtLeft) return `translateX(${lineOffset}px) translateY(-${offset}px)`;
-    if (isAtRight) return `translateX(-${lineOffset}px) translateY(-${offset}px)`;
-    return `translateY(-${lineOffset}px) translateX(-${offset}px)`;
+    if (isAtBottom || isAtTop) {
+      // Horizontal Full-Screen distribution
+      const totalWidth = window.innerWidth;
+      const spacing = totalWidth / count;
+      const xOnScreen = effectiveIndex * spacing;
+      const tx = xOnScreen - position.x + (spacing / 2);
+      const ty = isAtBottom ? -lineOffset : lineOffset;
+      return `translate(${tx}px, ${ty}px)`;
+    } else {
+      // Vertical Full-Screen distribution
+      const totalHeight = window.innerHeight;
+      const spacing = totalHeight / count;
+      const yOnScreen = effectiveIndex * spacing;
+      const ty = yOnScreen - position.y + (spacing / 2);
+      const tx = isAtLeft ? lineOffset : -lineOffset;
+      return `translate(${tx}px, ${ty}px)`;
+    }
   };
 
   return (
@@ -280,7 +291,10 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
               return (
                 <div
                   key={link.href}
-                  className="absolute left-1/2 top-1/2 pointer-events-auto transition-transform duration-500"
+                  className={cn(
+                    "absolute left-1/2 top-1/2 pointer-events-auto",
+                    theme.navStyle === 'wheel' ? "transition-transform duration-500" : "transition-none"
+                  )}
                   style={transformStyle}
                 >
                   <Link
