@@ -13,7 +13,7 @@ import {
   Search, FileSpreadsheet, Download, Send, 
   TrendingUp, Trophy, Edit3, CheckCircle2,
   Building2, ChevronRight, ArrowLeft, Loader2,
-  GraduationCap, Users, Award
+  GraduationCap, Users, Award, ArrowUpRight
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
