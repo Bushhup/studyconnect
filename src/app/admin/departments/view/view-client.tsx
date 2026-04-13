@@ -19,7 +19,8 @@ import {
   Building2, Users, GraduationCap, BookOpen, 
   Calendar, ArrowLeft, Loader2, Plus, 
   ChevronRight, TrendingUp, CheckCircle2,
-  UserPlus, BookPlus, LayoutGrid
+  UserPlus, BookPlus, LayoutGrid, Search,
+  Check
 } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,14 +53,15 @@ export default function DepartmentViewClient() {
   // Dialog States
   const [isAddClassOpen, setIsAddClassOpen] = useState(false);
   const [isAddSubjectOpen, setIsAddSubjectOpen] = useState(false);
-  const [isAddUserOpen, setIsAddUserOpen] = useState(false);
-  const [newUserRole, setNewUserRole] = useState<'student' | 'faculty'>('student');
+  const [isAssignUserOpen, setIsAssignUserOpen] = useState(false);
+  const [assignRole, setAssignRole] = useState<'student' | 'faculty'>('student');
+  const [userSearchQuery, setUserSearchQuery] = useState('');
 
   // Fetch Dept
   const deptRef = useMemoFirebase(() => id ? doc(firestore, 'colleges', collegeId, 'departments', id) : null, [firestore, id]);
   const { data: dept, isLoading: deptLoading } = useDoc(deptRef);
 
-  // Fetch Entities
+  // Fetch Entities already in this dept
   const usersQuery = useMemoFirebase(() => 
     id ? query(collection(firestore, 'colleges', collegeId, 'users'), where('departmentId', '==', id)) : null
   , [firestore, id]);
@@ -72,9 +74,15 @@ export default function DepartmentViewClient() {
     id ? query(collection(firestore, 'colleges', collegeId, 'courses'), where('departmentId', '==', id)) : null
   , [firestore, id]);
 
-  const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
+  // Fetch Global Users for Assignment
+  const globalUsersQuery = useMemoFirebase(() => 
+    query(collection(firestore, 'colleges', collegeId, 'users'), where('role', '==', assignRole))
+  , [firestore, assignRole]);
+
+  const { data: deptUsers, isLoading: usersLoading } = useCollection(usersQuery);
   const { data: classes, isLoading: classesLoading } = useCollection(classesQuery);
   const { data: courses, isLoading: coursesLoading } = useCollection(coursesQuery);
+  const { data: allGlobalUsers, isLoading: globalLoading } = useCollection(globalUsersQuery);
 
   if (!id) return <div className="p-20 text-center">Invalid Department Reference</div>;
 
@@ -87,8 +95,15 @@ export default function DepartmentViewClient() {
     );
   }
 
-  const students = users?.filter(u => u.role === 'student') || [];
-  const faculty = users?.filter(u => u.role === 'faculty') || [];
+  const students = deptUsers?.filter(u => u.role === 'student') || [];
+  const faculty = deptUsers?.filter(u => u.role === 'faculty') || [];
+
+  // Filter global users for the picker (exclude those already in this dept and apply search)
+  const availableUsers = allGlobalUsers?.filter(u => {
+    const isNotInDept = u.departmentId !== id;
+    const nameMatch = `${u.firstName} ${u.lastName} ${u.username}`.toLowerCase().includes(userSearchQuery.toLowerCase());
+    return isNotInDept && nameMatch;
+  }) || [];
 
   // Generate semester options based on department config
   const totalSemesters = dept?.totalSemesters || (dept?.programType === 'PG' ? 4 : 8);
@@ -134,28 +149,17 @@ export default function DepartmentViewClient() {
     setIsAddSubjectOpen(false);
   };
 
-  const handleAddUser = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    const firstName = formData.get('firstName') as string;
-    const lastName = formData.get('lastName') as string;
-    const email = formData.get('email') as string;
-
-    const userId = crypto.randomUUID();
-    const ref = doc(firestore, 'colleges', collegeId, 'users', userId);
-    updateDocumentNonBlocking(ref, {
-      id: userId,
-      firstName,
-      lastName,
-      email,
-      role: newUserRole,
+  const handleAssignUser = (userId: string, userName: string) => {
+    const userRef = doc(firestore, 'colleges', collegeId, 'users', userId);
+    updateDocumentNonBlocking(userRef, {
       departmentId: id,
-      status: 'active',
-      createdAt: new Date().toISOString()
+      updatedAt: new Date().toISOString()
     });
 
-    toast({ title: 'User Registered', description: `${firstName} has been added as ${newUserRole}.` });
-    setIsAddUserOpen(false);
+    toast({ 
+      title: 'User Assigned', 
+      description: `${userName} has been successfully mapped to ${dept?.name}.` 
+    });
   };
 
   return (
@@ -306,8 +310,8 @@ export default function DepartmentViewClient() {
 
         <TabsContent value="faculty">
           <div className="flex justify-end mb-4">
-            <Button size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 shadow-lg shadow-blue-500/20" onClick={() => {setNewUserRole('faculty'); setIsAddUserOpen(true);}}>
-              <UserPlus className="h-3 w-3" /> Add Faculty Member
+            <Button size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 shadow-lg shadow-blue-500/20" onClick={() => {setAssignRole('faculty'); setIsAssignUserOpen(true);}}>
+              <UserPlus className="h-3 w-3" /> Assign Faculty from Directory
             </Button>
           </div>
           <Card className="border-none shadow-sm rounded-[2rem] bg-card overflow-hidden">
@@ -317,7 +321,7 @@ export default function DepartmentViewClient() {
                   <div key={f.id} className="p-6 flex items-center justify-between group hover:bg-muted/30 transition-all">
                     <div className="flex items-center gap-4">
                       <Avatar className="h-12 w-12 border-2 border-background shadow-sm ring-1 ring-border">
-                        <AvatarFallback className="bg-primary/5 text-primary font-bold">{f.firstName?.[0]}{f.lastName?.[0]}</AvatarFallback>
+                        <AvatarFallback className="bg-primary/5 text-primary font-bold uppercase">{f.firstName?.[0]}{f.lastName?.[0]}</AvatarFallback>
                       </Avatar>
                       <div>
                         <p className="font-bold text-foreground">Dr. {f.firstName} {f.lastName}</p>
@@ -338,6 +342,9 @@ export default function DepartmentViewClient() {
                     </div>
                   </div>
                 ))}
+                {faculty.length === 0 && (
+                  <div className="p-20 text-center text-muted-foreground italic">No faculty members assigned to this division.</div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -345,8 +352,8 @@ export default function DepartmentViewClient() {
 
         <TabsContent value="students">
           <div className="flex justify-end mb-4">
-            <Button size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 shadow-lg shadow-purple-500/20 bg-purple-600 hover:bg-purple-700" onClick={() => {setNewUserRole('student'); setIsAddUserOpen(true);}}>
-              <UserPlus className="h-3 w-3" /> Enroll Student
+            <Button size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 shadow-lg shadow-purple-500/20 bg-purple-600 hover:bg-purple-700" onClick={() => {setAssignRole('student'); setIsAssignUserOpen(true);}}>
+              <UserPlus className="h-3 w-3" /> Enroll Students from Directory
             </Button>
           </div>
           <Card className="border-none shadow-sm rounded-[2rem] bg-card overflow-hidden">
@@ -355,17 +362,20 @@ export default function DepartmentViewClient() {
                 {students.map(s => (
                   <div key={s.id} className="p-4 rounded-2xl bg-muted/30 flex items-center justify-between group hover:bg-primary/5 transition-all cursor-pointer">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-card border flex items-center justify-center font-bold text-xs group-hover:bg-primary group-hover:text-white transition-colors">
+                      <div className="h-10 w-10 rounded-full bg-card border flex items-center justify-center font-bold text-xs group-hover:bg-primary group-hover:text-white transition-colors uppercase">
                         {s.firstName?.[0]}{s.lastName?.[0]}
                       </div>
                       <div>
                         <p className="text-sm font-bold">{s.firstName} {s.lastName}</p>
-                        <p className="text-[9px] font-mono text-muted-foreground">#{s.id.slice(0, 8).toUpperCase()}</p>
+                        <p className="text-[9px] font-mono text-muted-foreground uppercase">#{s.id.slice(0, 8)}</p>
                       </div>
                     </div>
                     <Badge className="bg-emerald-50 text-emerald-700 border-none font-bold text-[9px] uppercase">Active</Badge>
                   </div>
                 ))}
+                {students.length === 0 && (
+                  <div className="col-span-full p-20 text-center text-muted-foreground italic">No students currently enrolled in this division.</div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -387,34 +397,73 @@ export default function DepartmentViewClient() {
                 </CardContent>
               </Card>
             ))}
+            {courses?.length === 0 && (
+              <div className="col-span-full p-20 text-center text-muted-foreground italic border-2 border-dashed rounded-2xl">No subjects provisioned for this curriculum yet.</div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
 
-      {/* Shared User Creation Dialog */}
-      <Dialog open={isAddUserOpen} onOpenChange={setIsAddUserOpen}>
-        <DialogContent className="rounded-[2rem]">
+      {/* User Assignment Picker Dialog */}
+      <Dialog open={isAssignUserOpen} onOpenChange={setIsAssignUserOpen}>
+        <DialogContent className="rounded-[2rem] max-w-2xl max-h-[80vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>Register New {newUserRole}</DialogTitle>
-            <DialogDescription>Assign an institutional identity to this academic division.</DialogDescription>
+            <DialogTitle>Assign {assignRole === 'student' ? 'Students' : 'Faculty'} to Division</DialogTitle>
+            <DialogDescription>Pick registered users from the institutional directory to map them to {dept?.name}.</DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleAddUser} className="space-y-4 pt-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>First Name</Label>
-                <Input name="firstName" required className="bg-muted border-none h-12" />
+          
+          <div className="relative my-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input 
+              placeholder="Search by name or username..." 
+              className="pl-10 bg-muted border-none h-12 rounded-xl"
+              value={userSearchQuery}
+              onChange={(e) => setUserSearchQuery(e.target.value)}
+            />
+          </div>
+
+          <div className="flex-1 overflow-y-auto space-y-2 pr-2 custom-scrollbar">
+            {globalLoading ? (
+              <div className="p-12 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto text-primary" /></div>
+            ) : availableUsers.length > 0 ? (
+              availableUsers.map((u) => (
+                <div 
+                  key={u.id} 
+                  className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-primary/5 transition-all group border border-transparent hover:border-primary/10"
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
+                      <AvatarFallback className="bg-white text-primary font-bold text-xs uppercase">{u.firstName?.[0]}{u.lastName?.[0]}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="text-sm font-bold">{u.firstName} {u.lastName}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold text-primary uppercase tracking-tighter">@{u.username}</span>
+                        {u.departmentId && (
+                          <Badge variant="outline" className="text-[8px] h-4 border-muted-foreground/20 text-muted-foreground uppercase">{u.departmentId}</Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <Button 
+                    size="sm" 
+                    className="rounded-full gap-2 font-bold uppercase text-[9px] h-8"
+                    onClick={() => handleAssignUser(u.id, `${u.firstName} ${u.lastName}`)}
+                  >
+                    <Check className="h-3 w-3" /> Assign to Dept
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <div className="p-12 text-center text-muted-foreground bg-muted/10 rounded-2xl border-2 border-dashed">
+                No available {assignRole}s found in the directory matching your search.
               </div>
-              <div className="space-y-2">
-                <Label>Last Name</Label>
-                <Input name="lastName" required className="bg-muted border-none h-12" />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label>System Email</Label>
-              <Input name="email" type="email" placeholder="user@college.edu" required className="bg-muted border-none h-12" />
-            </div>
-            <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight shadow-lg shadow-primary/20 mt-2">Confirm Registration</Button>
-          </form>
+            )}
+          </div>
+          
+          <div className="pt-4 mt-auto border-t">
+            <Button variant="outline" className="w-full rounded-xl" onClick={() => setIsAssignUserOpen(false)}>Done Assigning</Button>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
