@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -9,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Plus, Loader2, ArrowRight, Users, BookOpen, GraduationCap, Trash2 } from 'lucide-react';
+import { Building2, Plus, Loader2, ArrowRight, Users, BookOpen, GraduationCap, Trash2, Layers } from 'lucide-react';
 import Link from 'next/link';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 import { cn } from '@/lib/utils';
@@ -24,20 +25,33 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const collegeId = 'study-connect-college';
 
 const DEPT_CSV_COLUMNS: CsvColumn[] = [
   { key: 'name', label: 'Department Name', description: 'The official academic title.', example: 'School of Bio-Engineering', required: true },
   { key: 'headOfDept', label: 'H.O.D', description: 'Name of the primary lead.', example: 'Dr. Sarah Miller', required: true },
+  { key: 'programType', label: 'Program Type', description: 'UG or PG.', example: 'UG', required: true },
+  { key: 'totalSemesters', label: 'Total Semesters', description: 'Number of semesters.', example: '8', required: true },
 ];
 
 export default function DepartmentManagement() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  
+  // Form State
   const [name, setName] = useState('');
   const [hod, setHod] = useState('');
+  const [programType, setProgramType] = useState<'UG' | 'PG'>('UG');
+  const [totalSemesters, setTotalSemesters] = useState('8');
 
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.uid) return null;
@@ -58,6 +72,11 @@ export default function DepartmentManagement() {
 
   const { data: departments, isLoading } = useCollection(deptQuery);
 
+  const handleProgramTypeChange = (val: 'UG' | 'PG') => {
+    setProgramType(val);
+    setTotalSemesters(val === 'UG' ? '8' : '4');
+  };
+
   const handleCreate = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !isAdmin) return;
@@ -67,11 +86,16 @@ export default function DepartmentManagement() {
       id: crypto.randomUUID(),
       name,
       headOfDept: hod,
+      programType,
+      totalSemesters: parseInt(totalSemesters),
       createdAt: new Date().toISOString()
     });
 
-    toast({ title: 'Department Created', description: `${name} has been added to the institution.` });
-    setName(''); setHod('');
+    toast({ title: 'Department Created', description: `${name} (${programType}) has been added.` });
+    setName(''); 
+    setHod('');
+    setProgramType('UG');
+    setTotalSemesters('8');
   };
 
   const handleDelete = (deptId: string, deptName: string) => {
@@ -80,7 +104,7 @@ export default function DepartmentManagement() {
     deleteDocumentNonBlocking(deptRef);
     toast({ 
       title: 'Division Removed', 
-      description: `${deptName} and its primary record have been deleted.` 
+      description: `${deptName} has been deleted.` 
     });
   };
 
@@ -89,13 +113,13 @@ export default function DepartmentManagement() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Institutional Architecture</h1>
-          <p className="text-muted-foreground mt-1">Manage academic divisions and their assigned resources.</p>
+          <p className="text-muted-foreground mt-1">Manage academic divisions, program types, and curricula.</p>
         </div>
         {isAdmin && (
           <div className="flex gap-2">
             <CsvImportDialog 
               title="Bulk Create Departments"
-              description="Import multiple academic divisions at once."
+              description="Import multiple academic divisions with program metadata."
               columns={DEPT_CSV_COLUMNS}
             />
             <Button onClick={() => (document.getElementById('deptName') as any)?.focus()} className="gap-2 shadow-lg shadow-primary/20">
@@ -110,7 +134,7 @@ export default function DepartmentManagement() {
           <Card className="h-fit bg-card border-none shadow-sm rounded-2xl lg:sticky lg:top-8">
             <CardHeader>
               <CardTitle className="text-lg">Register Department</CardTitle>
-              <CardDescription>Add a new academic node to the system.</CardDescription>
+              <CardDescription>Define a new academic program node.</CardDescription>
             </CardHeader>
             <form onSubmit={handleCreate}>
               <CardContent className="space-y-4">
@@ -122,6 +146,31 @@ export default function DepartmentManagement() {
                   <Label htmlFor="hod">Head of Department</Label>
                   <Input id="hod" value={hod} onChange={(e) => setHod(e.target.value)} placeholder="e.g. Dr. Jane Doe" className="bg-muted border-none shadow-none h-11" />
                 </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Program Type</Label>
+                    <Select value={programType} onValueChange={handleProgramTypeChange}>
+                      <SelectTrigger className="bg-muted border-none shadow-none h-11">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="UG">Undergraduate (UG)</SelectItem>
+                        <SelectItem value="PG">Postgraduate (PG)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Semesters</Label>
+                    <Input 
+                      type="number" 
+                      value={totalSemesters} 
+                      onChange={(e) => setTotalSemesters(e.target.value)} 
+                      className="bg-muted border-none shadow-none h-11" 
+                    />
+                  </div>
+                </div>
+
                 <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight">
                   <Plus className="mr-2 h-4 w-4" /> Create Node
                 </Button>
@@ -147,7 +196,9 @@ export default function DepartmentManagement() {
                         <Building2 className="h-6 w-6 text-primary" />
                       </div>
                       <div className="flex gap-2">
-                        <Badge variant="secondary" className="bg-muted text-muted-foreground border-none font-bold text-[9px] uppercase tracking-tighter">ID: {dept.id.slice(0, 6)}</Badge>
+                        <Badge className="bg-primary/5 text-primary border-none font-bold text-[9px] uppercase tracking-tighter">
+                          {dept.programType || 'UG'} • {dept.totalSemesters || 8} Sems
+                        </Badge>
                         {isAdmin && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -159,7 +210,7 @@ export default function DepartmentManagement() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Delete Division?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Confirm deletion of <strong>{dept.name}</strong>. This will remove the department record from the institutional hierarchy. Linked data like classes and users may become orphaned.
+                                  Confirm deletion of <strong>{dept.name}</strong>. This will remove the department record and its metadata from the institutional hierarchy.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -216,6 +267,6 @@ export default function DepartmentManagement() {
   );
 }
 
-function Badge({ children, className, variant = "default" }: any) {
+function Badge({ children, className }: any) {
   return <span className={cn("px-2 py-0.5 rounded-full text-[10px] border", className)}>{children}</span>;
 }

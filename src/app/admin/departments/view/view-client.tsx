@@ -90,6 +90,10 @@ export default function DepartmentViewClient() {
   const students = users?.filter(u => u.role === 'student') || [];
   const faculty = users?.filter(u => u.role === 'faculty') || [];
 
+  // Generate semester options based on department config
+  const totalSemesters = dept?.totalSemesters || (dept?.programType === 'PG' ? 4 : 8);
+  const semesterOptions = Array.from({ length: totalSemesters }, (_, i) => i + 1);
+
   const handleCreateClass = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -162,8 +166,13 @@ export default function DepartmentViewClient() {
             <Link href="/admin/departments"><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
           <div>
-            <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">{dept?.name}</h1>
-            <p className="text-muted-foreground mt-1 font-body">Master management hub for this academic division.</p>
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">{dept?.name}</h1>
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-none font-bold uppercase text-[10px]">
+                {dept?.programType || 'UG'} Program
+              </Badge>
+            </div>
+            <p className="text-muted-foreground mt-1 font-body">Master management hub • {totalSemesters} Semesters Curriculum.</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -206,7 +215,7 @@ export default function DepartmentViewClient() {
               <DialogContent className="rounded-[2rem]">
                 <DialogHeader>
                   <DialogTitle>Provision New Academic Section</DialogTitle>
-                  <DialogDescription>Define a batch/class for this department.</DialogDescription>
+                  <DialogDescription>Define a batch for the {dept?.programType} program.</DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreateClass} className="space-y-4 pt-4">
                   <div className="space-y-2">
@@ -217,7 +226,9 @@ export default function DepartmentViewClient() {
                     <Label>Target Semester</Label>
                     <Select name="semester" required>
                       <SelectTrigger className="bg-muted border-none h-12"><SelectValue placeholder="Select Semester" /></SelectTrigger>
-                      <SelectContent>{[1,2,3,4,5,6,7,8].map(s => <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>)}</SelectContent>
+                      <SelectContent>
+                        {semesterOptions.map(s => <SelectItem key={s} value={s.toString()}>Semester {s}</SelectItem>)}
+                      </SelectContent>
                     </Select>
                   </div>
                   <Button type="submit" className="w-full h-12 font-bold uppercase tracking-tight shadow-lg shadow-primary/20">Confirm Creation</Button>

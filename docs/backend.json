@@ -9,7 +9,9 @@
         "id": { "type": "string" },
         "name": { "type": "string" },
         "headOfDept": { "type": "string" },
-        "description": { "type": "string" }
+        "description": { "type": "string" },
+        "programType": { "type": "string", "enum": ["UG", "PG"] },
+        "totalSemesters": { "type": "number", "description": "Number of semesters in the program." }
       }
     },
     "Class": {
