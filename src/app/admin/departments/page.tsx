@@ -187,6 +187,21 @@ export default function DepartmentManagement() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {isAdmin && (
+                <Card 
+                  onClick={() => (document.getElementById('deptName') as any)?.focus()}
+                  className="group cursor-pointer border-2 border-dashed border-primary/20 hover:border-primary/50 hover:bg-primary/5 transition-all rounded-[2rem] flex flex-col items-center justify-center p-8 min-h-[280px]"
+                >
+                  <div className="p-4 bg-primary/10 rounded-full group-hover:scale-110 transition-transform">
+                    <Plus className="h-8 w-8 text-primary" />
+                  </div>
+                  <div className="mt-4 text-center">
+                    <h3 className="font-headline font-bold text-lg text-foreground">Add New Division</h3>
+                    <p className="text-xs text-muted-foreground mt-1">Initialize a new academic node</p>
+                  </div>
+                </Card>
+              )}
+
               {departments?.map((dept) => (
                 <Card key={dept.id} className="group hover:shadow-md transition-all border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
                   <div className="h-2 w-full bg-primary/10 group-hover:bg-primary transition-colors" />
@@ -253,7 +268,8 @@ export default function DepartmentManagement() {
                   </CardContent>
                 </Card>
               ))}
-              {departments?.length === 0 && (
+              
+              {departments?.length === 0 && !isAdmin && (
                 <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[3rem] bg-muted/20">
                   <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/20" />
                   <p className="font-bold text-muted-foreground">No departments registered yet.</p>
