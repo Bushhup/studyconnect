@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Department": {
@@ -50,6 +51,8 @@
       "properties": {
         "id": { "type": "string" },
         "role": { "type": "string", "enum": ["student", "faculty", "admin", "hod"] },
+        "email": { "type": "string", "format": "email" },
+        "mobileNumber": { "type": "string" },
         "departmentId": { "type": "string", "description": "Mandatory for HOD, Faculty, and Students." },
         "performanceScore": { "type": "number", "description": "0-100 score based on metrics." },
         "attendanceRate": { "type": "number" },
@@ -148,7 +151,7 @@
     }
   },
   "auth": {
-    "providers": ["password", "anonymous"]
+    "providers": ["password", "anonymous", "google"]
   },
   "firestore": {
     "structure": [
