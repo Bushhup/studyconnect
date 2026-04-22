@@ -96,6 +96,15 @@ export async function seedDatabase(db: Firestore) {
       status: 'active'
     },
     { 
+      id: 'michael.chen@college.edu', 
+      email: 'michael.chen@college.edu', 
+      firstName: 'Michael', 
+      lastName: 'Chen', 
+      role: 'faculty', 
+      departmentId: 'dept-bus', 
+      status: 'active'
+    },
+    { 
       id: 'alex.j@college.edu', 
       email: 'alex.j@college.edu', 
       firstName: 'Alex', 
@@ -119,7 +128,7 @@ export async function seedDatabase(db: Firestore) {
         userId: user.id.toLowerCase(),
         fullName: `${user.firstName} ${user.lastName}`,
         email: user.email,
-        employeeId: `FAC-${user.id.slice(0, 4).toUpperCase()}`,
+        employeeId: `FAC-${user.id.split('@')[0].toUpperCase()}`,
         designation: user.id.includes('sarah') ? 'Professor' : 'Assistant Professor',
         departmentId: user.departmentId,
         ugDegree: 'B.Tech Computer Science',
@@ -129,7 +138,11 @@ export async function seedDatabase(db: Firestore) {
         employmentType: 'Permanent',
         specialization: 'Distributed Computing',
         feedbackRating: 4.8,
-        publicationsCount: 14
+        publicationsCount: 14,
+        mobileNumber: '9876543210',
+        bloodGroup: 'O+',
+        gender: 'Female',
+        aadharNumber: 'XXXX XXXX XXXX'
       }, { merge: true });
     }
   });
@@ -140,6 +153,11 @@ export async function seedDatabase(db: Firestore) {
       id: 'class-cse-a', name: 'CSE - Section A', departmentId: 'dept-eng', 
       facultyId: 'sarah.smith@college.edu', semester: '5', studentIds: ['alex.j@college.edu'],
       subjectHandlers: { 'course-ai402': 'sarah.smith@college.edu' }
+    },
+    { 
+      id: 'class-art-b', name: 'Design - Section B', departmentId: 'dept-art', 
+      facultyId: 'james.wilson@college.edu', semester: '3', studentIds: [],
+      subjectHandlers: { 'course-ux101': 'james.wilson@college.edu' }
     }
   ];
   classes.forEach(cls => {

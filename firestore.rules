@@ -4,7 +4,7 @@ service cloud.firestore {
 
     /**
      * STUDYCONNECT SECURITY RULES
-     * Breaks recursion by allowing bootstrap and simple email-based role checks.
+     * Implements a "Bootstrap Loopholes" to allow initial setup when the DB is empty.
      */
 
     function isSignedIn() {
@@ -12,65 +12,69 @@ service cloud.firestore {
     }
 
     function getUserRole() {
-      // Direct lookup using hardcoded college ID for stability during bootstrap
       let email = request.auth.token.email.lower();
       let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(email);
       return exists(path) ? get(path).data.role : null;
     }
 
     function isAdmin() {
-      return isSignedIn() && getUserRole() == 'admin';
+      return isSignedIn() && "email" in request.auth.token && getUserRole() == 'admin';
+    }
+
+    function isSystemUninitialized() {
+      // Allows bootstrap if the master admin record is missing
+      return !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu);
     }
 
     match /colleges/{collegeId} {
       allow get: if true;
-      // Allow initial seeding if the system admin record is missing
-      allow write, update: if isAdmin() || !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu);
+      // Allow seeding if admin or if system is not yet initialized
+      allow write, update: if isAdmin() || isSystemUninitialized();
 
       match /users/{userId} {
-        allow get: if isSignedIn();
+        allow get: if true; // Required for login role verification
         allow list: if isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']);
-        allow create, update, delete: if isAdmin() || !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu);
+        allow create, update, delete: if isAdmin() || isSystemUninitialized();
       }
 
       match /departments/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu); 
+        allow write: if isAdmin() || isSystemUninitialized(); 
       }
       
       match /classes/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']) || !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu); 
+        allow write: if isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']) || isSystemUninitialized(); 
       }
       
       match /courses/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu); 
+        allow write: if isAdmin() || isSystemUninitialized(); 
       }
       
       match /academicRecords/{id} {
         allow read: if isSignedIn();
-        allow write: if isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']) || !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu);
+        allow write: if isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']) || isSystemUninitialized();
       }
 
       match /studentProfiles/{userId} { 
         allow read: if isSignedIn(); 
-        allow write: if isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()) || !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu); 
+        allow write: if isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()) || isSystemUninitialized(); 
       }
       
       match /facultyProfiles/{userId} { 
         allow read: if isSignedIn(); 
-        allow write: if isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()) || !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu); 
+        allow write: if isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()) || isSystemUninitialized(); 
       }
 
       match /achievements/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu); 
+        allow write: if isAdmin() || isSystemUninitialized(); 
       }
       
       match /events/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu); 
+        allow write: if isAdmin() || isSystemUninitialized(); 
       }
     }
   }
