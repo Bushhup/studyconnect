@@ -68,7 +68,7 @@ export default function LoginPage() {
       toast({
         variant: 'destructive',
         title: 'Bootstrap Interrupted',
-        description: e.message || 'The database could not be initialized. Ensure Firestore is enabled.',
+        description: e.message || 'The database could not be initialized. Check console for details.',
       });
     } finally {
       setIsBootstraping(false);
@@ -88,19 +88,19 @@ export default function LoginPage() {
       // 1. Authenticate with Firebase Auth
       await signInWithEmailAndPassword(auth, email, password);
 
-      // 2. Verify against Institutional Directory
+      // 2. Verify against Institutional Directory using email as ID
       const userRef = doc(firestore, 'colleges', collegeId, 'users', email);
       const userSnap = await getDoc(userRef);
       const userData = userSnap.data();
 
       if (!userData) {
         await signOut(auth);
-        throw new Error(`Profile not found for ${email}. Please click 'System Bootstrap' to create the directory record.`);
+        throw new Error(`Identity not found in directory for ${email}. Run System Bootstrap.`);
       }
 
       toast({ title: 'Access Granted', description: `Welcome back, ${userData.firstName}.` });
       
-      // Intelligent Routing based on actual database role
+      // Intelligent Routing
       const routes = {
         admin: '/admin/dashboard',
         hod: '/admin/dashboard',
@@ -116,7 +116,7 @@ export default function LoginPage() {
       let message = error.message || 'Incorrect credentials or account not provisioned.';
       
       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-        message = 'Authentication failed. Please verify your email/password in the Firebase Console.';
+        message = 'Authentication failed. Please verify your email/password.';
       }
 
       toast({
@@ -164,9 +164,9 @@ export default function LoginPage() {
               <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 max-w-lg flex items-start gap-3 text-left">
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-bold text-amber-900 uppercase tracking-tight">First-time Setup Required</p>
+                  <p className="text-xs font-bold text-amber-900 uppercase tracking-tight">System Initialization</p>
                   <p className="text-xs text-amber-800/80 leading-relaxed mt-1">
-                    If you see 'Profile not found', click the bootstrap button below to initialize the Firestore directory for your admin accounts.
+                    If this is a fresh setup, click Bootstrap once to initialize the directory for <strong>shabu@gmail.com</strong> and other test accounts.
                   </p>
                 </div>
               </div>
@@ -179,7 +179,7 @@ export default function LoginPage() {
                 className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-2 bg-card rounded-full px-8 h-12 shadow-sm border-dashed"
               >
                 {isBootstrapping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
-                System Bootstrap (Sync Directory)
+                System Bootstrap (Initialize Institution)
               </Button>
             </div>
           </motion.div>
@@ -250,7 +250,7 @@ export default function LoginPage() {
   );
 }
 
-function RoleCard({ title, description, icon: Icon, color, onClick }: any) {
+function RoleCard({ role, title, description, icon: Icon, color, onClick }: any) {
   const themes = {
     blue: "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20",
     emerald: "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20",

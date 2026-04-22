@@ -4,7 +4,7 @@ service cloud.firestore {
 
     /**
      * STUDYCONNECT SECURITY RULES
-     * Implements a "Bootstrap Loopholes" to allow initial setup when the DB is empty.
+     * Implements "Bootstrap Loophole" to allow initial setup.
      */
 
     function isSignedIn() {
@@ -12,7 +12,6 @@ service cloud.firestore {
     }
 
     function getUserRole() {
-      // Safe role check that doesn't crash if unauthenticated
       let email = request.auth.token.email.lower();
       let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(email);
       return exists(path) ? get(path).data.role : null;
@@ -23,8 +22,7 @@ service cloud.firestore {
     }
 
     function isSystemUninitialized() {
-      // Allows bootstrap if the master admin record is missing
-      // We check for both common admin IDs to ensure a reliable "empty" state detection
+      // Allows bootstrap if the master admin records are missing
       let adminExists = exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu);
       let shabuExists = exists(/databases/$(database)/documents/colleges/study-connect-college/users/shabu@gmail.com);
       let shabuddinExists = exists(/databases/$(database)/documents/colleges/study-connect-college/users/shabuddinaw@gmail.com);
@@ -32,13 +30,15 @@ service cloud.firestore {
     }
 
     match /colleges/{collegeId} {
+      // Allow read for everyone to see the college name/tagline on home page
       allow get: if true;
-      // Allow seeding if system is not yet initialized or if the user is an admin
+      // Allow write during bootstrap or if user is admin
       allow write, update: if isSystemUninitialized() || isAdmin();
 
       match /users/{userId} {
         allow get: if true; 
         allow list: if isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']);
+        // Allow creation of first users during bootstrap
         allow create, update, delete: if isSystemUninitialized() || isAdmin();
       }
 

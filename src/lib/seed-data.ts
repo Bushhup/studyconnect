@@ -17,8 +17,8 @@ export async function seedDatabase(db: Firestore) {
     tagline: 'Connecting Minds, Building Futures',
     overview: 'A leading institutional hub for academic excellence and innovation.',
     statisticHighlights: [
-      '100+ Programs',
-      '5000+ Students',
+      '120+ Programs',
+      '5500+ Students',
       '85+ Research Labs',
       '94.2% Placement Rate'
     ],
@@ -114,6 +114,15 @@ export async function seedDatabase(db: Firestore) {
       status: 'active'
     },
     { 
+      id: 'robert.fox@college.edu', 
+      email: 'robert.fox@college.edu', 
+      firstName: 'Robert', 
+      lastName: 'Fox', 
+      role: 'faculty', 
+      departmentId: 'dept-eng', 
+      status: 'active'
+    },
+    { 
       id: 'alex.j@college.edu', 
       email: 'alex.j@college.edu', 
       firstName: 'Alex', 
@@ -122,6 +131,17 @@ export async function seedDatabase(db: Firestore) {
       departmentId: 'dept-eng', 
       semester: '5', 
       batchYear: 'Batch-2026', 
+      status: 'active'
+    },
+    { 
+      id: 'jessica.m@college.edu', 
+      email: 'jessica.m@college.edu', 
+      firstName: 'Jessica', 
+      lastName: 'Miller', 
+      role: 'student', 
+      departmentId: 'dept-eng', 
+      semester: '3', 
+      batchYear: 'Batch-2027', 
       status: 'active'
     },
   ];
@@ -154,6 +174,32 @@ export async function seedDatabase(db: Firestore) {
         aadharNumber: 'XXXX XXXX XXXX'
       }, { merge: true });
     }
+
+    // Seed Student Profiles
+    if (user.role === 'student') {
+      const profileRef = doc(db, 'colleges', collegeId, 'studentProfiles', user.id.toLowerCase());
+      batch.set(profileRef, {
+        userId: user.id.toLowerCase(),
+        fullName: `${user.firstName} ${user.lastName}`,
+        studentEmail: user.email,
+        studentMobileNo: '9988776655',
+        gender: 'Male',
+        dob: '2004-05-15',
+        aadharNumber: 'XXXX XXXX XXXX',
+        bloodGroup: 'B+',
+        nationality: 'Indian',
+        religion: 'Universal',
+        community: 'OC',
+        address: 'West Campus Housing, Block B, Room 402',
+        pincode: '600001',
+        fatherName: 'Mr. Johnson',
+        fatherOccupation: 'Business',
+        motherName: 'Mrs. Johnson',
+        motherOccupation: 'Home Maker',
+        quota: 'Management',
+        dateOfAdmission: new Date().toISOString()
+      }, { merge: true });
+    }
   });
 
   // 5. Classes
@@ -164,6 +210,11 @@ export async function seedDatabase(db: Firestore) {
       subjectHandlers: { 'course-ai402': 'sarah.smith@college.edu' }
     },
     { 
+      id: 'class-cse-b', name: 'CSE - Section B', departmentId: 'dept-eng', 
+      facultyId: 'robert.fox@college.edu', semester: '5', studentIds: [],
+      subjectHandlers: { 'course-ds201': 'robert.fox@college.edu' }
+    },
+    { 
       id: 'class-art-b', name: 'Design - Section B', departmentId: 'dept-art', 
       facultyId: 'james.wilson@college.edu', semester: '3', studentIds: [],
       subjectHandlers: { 'course-ux101': 'james.wilson@college.edu' }
@@ -171,6 +222,15 @@ export async function seedDatabase(db: Firestore) {
   ];
   classes.forEach(cls => {
     batch.set(doc(db, 'colleges', collegeId, 'classes', cls.id), cls, { merge: true });
+  });
+
+  // 6. Achievements
+  const achievements = [
+    { id: 'ach-1', title: 'National Innovation Award', year: 2024, description: 'Won first prize for the AI-driven water management system.', category: 'Academic', facultyInCharge: 'Dr. Sarah Smith', departmentId: 'dept-eng' },
+    { id: 'ach-2', title: 'Top Regional Placement', year: 2024, description: 'Achieved 98% placement for the final year engineering batch.', category: 'Placement', facultyInCharge: 'System Admin', departmentId: 'dept-eng' }
+  ];
+  achievements.forEach(ach => {
+    batch.set(doc(db, 'colleges', collegeId, 'achievements', ach.id), ach, { merge: true });
   });
 
   await batch.commit();

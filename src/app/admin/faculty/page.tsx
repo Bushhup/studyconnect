@@ -43,14 +43,13 @@ export default function FacultyManagementPage() {
   const firestore = useFirestore();
   const { user, isUserLoading: authLoading } = useUser();
 
-  // FIX: Using email instead of uid for the directory lookup
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.email) return null;
     return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
   }, [firestore, user?.email]);
   
   const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
-  const isAdmin = profile?.role === 'admin';
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'hod';
 
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !isAdmin) return null;
@@ -71,10 +70,9 @@ export default function FacultyManagementPage() {
     f.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Detailed Profile Fetching
   const selectedProfileRef = useMemoFirebase(() => {
     if (!firestore || !selectedFacultyId) return null;
-    return doc(firestore, 'colleges', collegeId, 'facultyProfiles', selectedFacultyId);
+    return doc(firestore, 'colleges', collegeId, 'facultyProfiles', selectedFacultyId.toLowerCase());
   }, [firestore, selectedFacultyId]);
   const { data: detailedProfile, isLoading: detailLoading } = useDoc(selectedProfileRef);
 
@@ -175,12 +173,12 @@ export default function FacultyManagementPage() {
                     <span className="truncate">{member.email}</span>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-widest">Employee ID</p>
-                    <p className="text-xs font-mono font-bold text-primary">#{member.id.split('@')[0].toUpperCase()}</p>
+                    <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-widest">Email Key</p>
+                    <p className="text-xs font-mono font-bold text-primary truncate">{member.email}</p>
                   </div>
                 </CardContent>
                 <CardFooter className="pt-2 border-t border-border/50">
-                  <Button variant="ghost" size="sm" className="w-full text-xs font-bold gap-2 rounded-xl h-10" onClick={() => setSelectedFacultyId(member.id)}>
+                  <Button variant="ghost" size="sm" className="w-full text-xs font-bold gap-2 rounded-xl h-10" onClick={() => setSelectedFacultyId(member.email)}>
                     <FileUser className="h-4 w-4 text-primary" /> View Detailed Profile
                   </Button>
                 </CardFooter>
