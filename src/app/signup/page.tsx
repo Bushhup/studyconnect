@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -69,6 +68,8 @@ export default function SignupPage() {
 
     try {
       const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
       const result = await signInWithPopup(auth, provider);
       const googleUser = result.user;
 
@@ -97,7 +98,19 @@ export default function SignupPage() {
       setIsGoogleLinked(true);
       toast({ title: 'Google Identity Linked', description: 'Please complete your institutional mapping below.' });
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Google Link Failed', description: error.message });
+      // Ignore errors caused by closing the popup or browser blocks
+      const silentErrors = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/popup-blocked'];
+      if (silentErrors.includes(error.code)) {
+        setIsLoading(false);
+        return;
+      }
+
+      console.error('Google Signup Error:', error);
+      toast({ 
+        variant: 'destructive', 
+        title: 'Authentication Interrupted', 
+        description: error.message || 'Could not connect to Google.' 
+      });
     } finally {
       setIsLoading(false);
     }

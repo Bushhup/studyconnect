@@ -115,7 +115,9 @@ export default function LoginPage() {
       router.push(routes[userData.role as keyof typeof routes] || '/profile');
 
     } catch (error: any) {
-      if (error.code === 'auth/popup-closed-by-user') {
+      // Ignore errors caused by closing the popup or browser blocks
+      const silentErrors = ['auth/popup-closed-by-user', 'auth/cancelled-popup-request', 'auth/popup-blocked'];
+      if (silentErrors.includes(error.code)) {
         setIsLoading(false);
         return; 
       }
@@ -225,7 +227,7 @@ export default function LoginPage() {
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="w-full max-w-md"
+            className="w-full max-md"
           >
             <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.14)] bg-card/90 backdrop-blur-xl rounded-[2.5rem] overflow-hidden">
               <div className="h-2 w-full bg-primary" />
