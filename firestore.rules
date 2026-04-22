@@ -57,7 +57,7 @@ service cloud.firestore {
 
       match /users/{userId} {
         allow get: if isSignedIn();
-        allow list: if true;
+        allow list: if isSignedIn() && (isAdmin() || isHOD() || isFaculty());
         allow write: if isAdmin() || (isHOD() && userId == request.auth.uid);
       }
 
@@ -76,25 +76,12 @@ service cloud.firestore {
         allow write: if isAdmin() || (isHOD() && hodDept() != null && exists(/databases/$(database)/documents/colleges/$(collegeId)/courses/$(id)) && get(/databases/$(database)/documents/colleges/$(collegeId)/courses/$(id)).data.departmentId == hodDept()); 
       }
       
-      /**
-       * Academic Records: 
-       * - Admins, HODs, and Faculty can read all records for analytics.
-       * - Students can read their own records.
-       * - Only staff roles can write.
-       */
       match /academicRecords/{id} {
-        // Staff can list everything for analytics. Students can only 'get' if they are the owner.
         allow list: if isAdmin() || isHOD() || isFaculty();
         allow get: if isAdmin() || isHOD() || isFaculty() || (isSignedIn() && resource.data.studentId == request.auth.uid);
         allow write: if isAdmin() || isHOD() || isFaculty();
       }
 
-      /**
-       * Achievements & Events: 
-       * - Publicly readable.
-       * - Editable by Admin.
-       * - Editable by HOD if they belong to the HOD's department.
-       */
       match /achievements/{id} { 
         allow read: if true; 
         allow create: if isAdmin() || isHOD();
@@ -112,6 +99,12 @@ service cloud.firestore {
         allow list: if isAdmin() || isFaculty() || isHOD();
         allow create: if isOwner(userId);
         allow update, delete: if isAdmin();
+      }
+
+      match /facultyProfiles/{userId} {
+        allow get: if isOwner(userId) || isAdmin() || isHOD();
+        allow list: if isAdmin() || isHOD();
+        allow write: if isOwner(userId) || isAdmin();
       }
     }
 

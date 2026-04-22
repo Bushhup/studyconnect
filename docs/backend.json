@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "Department": {
@@ -91,6 +90,43 @@
         "dateOfAdmission": { "type": "string", "format": "date-time" }
       }
     },
+    "FacultyProfile": {
+      "title": "FacultyProfile",
+      "type": "object",
+      "description": "Comprehensive professional and academic record for teaching staff.",
+      "properties": {
+        "userId": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "fullName": { "type": "string" },
+        "dob": { "type": "string", "format": "date" },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "mobileNumber": { "type": "string" },
+        "email": { "type": "string" },
+        "address": { "type": "string" },
+        "pincode": { "type": "string" },
+        "nationality": { "type": "string", "default": "Indian" },
+        "aadharNumber": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "fatherName": { "type": "string" },
+        "motherName": { "type": "string" },
+        "emergencyContact": { "type": "string" },
+        "ugDegree": { "type": "string" },
+        "pgDegree": { "type": "string" },
+        "phd": { "type": "string", "enum": ["Yes", "No"] },
+        "phdSpecialization": { "type": "string" },
+        "specialization": { "type": "string" },
+        "certifications": { "type": "string" },
+        "designation": { "type": "string", "enum": ["Assistant Professor", "Associate Professor", "Professor"] },
+        "dateOfJoining": { "type": "string", "format": "date" },
+        "yearsOfExperience": { "type": "number" },
+        "employmentType": { "type": "string", "enum": ["Permanent", "Contract", "Guest"] },
+        "feedbackRating": { "type": "number" },
+        "publicationsCount": { "type": "number" },
+        "linkedin": { "type": "string" },
+        "googleScholar": { "type": "string" },
+        "areasOfInterest": { "type": "string" }
+      }
+    },
     "AcademicRecord": {
       "title": "AcademicRecord",
       "type": "object",
@@ -139,6 +175,10 @@
       {
         "path": "/colleges/{collegeId}/studentProfiles/{userId}",
         "definition": { "entityName": "StudentProfile", "description": "Verified bio data." }
+      },
+      {
+        "path": "/colleges/{collegeId}/facultyProfiles/{userId}",
+        "definition": { "entityName": "FacultyProfile", "description": "Staff professional data." }
       }
     ]
   }

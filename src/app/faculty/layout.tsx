@@ -7,7 +7,7 @@ import {
   BookOpen, Calendar, FileSpreadsheet, ClipboardCheck, 
   BarChart3, FileText, Settings, Bell,
   Search, LogOut, Menu, X, GripHorizontal,
-  Briefcase, Megaphone
+  Briefcase, Megaphone, UserCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -27,6 +27,7 @@ import { useAppTheme } from '@/components/theme-provider';
 
 const facultyLinks = [
   { href: '/faculty/dashboard', label: 'Dashboard', icon: LayoutDashboard, keywords: 'main, overview' },
+  { href: '/faculty/bio', label: 'Professional Bio', icon: UserCircle, keywords: 'profile, cv, credentials' },
   { href: '/faculty/classes', label: 'My Classes', icon: Building2, keywords: 'sections, room' },
   { href: '/faculty/students', label: 'Students', icon: Users, keywords: 'roster, directory' },
   { href: '/faculty/attendance', label: 'Attendance', icon: ClipboardCheck, keywords: 'presence, entry' },
@@ -262,7 +263,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search modules (e.g. Grades, Students)..." 
+                placeholder="Search modules (e.g. Bio, Grades)..." 
                 className="pl-10 bg-muted/50 border-none h-10 rounded-xl"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
