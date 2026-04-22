@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -68,9 +67,9 @@ export default function StudentManagementPage() {
   const { user, isUserLoading: authLoading } = useUser();
 
   const userProfileRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
-  }, [firestore, user?.uid]);
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
+  }, [firestore, user?.email]);
   
   const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
   const isAdmin = profile?.role === 'admin';
@@ -127,6 +126,7 @@ export default function StudentManagementPage() {
       <div className="flex flex-col items-center justify-center p-20 gap-4 text-center">
         <AlertCircle className="h-12 w-12 text-red-500" />
         <h2 className="text-xl font-bold text-foreground">Access Restricted</h2>
+        <p className="text-muted-foreground">Only administrators can access the full student directory.</p>
       </div>
     );
   }
@@ -202,6 +202,13 @@ export default function StudentManagementPage() {
                   </TableCell>
                 </TableRow>
               ))}
+              {filteredStudents.length === 0 && !collectionLoading && (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center py-20 text-muted-foreground">
+                    No student records found in the directory.
+                  </TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

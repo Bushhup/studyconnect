@@ -43,10 +43,11 @@ export default function FacultyManagementPage() {
   const firestore = useFirestore();
   const { user, isUserLoading: authLoading } = useUser();
 
+  // FIX: Using email instead of uid for the directory lookup
   const userProfileRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
-  }, [firestore, user?.uid]);
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
+  }, [firestore, user?.email]);
   
   const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
   const isAdmin = profile?.role === 'admin';
@@ -105,6 +106,16 @@ export default function FacultyManagementPage() {
     );
   }
 
+  if (!isAdmin) {
+    return (
+      <div className="flex flex-col items-center justify-center p-40 text-center gap-4">
+        <AlertCircle className="h-12 w-12 text-red-500" />
+        <h2 className="text-xl font-bold">Unauthorized Access</h2>
+        <p className="text-muted-foreground">You do not have administrative privileges to access the faculty directory.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -131,46 +142,60 @@ export default function FacultyManagementPage() {
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredFaculty.map((member) => {
-          const dept = departments?.find(d => d.id === member.departmentId);
-          return (
-            <Card key={member.id} className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden bg-card rounded-[2rem]">
-              <div className="h-1.5 w-full bg-primary/20" />
-              <CardHeader className="flex flex-row items-start gap-4 pb-3">
-                <Avatar className="h-16 w-16 border-4 border-background shadow-sm ring-1 ring-border">
-                  <AvatarFallback className="bg-primary/5 text-primary text-xl font-bold uppercase">
-                    {member.firstName?.[0]}{member.lastName?.[0]}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 space-y-1 pt-1">
-                  <CardTitle className="text-lg font-headline font-bold text-foreground truncate">
-                    Dr. {member.firstName} {member.lastName}
-                  </CardTitle>
-                  <Badge variant="outline" className="text-[10px] font-bold uppercase border-none bg-primary/5 text-primary">
-                    {dept?.name || 'General Faculty'}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Mail className="h-4 w-4 opacity-40" />
-                  <span className="truncate">{member.email}</span>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-widest">Employee ID</p>
-                  <p className="text-xs font-mono font-bold text-primary">#{member.id.slice(0, 8).toUpperCase()}</p>
-                </div>
-              </CardContent>
-              <CardFooter className="pt-2 border-t border-border/50">
-                <Button variant="ghost" size="sm" className="w-full text-xs font-bold gap-2 rounded-xl h-10" onClick={() => setSelectedFacultyId(member.id)}>
-                  <FileUser className="h-4 w-4 text-primary" /> View Detailed Profile
-                </Button>
-              </CardFooter>
-            </Card>
-          );
-        })}
-      </div>
+      {usersLoading ? (
+        <div className="p-20 text-center flex flex-col items-center gap-4">
+          <Loader2 className="animate-spin h-8 w-8 text-primary" />
+          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Retrieving Roster...</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredFaculty.map((member) => {
+            const dept = departments?.find(d => d.id === member.departmentId);
+            return (
+              <Card key={member.id} className="border-none shadow-sm hover:shadow-md transition-all group overflow-hidden bg-card rounded-[2rem]">
+                <div className="h-1.5 w-full bg-primary/20" />
+                <CardHeader className="flex flex-row items-start gap-4 pb-3">
+                  <Avatar className="h-16 w-16 border-4 border-background shadow-sm ring-1 ring-border">
+                    <AvatarFallback className="bg-primary/5 text-primary text-xl font-bold uppercase">
+                      {member.firstName?.[0]}{member.lastName?.[0]}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 space-y-1 pt-1">
+                    <CardTitle className="text-lg font-headline font-bold text-foreground truncate">
+                      Dr. {member.firstName} {member.lastName}
+                    </CardTitle>
+                    <Badge variant="outline" className="text-[10px] font-bold uppercase border-none bg-primary/5 text-primary">
+                      {dept?.name || 'General Faculty'}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Mail className="h-4 w-4 opacity-40" />
+                    <span className="truncate">{member.email}</span>
+                  </div>
+                  <div className="space-y-1">
+                    <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-widest">Employee ID</p>
+                    <p className="text-xs font-mono font-bold text-primary">#{member.id.split('@')[0].toUpperCase()}</p>
+                  </div>
+                </CardContent>
+                <CardFooter className="pt-2 border-t border-border/50">
+                  <Button variant="ghost" size="sm" className="w-full text-xs font-bold gap-2 rounded-xl h-10" onClick={() => setSelectedFacultyId(member.id)}>
+                    <FileUser className="h-4 w-4 text-primary" /> View Detailed Profile
+                  </Button>
+                </CardFooter>
+              </Card>
+            );
+          })}
+          {filteredFaculty.length === 0 && (
+            <div className="col-span-full py-32 text-center border-2 border-dashed rounded-[3rem] bg-muted/20">
+              <AlertCircle className="h-12 w-12 mx-auto mb-4 text-muted-foreground/20" />
+              <p className="font-bold text-foreground">No faculty records found.</p>
+              <p className="text-xs text-muted-foreground mt-1">Try running "System Bootstrap" to seed initial staff data.</p>
+            </div>
+          )}
+        </div>
+      )}
 
       <Dialog open={!!selectedFacultyId} onOpenChange={(o) => !o && setSelectedFacultyId(null)}>
         <DialogContent className="max-w-4xl rounded-[2.5rem] max-h-[90vh] overflow-y-auto">
@@ -199,20 +224,20 @@ export default function FacultyManagementPage() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-1">
                         <Label className="text-[10px] font-bold uppercase">Gender</Label>
-                        <Input name="gender" defaultValue={detailedProfile?.gender} disabled={!isEditing} className="bg-muted border-none h-11" />
+                        <Input name="gender" defaultValue={detailedProfile?.gender || 'N/A'} disabled={!isEditing} className="bg-muted border-none h-11" />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-[10px] font-bold uppercase">Blood Group</Label>
-                        <Input name="bloodGroup" defaultValue={detailedProfile?.bloodGroup} disabled={!isEditing} className="bg-muted border-none h-11" />
+                        <Input name="bloodGroup" defaultValue={detailedProfile?.bloodGroup || 'N/A'} disabled={!isEditing} className="bg-muted border-none h-11" />
                       </div>
                     </div>
                     <div className="space-y-1">
                       <Label className="text-[10px] font-bold uppercase">Aadhar Number</Label>
-                      <Input name="aadharNumber" defaultValue={detailedProfile?.aadharNumber} disabled={!isEditing} className="bg-muted border-none h-11" />
+                      <Input name="aadharNumber" defaultValue={detailedProfile?.aadharNumber || 'N/A'} disabled={!isEditing} className="bg-muted border-none h-11" />
                     </div>
                     <div className="space-y-1">
                       <Label className="text-[10px] font-bold uppercase">Mobile Number</Label>
-                      <Input name="mobileNumber" defaultValue={detailedProfile?.mobileNumber} disabled={!isEditing} className="bg-muted border-none h-11" />
+                      <Input name="mobileNumber" defaultValue={detailedProfile?.mobileNumber || 'N/A'} disabled={!isEditing} className="bg-muted border-none h-11" />
                     </div>
                   </div>
                 </TabsContent>

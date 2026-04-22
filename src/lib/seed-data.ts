@@ -19,17 +19,18 @@ export async function seedDatabase(db: Firestore) {
     statisticHighlights: [
       '100+ Programs',
       '5000+ Students',
-      '50+ Research Labs',
-      '95% Placement Rate'
+      '85+ Research Labs',
+      '94.2% Placement Rate'
     ],
     updatedAt: new Date().toISOString()
   }, { merge: true });
 
   // 2. Departments
   const departments = [
-    { id: 'dept-eng', name: 'Engineering & Technology', headOfDept: 'Dr. Sarah Smith', programType: 'UG', totalSemesters: 8 },
+    { id: 'dept-eng', name: 'School of Engineering', headOfDept: 'Dr. Sarah Smith', programType: 'UG', totalSemesters: 8 },
     { id: 'dept-art', name: 'Arts & Design', headOfDept: 'Prof. James Wilson', programType: 'UG', totalSemesters: 8 },
     { id: 'dept-sci', name: 'Applied Sciences', headOfDept: 'Dr. Emily Davis', programType: 'UG', totalSemesters: 6 },
+    { id: 'dept-bus', name: 'Management Studies', headOfDept: 'Dr. Michael Chen', programType: 'PG', totalSemesters: 4 },
   ];
   departments.forEach(dept => {
     batch.set(doc(db, 'colleges', collegeId, 'departments', dept.id), dept, { merge: true });
@@ -41,13 +42,13 @@ export async function seedDatabase(db: Firestore) {
     { id: 'course-ai402', code: 'AI402', name: 'Machine Learning Systems', departmentId: 'dept-eng', credits: 4 },
     { id: 'course-ds201', code: 'DS201', name: 'Data Structures & Algorithms', departmentId: 'dept-eng', credits: 3 },
     { id: 'course-ux101', code: 'UX101', name: 'User Experience Principles', departmentId: 'dept-art', credits: 3 },
+    { id: 'course-ph101', code: 'PH101', name: 'Applied Physics', departmentId: 'dept-sci', credits: 4 },
   ];
   courses.forEach(course => {
     batch.set(doc(db, 'colleges', collegeId, 'courses', course.id), course, { merge: true });
   });
 
   // 4. Users (Emails as IDs)
-  // CRITICAL: Document IDs are normalized lowercase emails to match the login logic.
   const initialUsers = [
     { 
       id: 'shabuddinaw@gmail.com', 
@@ -77,6 +78,24 @@ export async function seedDatabase(db: Firestore) {
       status: 'active'
     },
     { 
+      id: 'james.wilson@college.edu', 
+      email: 'james.wilson@college.edu', 
+      firstName: 'James', 
+      lastName: 'Wilson', 
+      role: 'faculty', 
+      departmentId: 'dept-art', 
+      status: 'active'
+    },
+    { 
+      id: 'emily.davis@college.edu', 
+      email: 'emily.davis@college.edu', 
+      firstName: 'Emily', 
+      lastName: 'Davis', 
+      role: 'faculty', 
+      departmentId: 'dept-sci', 
+      status: 'active'
+    },
+    { 
       id: 'alex.j@college.edu', 
       email: 'alex.j@college.edu', 
       firstName: 'Alex', 
@@ -92,6 +111,27 @@ export async function seedDatabase(db: Firestore) {
   initialUsers.forEach(user => {
     const userRef = doc(db, 'colleges', collegeId, 'users', user.id.toLowerCase());
     batch.set(userRef, user, { merge: true });
+
+    // Seed Faculty Profiles
+    if (user.role === 'faculty') {
+      const profileRef = doc(db, 'colleges', collegeId, 'facultyProfiles', user.id.toLowerCase());
+      batch.set(profileRef, {
+        userId: user.id.toLowerCase(),
+        fullName: `${user.firstName} ${user.lastName}`,
+        email: user.email,
+        employeeId: `FAC-${user.id.slice(0, 4).toUpperCase()}`,
+        designation: user.id.includes('sarah') ? 'Professor' : 'Assistant Professor',
+        departmentId: user.departmentId,
+        ugDegree: 'B.Tech Computer Science',
+        pgDegree: 'M.Tech AI & Robotics',
+        phd: 'Yes',
+        yearsOfExperience: 12,
+        employmentType: 'Permanent',
+        specialization: 'Distributed Computing',
+        feedbackRating: 4.8,
+        publicationsCount: 14
+      }, { merge: true });
+    }
   });
 
   // 5. Classes
