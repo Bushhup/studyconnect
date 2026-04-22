@@ -47,6 +47,11 @@ export async function seedDatabase(db: Firestore) {
       createdAt: new Date().toISOString()
     },
     { 
+      id: 'admin@college.edu', email: 'admin@college.edu', 
+      firstName: 'System', lastName: 'Admin', role: 'admin', status: 'active',
+      createdAt: new Date().toISOString()
+    },
+    { 
       id: 'sarah.smith@college.edu', email: 'sarah.smith@college.edu', 
       firstName: 'Sarah', lastName: 'Smith', role: 'faculty', 
       departmentId: 'dept-eng', status: 'active'
