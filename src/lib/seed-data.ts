@@ -2,7 +2,7 @@ import { doc, writeBatch, Firestore } from 'firebase/firestore';
 
 /**
  * Seeds the Firestore database with initial sample data.
- * Provides real, linked data for all portals.
+ * Provides real, linked data for all portals and ensures admin access.
  */
 export async function seedDatabase(db: Firestore) {
   const collegeId = 'study-connect-college';
@@ -15,7 +15,14 @@ export async function seedDatabase(db: Firestore) {
     name: 'StudyConnect University',
     logoUrl: '/logo.png',
     tagline: 'Connecting Minds, Building Futures',
-    overview: 'A leading institutional hub for academic excellence and innovation.'
+    overview: 'A leading institutional hub for academic excellence and innovation.',
+    statisticHighlights: [
+      '100+ Programs',
+      '5000+ Students',
+      '50+ Research Labs',
+      '95% Placement Rate'
+    ],
+    updatedAt: new Date().toISOString()
   }, { merge: true });
 
   // 2. Departments
@@ -40,7 +47,7 @@ export async function seedDatabase(db: Firestore) {
   });
 
   // 4. Users (Emails as IDs)
-  // These MUST match the emails added in the Firebase Authentication console.
+  // CRITICAL: Document IDs are normalized lowercase emails to match the login logic.
   const initialUsers = [
     { 
       id: 'shabuddinaw@gmail.com', 
@@ -81,8 +88,10 @@ export async function seedDatabase(db: Firestore) {
       status: 'active'
     },
   ];
+  
   initialUsers.forEach(user => {
-    batch.set(doc(db, 'colleges', collegeId, 'users', user.id.toLowerCase()), user, { merge: true });
+    const userRef = doc(db, 'colleges', collegeId, 'users', user.id.toLowerCase());
+    batch.set(userRef, user, { merge: true });
   });
 
   // 5. Classes

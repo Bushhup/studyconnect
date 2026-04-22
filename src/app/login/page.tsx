@@ -26,7 +26,8 @@ import {
   ChevronRight,
   Eye,
   EyeOff,
-  Database
+  Database,
+  AlertCircle
 } from 'lucide-react';
 import { useFirebase } from '@/firebase';
 import { 
@@ -59,14 +60,15 @@ export default function LoginPage() {
     try {
       await seedDatabase(firestore);
       toast({
-        title: 'System Initialized',
-        description: 'Institutional hierarchy and admin accounts have been provisioned in Firestore. Now ensure these emails are added to Firebase Auth Users.',
+        title: 'Institutional Sync Complete',
+        description: 'Directory records and admin roles have been successfully provisioned in Firestore.',
       });
     } catch (e: any) {
+      console.error('Bootstrap error:', e);
       toast({
         variant: 'destructive',
-        title: 'Bootstrap Failed',
-        description: e.message || 'Check firestore security rules.',
+        title: 'Bootstrap Interrupted',
+        description: e.message || 'The database could not be initialized. Ensure Firestore is enabled.',
       });
     } finally {
       setIsBootstraping(false);
@@ -79,19 +81,23 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      const email = username.includes('@') ? username.toLowerCase().trim() : `${username.toLowerCase().trim()}@college.edu`;
+      const email = username.toLowerCase().trim().includes('@') 
+        ? username.toLowerCase().trim() 
+        : `${username.toLowerCase().trim()}@college.edu`;
       
       // 1. Authenticate with Firebase Auth
+      // This verifies the user exists in Step 1 (Firebase Console -> Auth)
       await signInWithEmailAndPassword(auth, email, password);
 
       // 2. Verify against Institutional Directory
+      // This verifies the user exists in Step 2 (Firestore -> colleges/.../users)
       const userRef = doc(firestore, 'colleges', collegeId, 'users', email);
       const userSnap = await getDoc(userRef);
       const userData = userSnap.data();
 
       if (!userData) {
         await signOut(auth);
-        throw new Error("Account found in Auth but missing in Institutional Directory. Run System Bootstrap.");
+        throw new Error(`Profile not found for ${email}. Please click 'System Bootstrap' to create the directory record.`);
       }
 
       toast({ title: 'Access Granted', description: `Welcome back, ${userData.firstName}.` });
@@ -106,16 +112,16 @@ export default function LoginPage() {
       router.push(routes[userData.role as keyof typeof routes] || '/profile');
 
     } catch (error: any) {
-      console.error(error);
+      console.error('Login error:', error);
       let message = error.message || 'Incorrect credentials or account not provisioned.';
       
       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-        message = 'Authentication failed. Please check your email/password or ensure the user exists in Firebase Console.';
+        message = 'Authentication failed. Please verify your email/password in the Firebase Console.';
       }
 
       toast({
         variant: 'destructive',
-        title: 'Authentication Denied',
+        title: 'Access Denied',
         description: message
       });
       setIsLoading(false);
@@ -145,7 +151,7 @@ export default function LoginPage() {
                 </div>
               </motion.div>
               <h1 className="text-4xl md:text-6xl font-headline font-bold text-foreground tracking-tight">Institutional Portal</h1>
-              <p className="text-muted-foreground text-lg max-w-xl mx-auto font-body">Select your gateway to enter the ecosystem.</p>
+              <p className="text-muted-foreground text-lg max-w-xl mx-auto font-body">Select your gateway to enter the academic ecosystem.</p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
@@ -154,17 +160,26 @@ export default function LoginPage() {
               <RoleCard role="admin" title="Administrator" description="Master control for institutional hierarchy and configuration." icon={ShieldCheck} color="violet" onClick={() => setSelectedRole('admin')} />
             </div>
             
-            <div className="mt-12 text-center flex flex-col items-center gap-4">
-              <p className="text-muted-foreground font-body text-sm opacity-60">Restricted institutional access. Accounts are provisioned by Admin.</p>
+            <div className="mt-12 text-center flex flex-col items-center gap-6">
+              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 max-w-lg flex items-start gap-3 text-left">
+                <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-bold text-amber-900 uppercase tracking-tight">First-time Setup Required</p>
+                  <p className="text-xs text-amber-800/80 leading-relaxed mt-1">
+                    If you see 'Profile not found', click the bootstrap button below to initialize the Firestore directory for your admin accounts.
+                  </p>
+                </div>
+              </div>
+
               <Button 
                 variant="outline" 
                 size="sm" 
                 onClick={handleBootstrap} 
                 disabled={isBootstrapping}
-                className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-2 bg-card rounded-full px-6 h-10"
+                className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-2 bg-card rounded-full px-8 h-12 shadow-sm border-dashed"
               >
-                {isBootstrapping ? <Loader2 className="h-3 w-3 animate-spin" /> : <Database className="h-3 w-3" />}
-                System Bootstrap (Initialize Firestore)
+                {isBootstrapping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+                System Bootstrap (Sync Directory)
               </Button>
             </div>
           </motion.div>
@@ -184,7 +199,7 @@ export default function LoginPage() {
                 </Button>
                 <div className="space-y-1">
                   <CardTitle className="text-3xl font-headline font-bold capitalize">{selectedRole} Login</CardTitle>
-                  <CardDescription className="font-body text-base">Enter institutional credentials.</CardDescription>
+                  <CardDescription className="font-body text-base">Enter your institutional credentials.</CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
