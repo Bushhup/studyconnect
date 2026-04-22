@@ -39,31 +39,50 @@ export async function seedDatabase(db: Firestore) {
     batch.set(doc(db, 'colleges', collegeId, 'courses', course.id), course, { merge: true });
   });
 
-  // 4. Users (Linked via Emails) - Critical for login
+  // 4. Users (Emails as IDs)
+  // These MUST match the emails added in the Firebase Authentication console.
   const initialUsers = [
     { 
-      id: 'shabuddinaw@gmail.com', email: 'shabuddinaw@gmail.com', 
-      firstName: 'Shabuddin', lastName: 'A', role: 'admin', status: 'active',
+      id: 'shabuddinaw@gmail.com', 
+      email: 'shabuddinaw@gmail.com', 
+      firstName: 'Shabuddin', 
+      lastName: 'A', 
+      role: 'admin', 
+      status: 'active',
       createdAt: new Date().toISOString()
     },
     { 
-      id: 'admin@college.edu', email: 'admin@college.edu', 
-      firstName: 'System', lastName: 'Admin', role: 'admin', status: 'active',
+      id: 'admin@college.edu', 
+      email: 'admin@college.edu', 
+      firstName: 'System', 
+      lastName: 'Admin', 
+      role: 'admin', 
+      status: 'active',
       createdAt: new Date().toISOString()
     },
     { 
-      id: 'sarah.smith@college.edu', email: 'sarah.smith@college.edu', 
-      firstName: 'Sarah', lastName: 'Smith', role: 'faculty', 
-      departmentId: 'dept-eng', status: 'active'
+      id: 'sarah.smith@college.edu', 
+      email: 'sarah.smith@college.edu', 
+      firstName: 'Sarah', 
+      lastName: 'Smith', 
+      role: 'faculty', 
+      departmentId: 'dept-eng', 
+      status: 'active'
     },
     { 
-      id: 'alex.j@college.edu', email: 'alex.j@college.edu', 
-      firstName: 'Alex', lastName: 'Johnson', role: 'student', 
-      departmentId: 'dept-eng', semester: '5', batchYear: 'Batch-2026', status: 'active'
+      id: 'alex.j@college.edu', 
+      email: 'alex.j@college.edu', 
+      firstName: 'Alex', 
+      lastName: 'Johnson', 
+      role: 'student', 
+      departmentId: 'dept-eng', 
+      semester: '5', 
+      batchYear: 'Batch-2026', 
+      status: 'active'
     },
   ];
   initialUsers.forEach(user => {
-    batch.set(doc(db, 'colleges', collegeId, 'users', user.id), user, { merge: true });
+    batch.set(doc(db, 'colleges', collegeId, 'users', user.id.toLowerCase()), user, { merge: true });
   });
 
   // 5. Classes

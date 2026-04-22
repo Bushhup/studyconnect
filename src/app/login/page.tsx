@@ -60,13 +60,13 @@ export default function LoginPage() {
       await seedDatabase(firestore);
       toast({
         title: 'System Initialized',
-        description: 'Institutional hierarchy and admin accounts have been provisioned.',
+        description: 'Institutional hierarchy and admin accounts have been provisioned in Firestore. Now ensure these emails are added to Firebase Auth Users.',
       });
     } catch (e: any) {
       toast({
         variant: 'destructive',
         title: 'Bootstrap Failed',
-        description: e.message || 'Database might already be initialized or rules are blocking.',
+        description: e.message || 'Check firestore security rules.',
       });
     } finally {
       setIsBootstraping(false);
@@ -79,9 +79,9 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      const email = username.includes('@') ? username.toLowerCase() : `${username.toLowerCase()}@college.edu`;
+      const email = username.includes('@') ? username.toLowerCase().trim() : `${username.toLowerCase().trim()}@college.edu`;
       
-      // 1. Authenticate with Firebase
+      // 1. Authenticate with Firebase Auth
       await signInWithEmailAndPassword(auth, email, password);
 
       // 2. Verify against Institutional Directory
@@ -91,7 +91,7 @@ export default function LoginPage() {
 
       if (!userData) {
         await signOut(auth);
-        throw new Error("Identity record not found in institutional directory. Access Denied.");
+        throw new Error("Account found in Auth but missing in Institutional Directory. Run System Bootstrap.");
       }
 
       toast({ title: 'Access Granted', description: `Welcome back, ${userData.firstName}.` });
@@ -106,13 +106,11 @@ export default function LoginPage() {
       router.push(routes[userData.role as keyof typeof routes] || '/profile');
 
     } catch (error: any) {
-      let message = 'Incorrect credentials or account not provisioned.';
-      if (error.code === 'auth/user-not-found') {
-        message = 'This account does not exist in the authentication service. Please ask an admin to create it.';
-      } else if (error.code === 'auth/wrong-password') {
-        message = 'Incorrect password. Please try again.';
-      } else if (error.message.includes('Access Denied')) {
-        message = error.message;
+      console.error(error);
+      let message = error.message || 'Incorrect credentials or account not provisioned.';
+      
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+        message = 'Authentication failed. Please check your email/password or ensure the user exists in Firebase Console.';
       }
 
       toast({
@@ -159,14 +157,14 @@ export default function LoginPage() {
             <div className="mt-12 text-center flex flex-col items-center gap-4">
               <p className="text-muted-foreground font-body text-sm opacity-60">Restricted institutional access. Accounts are provisioned by Admin.</p>
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm" 
                 onClick={handleBootstrap} 
                 disabled={isBootstrapping}
-                className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-2"
+                className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-2 bg-card rounded-full px-6 h-10"
               >
                 {isBootstrapping ? <Loader2 className="h-3 w-3 animate-spin" /> : <Database className="h-3 w-3" />}
-                System Bootstrap (First Time Setup)
+                System Bootstrap (Initialize Firestore)
               </Button>
             </div>
           </motion.div>

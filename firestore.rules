@@ -3,83 +3,68 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * STUDYCONNECT SECURITY RULES - RECURSION FIXED
-     * 
-     * Uses email-based lookups from the auth token to verify roles.
+     * STUDYCONNECT SECURITY RULES
+     * Breaks recursion by allowing bootstrap and simple email-based role checks.
      */
 
     function isSignedIn() {
       return request.auth != null;
     }
 
-    // Direct lookup of the user's role without calling isAdmin() to avoid recursion
-    function getUserRole() {
-      let email = request.auth.token.email;
-      let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(email);
-      return (email != null && exists(path)) ? get(path).data.role : null;
+    function getUserRole(email) {
+      let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(email.lower());
+      return exists(path) ? get(path).data.role : null;
     }
 
     function isAdmin() {
       return isSignedIn() && (
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
-        getUserRole() == 'admin'
+        getUserRole(request.auth.token.email) == 'admin'
       );
-    }
-
-    function isHOD() {
-      return isSignedIn() && getUserRole() == 'hod';
-    }
-
-    function isFaculty() {
-      return isSignedIn() && getUserRole() == 'faculty';
-    }
-
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.token.email == userId;
     }
 
     match /colleges/{collegeId} {
       allow get: if true;
-      // Allow initial seeding if the database is empty (Bootstrap)
-      allow update: if isAdmin() || (isSignedIn() && !exists(/databases/$(database)/documents/colleges/$(collegeId)/users/admin@college.edu));
+      // Allow initial seeding if the database is empty or user is admin
+      allow update, write: if isAdmin() || !exists(/databases/$(database)/documents/colleges/$(collegeId)/users/admin@college.edu);
 
       match /users/{userId} {
-        // Users can always read their own record once signed in
-        allow get: if isSignedIn() && (request.auth.token.email == userId || isAdmin() || isFaculty() || isHOD());
-        allow list: if isAdmin() || isFaculty() || isHOD();
-        allow create: if isAdmin() || (isSignedIn() && !exists(/databases/$(database)/documents/colleges/$(collegeId)/users/admin@college.edu));
-        allow update, delete: if isAdmin();
+        allow get: if isSignedIn();
+        allow list: if isAdmin() || getUserRole(request.auth.token.email) in ['faculty', 'hod'];
+        allow create, update, delete: if isAdmin() || !exists(/databases/$(database)/documents/colleges/$(collegeId)/users/admin@college.edu);
       }
 
       match /departments/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || isHOD(); 
+        allow write: if isAdmin(); 
       }
       
       match /classes/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || isHOD() || isFaculty(); 
+        allow write: if isAdmin() || getUserRole(request.auth.token.email) in ['faculty', 'hod']; 
       }
       
       match /courses/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || isHOD(); 
+        allow write: if isAdmin(); 
       }
       
       match /academicRecords/{id} {
         allow read: if isSignedIn();
-        allow write: if isAdmin() || isHOD() || isFaculty();
+        allow write: if isAdmin() || getUserRole(request.auth.token.email) in ['faculty', 'hod'];
       }
 
-      match /achievements/{id} { allow read: if true; allow write: if isAdmin() || isHOD(); }
-      match /events/{id} { allow read: if true; allow write: if isAdmin() || isHOD(); }
-      match /studentProfiles/{userId} { allow read: if isSignedIn(); allow write: if isAdmin() || isOwner(userId); }
-      match /facultyProfiles/{userId} { allow read: if isSignedIn(); allow write: if isAdmin() || isOwner(userId); }
-    }
+      match /studentProfiles/{userId} { 
+        allow read: if isSignedIn(); 
+        allow write: if isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
+      }
+      
+      match /facultyProfiles/{userId} { 
+        allow read: if isSignedIn(); 
+        allow write: if isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
+      }
 
-    match /admins/{id} { 
-      allow get: if isSignedIn();
-      allow write: if isAdmin() || (isSignedIn() && !exists(/databases/$(database)/documents/admins/$(id))); 
+      match /achievements/{id} { allow read: if true; allow write: if isAdmin(); }
+      match /events/{id} { allow read: if true; allow write: if isAdmin(); }
     }
   }
 }
