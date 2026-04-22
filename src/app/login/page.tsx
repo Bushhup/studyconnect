@@ -54,7 +54,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
-    if (!selectedRole) return;
+    if (!selectedRole || isLoading) return;
     setIsLoading(true);
 
     try {
@@ -70,7 +70,7 @@ export default function LoginPage() {
       }
 
       // Directly lookup by email address (which is the document ID)
-      const userRef = doc(firestore, 'colleges', collegeId, 'users', googleUser.email);
+      const userRef = doc(firestore, 'colleges', collegeId, 'users', googleUser.email.toLowerCase());
       const userSnap = await getDoc(userRef);
 
       if (!userSnap.exists()) {
@@ -81,7 +81,11 @@ export default function LoginPage() {
       const userData = userSnap.data();
 
       // Verify Role
-      if (userData.role !== selectedRole && !(selectedRole === 'admin' && userData.role === 'admin')) {
+      // Admins and HODs share the same dashboard but have different internal permissions
+      const roleMismatch = userData.role !== selectedRole;
+      const isBothAdminRelated = (selectedRole === 'admin' || selectedRole === 'hod') && (userData.role === 'admin' || userData.role === 'hod');
+      
+      if (roleMismatch && !isBothAdminRelated) {
         await signOut(auth);
         throw new Error(`This account is registered as a ${userData.role}, not a ${selectedRole}.`);
       }
@@ -112,24 +116,29 @@ export default function LoginPage() {
       router.push(routes[userData.role as keyof typeof routes] || '/profile');
 
     } catch (error: any) {
+      // Specifically handle the popup-closed-by-user error to avoid scary toasts during legitimate sign-in
+      if (error.code === 'auth/popup-closed-by-user') {
+        setIsLoading(false);
+        return; 
+      }
+
       console.error('Google Auth Error:', error);
       toast({
         variant: 'destructive',
         title: 'Access Denied',
         description: error.message || 'Institutional verification failed.'
       });
-    } finally {
       setIsLoading(false);
     }
   };
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!username || !password || !selectedRole) return;
+    if (!username || !password || !selectedRole || isLoading) return;
 
     setIsLoading(true);
     try {
-      const email = username.includes('@') ? username : `${username}@college.edu`;
+      const email = username.includes('@') ? username.toLowerCase() : `${username.toLowerCase()}@college.edu`;
       const userRef = doc(firestore, 'colleges', collegeId, 'users', email);
       const userSnap = await getDoc(userRef);
 
@@ -144,7 +153,6 @@ export default function LoginPage() {
       }
 
       // For prototypes, we assume directory match equals auth
-      // Real apps would use signInWithEmailAndPassword after directory sync
       try {
         await signInWithEmailAndPassword(auth, email, password);
       } catch (ae) {
@@ -165,7 +173,6 @@ export default function LoginPage() {
         title: 'Login Failed',
         description: error.message
       });
-    } finally {
       setIsLoading(false);
     }
   };
@@ -255,7 +262,7 @@ export default function LoginPage() {
                   variant="ghost" 
                   size="sm" 
                   className="w-fit p-0 h-auto hover:bg-transparent text-muted-foreground hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest" 
-                  onClick={() => setSelectedRole(null)}
+                  onClick={() => { setSelectedRole(null); setIsLoading(false); }}
                 >
                   <ArrowLeft className="mr-2 h-3.5 w-3.5" /> Back to Selection
                 </Button>
@@ -271,13 +278,17 @@ export default function LoginPage() {
                   onClick={handleGoogleLogin}
                   disabled={isLoading}
                 >
-                  <svg className="h-5 w-5" viewBox="0 0 24 24">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-                    <path d="M12 23c2.97 0 3.86-.98 5.15-2.67l-3.57-2.77c-.98.66-2.23 1.06-3.58 1.06-2.76 0-5.09-1.87-5.93-4.39H.43v2.83C2.24 20.67 6.83 23 12 23z" fill="#34A853"/>
-                    <path d="M6.07 14.23c-.22-.66-.35-1.36-.35-2.08s.13-1.42.35-2.08V7.24H.43C.16 8.13 0 9.04 0 10s.16 1.87.43 2.76l5.64-4.53z" fill="#FBBC05"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 6.83 1 2.24 3.33.43 7.24l5.64 2.83C6.91 7.25 9.24 5.38 12 5.38z" fill="#EA4335"/>
-                  </svg>
-                  Sign in with Institutional Google
+                  {isLoading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <svg className="h-5 w-5" viewBox="0 0 24 24">
+                      <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+                      <path d="M12 23c2.97 0 3.86-.98 5.15-2.67l-3.57-2.77c-.98.66-2.23 1.06-3.58 1.06-2.76 0-5.09-1.87-5.93-4.39H.43v2.83C2.24 20.67 6.83 23 12 23z" fill="#34A853"/>
+                      <path d="M6.07 14.23c-.22-.66-.35-1.36-.35-2.08s.13-1.42.35-2.08V7.24H.43C.16 8.13 0 9.04 0 10s.16 1.87.43 2.76l5.64-4.53z" fill="#FBBC05"/>
+                      <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 6.83 1 2.24 3.33.43 7.24l5.64 2.83C6.91 7.25 9.24 5.38 12 5.38z" fill="#EA4335"/>
+                    </svg>
+                  )}
+                  {isLoading ? 'Verifying...' : 'Sign in with Institutional Google'}
                 </Button>
 
                 <div className="relative">
