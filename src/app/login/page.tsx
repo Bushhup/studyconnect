@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -38,6 +37,7 @@ import {
 } from 'firebase/auth';
 import { collection, query, where, getDocs, doc, setDoc, updateDoc } from 'firebase/firestore';
 import { Logo } from '@/components/logo';
+import { cn } from '@/lib/utils';
 
 type UserRole = 'student' | 'faculty' | 'admin' | 'hod';
 const collegeId = 'study-connect-college';
