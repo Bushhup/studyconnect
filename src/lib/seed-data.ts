@@ -53,7 +53,7 @@ export async function seedDatabase(db: Firestore) {
     batch.set(ref, cls);
   });
 
-  // 5. Initial Users (Admin & Faculty)
+  // 5. Initial Users (Admin, Faculty, Student)
   // CRITICAL: Document ID is the Email Address
   const initialUsers = [
     { 
@@ -93,6 +93,19 @@ export async function seedDatabase(db: Firestore) {
       lastName: 'Wilson', 
       role: 'faculty', 
       departmentId: 'dept-art', 
+      status: 'active',
+      createdAt: new Date().toISOString()
+    },
+    { 
+      id: 'alex.j@college.edu', 
+      email: 'alex.j@college.edu', 
+      firstName: 'Alex', 
+      lastName: 'Johnson', 
+      role: 'student', 
+      departmentId: 'dept-eng', 
+      semester: '5',
+      batchYear: 'Batch-2026',
+      password: 'password123',
       status: 'active',
       createdAt: new Date().toISOString()
     },

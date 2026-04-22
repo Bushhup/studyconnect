@@ -11,10 +11,10 @@ export const MOCK_COLLEGE = {
 };
 
 export const MOCK_DEPARTMENTS = [
-  { id: 'dept-1', name: 'Engineering' },
-  { id: 'dept-2', name: 'Arts & Design' },
-  { id: 'dept-3', name: 'Management' },
-  { id: 'dept-4', name: 'Applied Sciences' },
+  { id: 'dept-eng', name: 'Engineering' },
+  { id: 'dept-art', name: 'Arts & Design' },
+  { id: 'dept-bus', name: 'Management' },
+  { id: 'dept-sci', name: 'Applied Sciences' },
 ];
 
 export const MOCK_USERS = [
@@ -39,41 +39,36 @@ export const MOCK_USERS = [
     status: 'active'
   },
   {
-    id: 'faculty-1',
+    id: 'sarah.smith@college.edu',
     uid: 'faculty-1',
     email: 'sarah.smith@college.edu',
     password: 'password123',
     firstName: 'Sarah',
     lastName: 'Smith',
     role: 'faculty',
-    departmentId: 'dept-1',
+    departmentId: 'dept-eng',
     status: 'active'
   },
   {
-    id: 'student-1',
+    id: 'alex.j@college.edu',
     uid: 'student-1',
     email: 'alex.j@college.edu',
     password: 'password123',
     firstName: 'Alex',
     lastName: 'Johnson',
     role: 'student',
-    degreeType: 'UG',
-    departmentId: 'CSE',
-    status: 'active',
-    marks: {
-      sem1: { cat1: 45, cat2: 42, model: 88, final: 92 }
-    }
+    departmentId: 'dept-eng',
+    semester: '5',
+    status: 'active'
   }
 ];
 
 export const MOCK_CLASSES = [
-  { id: 'class-1', name: 'Computer Science - Section A', departmentId: 'dept-1', facultyId: 'faculty-1' },
-  { id: 'class-2', name: 'UI/UX Fundamentals', departmentId: 'dept-2', facultyId: 'faculty-1' }
+  { id: 'class-csa', name: 'Computer Science - Section A', departmentId: 'dept-eng', facultyId: 'sarah.smith@college.edu' },
 ];
 
 export const MOCK_RESOURCES = [
   { id: 'res-1', name: 'Academic Handbook 2024', category: 'Policy Documents', type: 'PDF', size: '2.4 MB', accessLevel: 'Public' },
-  { id: 'res-2', name: 'Faculty Leave Form', category: 'Administrative Forms', type: 'Word', size: '0.5 MB', accessLevel: 'Faculty' }
 ];
 
 export const MOCK_EVENTS = [
