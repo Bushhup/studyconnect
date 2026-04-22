@@ -1,118 +1,91 @@
-
 import { doc, writeBatch, Firestore } from 'firebase/firestore';
 
 /**
  * Seeds the Firestore database with initial sample data.
- * Follows the schema defined in docs/backend.json
- * Uses Email IDs as document IDs for predictable security rules.
+ * Provides real, linked data for all portals.
  */
 export async function seedDatabase(db: Firestore) {
   const collegeId = 'study-connect-college';
   const batch = writeBatch(db);
 
-  // 1. College Root Document
+  // 1. College Root
   const collegeRef = doc(db, 'colleges', collegeId);
   batch.set(collegeRef, {
     id: collegeId,
     name: 'StudyConnect University',
     logoUrl: '/logo.png',
-    tagline: 'Connecting Minds, Building Futures'
+    tagline: 'Connecting Minds, Building Futures',
+    overview: 'A leading institutional hub for academic excellence and innovation.'
   });
 
   // 2. Departments
   const departments = [
-    { id: 'dept-eng', name: 'Engineering', headOfDept: 'Dr. Sarah Smith', programType: 'UG', totalSemesters: 8 },
+    { id: 'dept-eng', name: 'Engineering & Technology', headOfDept: 'Dr. Sarah Smith', programType: 'UG', totalSemesters: 8 },
     { id: 'dept-art', name: 'Arts & Design', headOfDept: 'Prof. James Wilson', programType: 'UG', totalSemesters: 8 },
     { id: 'dept-sci', name: 'Applied Sciences', headOfDept: 'Dr. Emily Davis', programType: 'UG', totalSemesters: 6 },
-    { id: 'dept-bus', name: 'Business & Management', headOfDept: 'Mr. Robert Brown', programType: 'PG', totalSemesters: 4 },
   ];
   departments.forEach(dept => {
-    const ref = doc(db, 'colleges', collegeId, 'departments', dept.id);
-    batch.set(ref, dept);
+    batch.set(doc(db, 'colleges', collegeId, 'departments', dept.id), dept);
   });
 
   // 3. Courses
   const courses = [
     { id: 'course-cs101', code: 'CS101', name: 'Intro to Computer Science', departmentId: 'dept-eng', credits: 4 },
     { id: 'course-ai402', code: 'AI402', name: 'Machine Learning Systems', departmentId: 'dept-eng', credits: 4 },
-    { id: 'course-ux201', code: 'UX201', name: 'User Experience Design', departmentId: 'dept-art', credits: 3 },
-    { id: 'course-phys102', code: 'PHY102', name: 'Applied Physics Lab', departmentId: 'dept-sci', credits: 2 },
+    { id: 'course-ds201', code: 'DS201', name: 'Data Structures & Algorithms', departmentId: 'dept-eng', credits: 3 },
+    { id: 'course-ux101', code: 'UX101', name: 'User Experience Principles', departmentId: 'dept-art', credits: 3 },
   ];
   courses.forEach(course => {
-    const ref = doc(db, 'colleges', collegeId, 'courses', course.id);
-    batch.set(ref, course);
+    batch.set(doc(db, 'colleges', collegeId, 'courses', course.id), course);
   });
 
-  // 4. Classes (Sections)
-  const classes = [
-    { id: 'class-csa', name: 'Computer Science - Section A', departmentId: 'dept-eng', facultyId: 'sarah.smith@college.edu', semester: '5' },
-    { id: 'class-uxb', name: 'UI/UX Design - Section B', departmentId: 'dept-art', facultyId: 'james.wilson@college.edu', semester: '3' },
-  ];
-  classes.forEach(cls => {
-    const ref = doc(db, 'colleges', collegeId, 'classes', cls.id);
-    batch.set(ref, cls);
-  });
-
-  // 5. Initial Users (Admin, Faculty, Student)
-  // CRITICAL: Document ID is the Email Address
+  // 4. Users (Linked via Emails)
   const initialUsers = [
     { 
-      id: 'shabuddinaw@gmail.com', 
-      email: 'shabuddinaw@gmail.com', 
-      firstName: 'Shabuddin', 
-      lastName: 'A', 
-      password: 'shabu05413',
-      role: 'admin', 
-      status: 'active',
+      id: 'shabuddinaw@gmail.com', email: 'shabuddinaw@gmail.com', 
+      firstName: 'Shabuddin', lastName: 'A', role: 'admin', status: 'active',
       createdAt: new Date().toISOString()
     },
     { 
-      id: 'admin@college.edu', 
-      email: 'admin@college.edu', 
-      firstName: 'System', 
-      lastName: 'Administrator', 
-      password: 'minister123',
-      role: 'admin', 
-      status: 'active',
-      createdAt: new Date().toISOString()
+      id: 'sarah.smith@college.edu', email: 'sarah.smith@college.edu', 
+      firstName: 'Sarah', lastName: 'Smith', role: 'faculty', 
+      departmentId: 'dept-eng', status: 'active'
     },
     { 
-      id: 'sarah.smith@college.edu', 
-      email: 'sarah.smith@college.edu', 
-      firstName: 'Sarah', 
-      lastName: 'Smith', 
-      role: 'faculty', 
-      departmentId: 'dept-eng', 
-      status: 'active',
-      createdAt: new Date().toISOString()
-    },
-    { 
-      id: 'james.wilson@college.edu', 
-      email: 'james.wilson@college.edu', 
-      firstName: 'James', 
-      lastName: 'Wilson', 
-      role: 'faculty', 
-      departmentId: 'dept-art', 
-      status: 'active',
-      createdAt: new Date().toISOString()
-    },
-    { 
-      id: 'alex.j@college.edu', 
-      email: 'alex.j@college.edu', 
-      firstName: 'Alex', 
-      lastName: 'Johnson', 
-      role: 'student', 
-      departmentId: 'dept-eng', 
-      semester: '5',
-      batchYear: 'Batch-2026',
-      password: 'password123',
-      status: 'active',
-      createdAt: new Date().toISOString()
+      id: 'alex.j@college.edu', email: 'alex.j@college.edu', 
+      firstName: 'Alex', lastName: 'Johnson', role: 'student', 
+      departmentId: 'dept-eng', semester: '5', batchYear: 'Batch-2026', status: 'active'
     },
   ];
   initialUsers.forEach(user => {
-    const ref = doc(db, 'colleges', collegeId, 'users', user.id);
-    batch.set(ref, user);
+    batch.set(doc(db, 'colleges', collegeId, 'users', user.id), user);
+  });
+
+  // 5. Classes
+  const classes = [
+    { 
+      id: 'class-cse-a', name: 'CSE - Section A', departmentId: 'dept-eng', 
+      facultyId: 'sarah.smith@college.edu', semester: '5', studentIds: ['alex.j@college.edu'],
+      subjectHandlers: { 'course-ai402': 'sarah.smith@college.edu' }
+    }
+  ];
+  classes.forEach(cls => {
+    batch.set(doc(db, 'colleges', collegeId, 'classes', cls.id), cls);
+  });
+
+  // 6. Academic Records (Attendance & Marks)
+  const records = [
+    {
+      id: 'rec-alex-ml',
+      studentId: 'alex.j@college.edu',
+      classId: 'class-cse-a',
+      subjectId: 'course-ai402',
+      attendance: 94,
+      marks: { cat1: 42, cat2: 45, final: 0 }
+    }
+  ];
+  records.forEach(rec => {
+    batch.set(doc(db, 'colleges', collegeId, 'academicRecords', rec.id), rec);
   });
 
   await batch.commit();
