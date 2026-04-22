@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -27,7 +26,8 @@ import {
   UserCheck, 
   Building2,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  UserPlus
 } from 'lucide-react';
 import { useFirebase } from '@/firebase';
 import { 
@@ -39,6 +39,7 @@ import {
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 type UserRole = 'student' | 'faculty' | 'admin' | 'hod';
 const collegeId = 'study-connect-college';
@@ -74,7 +75,7 @@ export default function LoginPage() {
 
       if (!userSnap.exists()) {
         await signOut(auth);
-        throw new Error(`The email ${emailKey} is not registered in the institutional directory.`);
+        throw new Error(`The email ${emailKey} is not registered in the institutional directory. Please sign up first.`);
       }
 
       const userData = userSnap.data();
@@ -137,25 +138,30 @@ export default function LoginPage() {
     try {
       const email = username.includes('@') ? username.toLowerCase() : `${username.toLowerCase()}@college.edu`;
       
-      // In this prototype, we check directory credentials first
+      // Attempt actual Firebase Auth first
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (authError: any) {
+        // Fallback: check directory if Auth user doesn't exist yet (legacy/pre-registered case)
+        const userRef = doc(firestore, 'colleges', collegeId, 'users', email);
+        const userSnap = await getDoc(userRef);
+
+        if (!userSnap.exists()) {
+          throw new Error('Identity record not found.');
+        }
+
+        const userData = userSnap.data();
+        if (userData.password !== password) {
+          throw new Error('Incorrect institutional password.');
+        }
+      }
+
+      // Final Directory Check
       const userRef = doc(firestore, 'colleges', collegeId, 'users', email);
       const userSnap = await getDoc(userRef);
-
-      if (!userSnap.exists()) {
-        throw new Error('Identity record not found.');
-      }
-
       const userData = userSnap.data();
-      
-      if (userData.password !== password) {
-        throw new Error('Incorrect institutional password.');
-      }
 
-      // For standard directory login, we attempt a bypass sign-in for the session
-      // or redirect if they should be using Google
-      if (userData.authProvider === 'google') {
-        throw new Error('This account is configured for Google Authentication. Please use the button above.');
-      }
+      if (!userData) throw new Error("Portal data missing.");
 
       toast({ title: 'Directory Match Success', description: `Initializing portal for ${userData.firstName}...` });
       
@@ -207,6 +213,10 @@ export default function LoginPage() {
               <RoleCard role="student" title="Student Portal" description="Monitor your academic journey, attendance, and internal marks." icon={GraduationCap} color="blue" onClick={() => setSelectedRole('student')} />
               <RoleCard role="faculty" title="Faculty Portal" description="Manage section-wise rosters, grade entries, and study materials." icon={BookOpen} color="emerald" onClick={() => setSelectedRole('faculty')} />
               <RoleCard role="admin" title="Admin Command" description="Master control for institutional hierarchy and global configuration." icon={ShieldCheck} color="violet" onClick={() => setSelectedRole('admin')} />
+            </div>
+            
+            <div className="mt-12 text-center">
+              <p className="text-muted-foreground font-body">First time here? <Link href="/signup" className="text-primary font-bold hover:underline">Create an institutional account</Link></p>
             </div>
           </motion.div>
         ) : (
@@ -268,10 +278,11 @@ export default function LoginPage() {
                   </Button>
                 </form>
               </CardContent>
-              <CardFooter className="bg-muted/30 py-6 justify-center flex-col gap-2">
-                <p className="text-[9px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
+              <CardFooter className="bg-muted/30 py-6 flex-col gap-2">
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
                    <ShieldCheck className="h-3 w-3 text-emerald-500" /> Linked to StudyConnect Identity
                 </p>
+                <Link href="/signup" className="text-[10px] font-bold text-primary hover:underline uppercase tracking-tight">Need an account? Sign up</Link>
               </CardFooter>
             </Card>
           </motion.div>
