@@ -80,13 +80,18 @@ export default function LoginPage() {
 
       const userData = userSnap.data();
 
-      // Flexible role matching for Admin/HOD
+      // Check for role consistency but don't block login.
+      // If the user picked a different portal, we just redirect them to their actual one.
       const isUserAdminRelated = userData.role === 'admin' || userData.role === 'hod';
       const isSelectionAdminRelated = selectedRole === 'admin' || selectedRole === 'hod';
       
       if (userData.role !== selectedRole && !(isUserAdminRelated && isSelectionAdminRelated)) {
-        await signOut(auth);
-        throw new Error(`This account is registered as a ${userData.role.toUpperCase()}, but you selected the ${selectedRole.toUpperCase()} portal.`);
+        toast({
+          title: 'Portal Redirect',
+          description: `Identity verified. Redirecting to your assigned ${userData.role.toUpperCase()} portal.`
+        });
+      } else {
+        toast({ title: 'Institutional Access Granted', description: `Welcome back, ${userData.firstName}.` });
       }
 
       // Link UID and metadata
@@ -102,8 +107,6 @@ export default function LoginPage() {
         const adminMarkerRef = doc(firestore, 'admins', googleUser.uid);
         await setDoc(adminMarkerRef, { id: googleUser.uid, email: emailKey, verified: true }, { merge: true });
       }
-
-      toast({ title: 'Institutional Access Granted', description: `Welcome back, ${userData.firstName}.` });
       
       const routes = {
         admin: '/admin/dashboard',
@@ -165,7 +168,18 @@ export default function LoginPage() {
 
       if (!userData) throw new Error("Portal data missing.");
 
-      toast({ title: 'Directory Match Success', description: `Initializing portal for ${userData.firstName}...` });
+      // Check for role consistency but don't block login
+      const isUserAdminRelated = userData.role === 'admin' || userData.role === 'hod';
+      const isSelectionAdminRelated = selectedRole === 'admin' || selectedRole === 'hod';
+      
+      if (userData.role !== selectedRole && !(isUserAdminRelated && isSelectionAdminRelated)) {
+        toast({
+          title: 'Portal Redirect',
+          description: `Logged in as ${userData.role.toUpperCase()}. Redirecting to your assigned dashboard.`
+        });
+      } else {
+        toast({ title: 'Directory Match Success', description: `Initializing portal for ${userData.firstName}...` });
+      }
       
       const routes = {
         admin: '/admin/dashboard',
@@ -305,7 +319,10 @@ function RoleCard({ title, description, icon: Icon, color, onClick }: any) {
     <motion.div whileHover={{ y: -8, scale: 1.02 }} whileTap={{ scale: 0.98 }}>
       <Card className="group cursor-pointer h-full border-none shadow-sm hover:shadow-2xl transition-all duration-500 bg-card rounded-[2.5rem] p-1 overflow-hidden" onClick={onClick}>
         <div className="p-8 flex flex-col h-full items-center text-center">
-          <div className={cn("w-20 h-20 rounded-[2rem] flex items-center justify-center mb-8 transition-all duration-500 ring-8 ring-transparent group-hover:ring-primary/5", themes[color as keyof typeof themes])}>
+          <div className={cn(
+            "w-20 h-20 rounded-[2rem] flex items-center justify-center mb-8 transition-all duration-500 ring-8 ring-transparent group-hover:ring-primary/5", 
+            themes[color as keyof typeof themes]
+          )}>
             <Icon className="w-10 h-10 transition-transform duration-500 group-hover:scale-110" strokeWidth={1.5} />
           </div>
           <CardTitle className="font-headline text-2xl mb-3 text-foreground group-hover:text-primary transition-colors">{title}</CardTitle>
