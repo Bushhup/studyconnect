@@ -59,6 +59,38 @@
         "semester": { "type": "string" }
       }
     },
+    "StudentProfile": {
+      "title": "StudentProfile",
+      "type": "object",
+      "description": "Verified biographical and background data for a student.",
+      "properties": {
+        "userId": { "type": "string" },
+        "fullName": { "type": "string", "description": "As per birth certificate" },
+        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
+        "dob": { "type": "string", "format": "date" },
+        "studentMobileNo": { "type": "string" },
+        "studentEmail": { "type": "string" },
+        "aadharNumber": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "motherTongue": { "type": "string" },
+        "nationality": { "type": "string", "default": "Indian" },
+        "religion": { "type": "string" },
+        "community": { "type": "string", "enum": ["BC (muslim)", "OC", "BC", "MBC", "SC", "SCC", "ST"] },
+        "casteName": { "type": "string" },
+        "address": { "type": "string" },
+        "pincode": { "type": "string" },
+        "fatherName": { "type": "string" },
+        "fatherOccupation": { "type": "string" },
+        "fatherAnnualIncome": { "type": "string" },
+        "fatherMobileNo": { "type": "string" },
+        "motherName": { "type": "string" },
+        "motherOccupation": { "type": "string" },
+        "motherAnnualIncome": { "type": "string" },
+        "motherMobileNo": { "type": "string" },
+        "quota": { "type": "string", "enum": ["Management", "Government"] },
+        "dateOfAdmission": { "type": "string", "format": "date-time" }
+      }
+    },
     "AcademicRecord": {
       "title": "AcademicRecord",
       "type": "object",
@@ -76,37 +108,6 @@
             "final": { "type": "number" }
           }
         }
-      }
-    },
-    "Achievement": {
-      "title": "Achievement",
-      "type": "object",
-      "description": "A recorded academic or extracurricular milestone.",
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "year": { "type": "integer" },
-        "description": { "type": "string" },
-        "category": { "type": "string" },
-        "departmentId": { "type": "string" },
-        "facultyInCharge": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      }
-    },
-    "Event": {
-      "title": "Event",
-      "type": "object",
-      "description": "A campus activity or seminar.",
-      "properties": {
-        "id": { "type": "string" },
-        "title": { "type": "string" },
-        "date": { "type": "string", "format": "date" },
-        "description": { "type": "string" },
-        "location": { "type": "string" },
-        "category": { "type": "string" },
-        "departmentId": { "type": "string" },
-        "facultyInCharge": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
       }
     }
   },
@@ -136,16 +137,8 @@
         "definition": { "entityName": "AcademicRecord", "description": "Aggregated performance data." }
       },
       {
-        "path": "/colleges/{collegeId}/achievements/{achievementId}",
-        "definition": { "entityName": "Achievement", "description": "Institutional milestones." }
-      },
-      {
-        "path": "/colleges/{collegeId}/events/{eventId}",
-        "definition": { "entityName": "Event", "description": "Campus calendar events." }
-      },
-      {
         "path": "/colleges/{collegeId}/studentProfiles/{userId}",
-        "definition": { "entityName": "InstitutionalUser", "description": "Verified bio data." }
+        "definition": { "entityName": "StudentProfile", "description": "Verified bio data." }
       }
     ]
   }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -24,6 +25,8 @@ import {
   Loader2,
   AlertCircle,
   FileUser,
+  Save,
+  CheckCircle2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -32,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
-import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import {
   Dialog,
@@ -40,8 +43,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 import { StudentBioHover } from '@/components/StudentBioHover';
+import { useToast } from '@/hooks/use-toast';
 
 const collegeId = 'study-connect-college';
 
@@ -54,8 +60,10 @@ const STUDENT_CSV_COLUMNS: CsvColumn[] = [
 ];
 
 export default function StudentManagementPage() {
+  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudentId, setSelectedStudentId] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
   const firestore = useFirestore();
   const { user, isUserLoading: authLoading } = useUser();
 
@@ -81,12 +89,29 @@ export default function StudentManagementPage() {
     s.username?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Fetch Bio Data for Preview (Used in the manual detailed dialog)
   const selectedBioRef = useMemoFirebase(() => {
     if (!firestore || !selectedStudentId) return null;
     return doc(firestore, 'colleges', collegeId, 'studentProfiles', selectedStudentId);
   }, [firestore, selectedStudentId]);
   const { data: bioData, isLoading: bioLoading } = useDoc(selectedBioRef);
+
+  const handleUpdateBio = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!selectedBioRef) return;
+    const formData = new FormData(e.currentTarget);
+    const updates: any = {};
+    formData.forEach((value, key) => {
+      updates[key] = value;
+    });
+
+    setDocumentNonBlocking(selectedBioRef, {
+      ...updates,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+
+    toast({ title: 'Bio Data Updated', description: 'The institutional record has been synchronized.' });
+    setIsEditing(false);
+  };
 
   if (authLoading || profileLoading) {
     return (
@@ -101,10 +126,7 @@ export default function StudentManagementPage() {
     return (
       <div className="flex flex-col items-center justify-center p-20 gap-4 text-center">
         <AlertCircle className="h-12 w-12 text-red-500" />
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Access Restricted</h2>
-          <p className="text-sm text-muted-foreground mt-1 max-w-sm">The student directory contains private academic records and is only accessible to verified administrators.</p>
-        </div>
+        <h2 className="text-xl font-bold text-foreground">Access Restricted</h2>
       </div>
     );
   }
@@ -119,40 +141,10 @@ export default function StudentManagementPage() {
         <div className="flex gap-2">
           <CsvImportDialog 
             title="Bulk Enroll Students"
-            description="Onboard an entire batch by uploading a CSV file with student identities and department codes."
+            description="Onboard an entire batch via CSV."
             columns={STUDENT_CSV_COLUMNS}
           />
-          <Button className="gap-2 shadow-lg shadow-primary/20 rounded-xl px-6">
-            <Plus className="h-4 w-4" /> Add Student
-          </Button>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm bg-primary/5 rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-primary font-bold uppercase text-[10px] tracking-widest flex items-center gap-2">
-              <TrendingUp className="h-3 w-3" /> Average GPA
-            </CardDescription>
-            <CardTitle className="text-2xl text-foreground font-headline">3.73 / 4.0</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="border-none shadow-sm bg-accent/5 rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-accent-foreground font-bold uppercase text-[10px] tracking-widest flex items-center gap-2">
-              <Clock className="h-3 w-3" /> Avg Attendance
-            </CardDescription>
-            <CardTitle className="text-2xl text-foreground font-headline">94.1%</CardTitle>
-          </CardHeader>
-        </Card>
-        <Card className="border-none shadow-sm bg-primary/10 rounded-2xl">
-          <CardHeader className="pb-2">
-            <CardDescription className="text-primary font-bold uppercase text-[10px] tracking-widest flex items-center gap-2">
-              <BookOpen className="h-3 w-3" /> Active Enrollment
-            </CardDescription>
-            <CardTitle className="text-2xl text-foreground font-headline">{students.length}</CardTitle>
-          </CardHeader>
-        </Card>
       </div>
 
       <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
@@ -161,150 +153,118 @@ export default function StudentManagementPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
               placeholder="Search students..." 
-              className="pl-10 bg-muted border-none h-11 shadow-none rounded-xl"
+              className="pl-10 bg-muted border-none h-11 rounded-xl"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          {collectionLoading ? (
-            <div className="flex flex-col items-center justify-center p-20 gap-4">
-              <Loader2 className="animate-spin h-8 w-8 text-primary" />
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Syncing records...</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader className="bg-muted/50">
-                <TableRow className="hover:bg-transparent border-none">
-                  <TableHead className="font-bold text-foreground py-4 pl-6">Student</TableHead>
-                  <TableHead className="font-bold text-foreground">ID / Dept</TableHead>
-                  <TableHead className="font-bold text-foreground">Performance</TableHead>
-                  <TableHead className="font-bold text-foreground">Status</TableHead>
-                  <TableHead className="text-right font-bold text-foreground pr-6">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredStudents.map((student) => (
-                  <TableRow key={student.id} className="group transition-colors hover:bg-muted/50 border-border">
-                    <TableCell className="py-4 pl-6">
-                      <StudentBioHover student={student}>
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10 border-2 border-background shadow-sm ring-1 ring-border">
-                            <AvatarFallback className="bg-primary/5 text-primary font-bold">
-                              {student.firstName?.[0]}{student.lastName?.[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col">
-                            <span className="font-bold text-foreground">{student.firstName} {student.lastName}</span>
-                            <span className="text-[10px] text-muted-foreground">{student.email}</span>
-                          </div>
+          <Table>
+            <TableHeader className="bg-muted/50">
+              <TableRow className="border-none">
+                <TableHead className="font-bold pl-6">Student</TableHead>
+                <TableHead className="font-bold">ID / Dept</TableHead>
+                <TableHead className="font-bold">Status</TableHead>
+                <TableHead className="text-right pr-6 font-bold">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredStudents.map((student) => (
+                <TableRow key={student.id} className="group hover:bg-muted/50">
+                  <TableCell className="py-4 pl-6">
+                    <StudentBioHover student={student}>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-9 w-9 border-2 border-background shadow-sm">
+                          <AvatarFallback className="bg-primary/5 text-primary font-bold text-xs uppercase">
+                            {student.firstName?.[0]}{student.lastName?.[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-bold text-sm text-foreground">{student.firstName} {student.lastName}</p>
+                          <p className="text-[10px] text-muted-foreground">{student.email}</p>
                         </div>
-                      </StudentBioHover>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col">
-                        <span className="text-xs font-mono font-bold text-muted-foreground">#{student.id.slice(0, 6)}</span>
-                        <Badge variant="outline" className="text-[9px] uppercase border-primary/20 text-primary w-fit mt-1 px-1">
-                          {student.departmentId || 'Not Assigned'}
-                        </Badge>
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="secondary" className="bg-primary/10 text-primary font-bold px-3 border-none">
-                        3.8 GPA
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5">
-                        <div className={cn("w-2 h-2 rounded-full", student.status === 'inactive' ? 'bg-muted-foreground/30' : 'bg-emerald-500')} />
-                        <span className="text-xs font-semibold capitalize text-muted-foreground">{student.status || 'Active'}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-right pr-6">
-                      <DropdownMenu modal={false}>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
-                            <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-card border-border shadow-xl rounded-xl">
-                          <DropdownMenuItem className="gap-2" onClick={() => setSelectedStudentId(student.id)}>
-                            <FileUser className="h-4 w-4" /> View Bio Data
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>Attendance History</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {filteredStudents.length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-20 text-muted-foreground">
-                      No student records found.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          )}
+                    </StudentBioHover>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="text-[9px] uppercase border-primary/20 text-primary">
+                      {student.departmentId || 'UNASSIGNED'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 text-[10px] border-none font-bold uppercase">{student.status || 'Active'}</Badge>
+                  </TableCell>
+                  <TableCell className="text-right pr-6">
+                    <Button variant="ghost" size="icon" onClick={() => {setSelectedStudentId(student.id); setIsEditing(false);}}>
+                      <FileUser className="h-4 w-4 text-primary" />
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
 
       <Dialog open={!!selectedStudentId} onOpenChange={(o) => !o && setSelectedStudentId(null)}>
-        <DialogContent className="max-w-2xl rounded-[2rem]">
-          <DialogHeader>
-            <DialogTitle className="font-headline text-2xl flex items-center gap-2">
-              <FileUser className="text-primary" /> Institutional Bio Data
-            </DialogTitle>
+        <DialogContent className="max-w-4xl rounded-[2.5rem] max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="flex flex-row items-center justify-between space-y-0">
+            <DialogTitle className="font-headline text-2xl">Institutional Registry</DialogTitle>
+            <Button variant="outline" size="sm" className="rounded-xl font-bold uppercase text-[10px]" onClick={() => setIsEditing(!isEditing)}>
+              {isEditing ? 'Cancel Edit' : 'Modify Record'}
+            </Button>
           </DialogHeader>
-          {bioLoading ? (
-            <div className="p-12 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto" /></div>
-          ) : bioData ? (
-            <div className="grid grid-cols-2 gap-6 pt-4 font-body">
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Full Name</p>
-                <p className="font-bold">{bioData.fullName}</p>
+          
+          {bioLoading ? <div className="p-12 text-center"><Loader2 className="animate-spin h-8 w-8 mx-auto" /></div> : (
+            <form onSubmit={handleUpdateBio} className="space-y-6 pt-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Admission Date</Label>
+                  <Input name="dateOfAdmission" type="date" defaultValue={bioData?.dateOfAdmission?.split('T')[0]} disabled={!isEditing} className="bg-muted border-none h-10" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Gender</Label>
+                  <Input name="gender" defaultValue={bioData?.gender} disabled={!isEditing} className="bg-muted border-none h-10" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground">Aadhar Number</Label>
+                  <Input name="aadharNumber" defaultValue={bioData?.aadharNumber} disabled={!isEditing} className="bg-muted border-none h-10" />
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Gender</p>
-                <p className="font-bold">{bioData.gender}</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4 border-t border-dashed">
+                <div className="space-y-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-primary">Guardian 1 (Father)</p>
+                  <div className="grid gap-3">
+                    <Input name="fatherName" placeholder="Name" defaultValue={bioData?.fatherName} disabled={!isEditing} className="bg-muted border-none h-10" />
+                    <Input name="fatherOccupation" placeholder="Occupation" defaultValue={bioData?.fatherOccupation} disabled={!isEditing} className="bg-muted border-none h-10" />
+                    <Input name="fatherAnnualIncome" placeholder="Income" defaultValue={bioData?.fatherAnnualIncome} disabled={!isEditing} className="bg-muted border-none h-10" />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <p className="text-xs font-bold uppercase tracking-widest text-primary">Guardian 2 (Mother)</p>
+                  <div className="grid gap-3">
+                    <Input name="motherName" placeholder="Name" defaultValue={bioData?.motherName} disabled={!isEditing} className="bg-muted border-none h-10" />
+                    <Input name="motherOccupation" placeholder="Occupation" defaultValue={bioData?.motherOccupation} disabled={!isEditing} className="bg-muted border-none h-10" />
+                    <Input name="motherAnnualIncome" placeholder="Income" defaultValue={bioData?.motherAnnualIncome} disabled={!isEditing} className="bg-muted border-none h-10" />
+                  </div>
+                </div>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Phone</p>
-                <p className="font-bold">{bioData.phoneNumber}</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4 border-t border-dashed">
+                <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">Nationality</Label><Input value="Indian" disabled className="bg-muted border-none h-10" /></div>
+                <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">Community</Label><Input name="community" defaultValue={bioData?.community} disabled={!isEditing} className="bg-muted border-none h-10" /></div>
+                <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">Caste</Label><Input name="casteName" defaultValue={bioData?.casteName} disabled={!isEditing} className="bg-muted border-none h-10" /></div>
+                <div className="space-y-1"><Label className="text-[10px] font-bold uppercase">Quota</Label><Input name="quota" defaultValue={bioData?.quota} disabled={!isEditing} className="bg-muted border-none h-10" /></div>
               </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Quota</p>
-                <Badge variant="secondary" className="font-bold">{bioData.quota}</Badge>
-              </div>
-              <div className="col-span-2 space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Address</p>
-                <p className="font-medium text-sm">{bioData.address}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Father</p>
-                <p className="font-bold">{bioData.fatherName}</p>
-                <p className="text-xs text-muted-foreground">{bioData.fatherPhoneNumber}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Mother</p>
-                <p className="font-bold">{bioData.motherName}</p>
-                <p className="text-xs text-muted-foreground">{bioData.motherPhoneNumber}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Aadhar</p>
-                <p className="font-mono text-sm font-bold">{bioData.aadharNumber}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Religion</p>
-                <p className="font-bold">{bioData.religion}</p>
-              </div>
-            </div>
-          ) : (
-            <div className="p-12 text-center text-muted-foreground bg-muted/20 rounded-2xl border-2 border-dashed">
-              No bio data profile found for this student.
-            </div>
+
+              {isEditing && (
+                <Button type="submit" className="w-full h-12 rounded-xl font-bold uppercase shadow-lg shadow-primary/20">
+                  <Save className="mr-2 h-4 w-4" /> Save Record Updates
+                </Button>
+              )}
+            </form>
           )}
         </DialogContent>
       </Dialog>
