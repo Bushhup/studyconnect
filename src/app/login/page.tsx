@@ -86,11 +86,9 @@ export default function LoginPage() {
         : `${username.toLowerCase().trim()}@college.edu`;
       
       // 1. Authenticate with Firebase Auth
-      // This verifies the user exists in Step 1 (Firebase Console -> Auth)
       await signInWithEmailAndPassword(auth, email, password);
 
       // 2. Verify against Institutional Directory
-      // This verifies the user exists in Step 2 (Firestore -> colleges/.../users)
       const userRef = doc(firestore, 'colleges', collegeId, 'users', email);
       const userSnap = await getDoc(userRef);
       const userData = userSnap.data();
