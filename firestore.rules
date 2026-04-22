@@ -12,21 +12,20 @@ service cloud.firestore {
     }
 
     function getUserRole() {
-      let email = request.auth.token.email.lower();
-      let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(email);
-      return exists(path) ? get(path).data.role : null;
+      // Safely check role if user is signed in and has an email token
+      return (isSignedIn() && "email" in request.auth.token) 
+        ? get(/databases/$(database)/documents/colleges/study-connect-college/users/$(request.auth.token.email.lower())).data.role 
+        : null;
     }
 
     function isAdmin() {
-      return isSignedIn() && "email" in request.auth.token && getUserRole() == 'admin';
+      return isSignedIn() && getUserRole() == 'admin';
     }
 
     function isSystemUninitialized() {
-      // Allows bootstrap if the master admin records are missing
-      let adminExists = exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu);
-      let shabuExists = exists(/databases/$(database)/documents/colleges/study-connect-college/users/shabu@gmail.com);
-      let shabuddinExists = exists(/databases/$(database)/documents/colleges/study-connect-college/users/shabuddinaw@gmail.com);
-      return !adminExists && !shabuExists && !shabuddinExists;
+      // Allows bootstrap if the master admin record is missing
+      return !exists(/databases/$(database)/documents/colleges/study-connect-college/users/shabu@gmail.com) &&
+             !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu);
     }
 
     match /colleges/{collegeId} {
@@ -38,7 +37,7 @@ service cloud.firestore {
       match /users/{userId} {
         allow get: if true; 
         allow list: if isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']);
-        // Allow creation of first users during bootstrap
+        // Allow creation of records during bootstrap or by an existing admin
         allow create, update, delete: if isSystemUninitialized() || isAdmin();
       }
 

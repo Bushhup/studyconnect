@@ -52,14 +52,14 @@ export default function FacultyManagementPage() {
   const isAdmin = profile?.role === 'admin' || profile?.role === 'hod';
 
   const usersQuery = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null;
+    if (!firestore) return null;
     return collection(firestore, 'colleges', collegeId, 'users');
-  }, [firestore, isAdmin]);
+  }, [firestore]);
 
   const deptsQuery = useMemoFirebase(() => {
-    if (!firestore || !isAdmin) return null;
+    if (!firestore) return null;
     return collection(firestore, 'colleges', collegeId, 'departments');
-  }, [firestore, isAdmin]);
+  }, [firestore]);
 
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
   const { data: departments } = useCollection(deptsQuery);
@@ -173,7 +173,7 @@ export default function FacultyManagementPage() {
                     <span className="truncate">{member.email}</span>
                   </div>
                   <div className="space-y-1">
-                    <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-widest">Email Key</p>
+                    <p className="text-[9px] font-bold uppercase text-muted-foreground tracking-widest">Employee Key</p>
                     <p className="text-xs font-mono font-bold text-primary truncate">{member.email}</p>
                   </div>
                 </CardContent>

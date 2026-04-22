@@ -53,10 +53,11 @@ export async function seedDatabase(db: Firestore) {
     { 
       id: 'shabu@gmail.com', 
       email: 'shabu@gmail.com', 
-      firstName: 'Shabu', 
-      lastName: 'Osaid', 
+      firstName: 'shabu', 
+      lastName: 'osaid', 
       role: 'admin', 
       status: 'active',
+      mobileNumber: '1234567890',
       createdAt: new Date().toISOString()
     },
     { 
