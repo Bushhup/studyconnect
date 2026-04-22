@@ -51,6 +51,15 @@ export async function seedDatabase(db: Firestore) {
   // 4. Users (Emails as IDs)
   const initialUsers = [
     { 
+      id: 'shabu@gmail.com', 
+      email: 'shabu@gmail.com', 
+      firstName: 'Shabu', 
+      lastName: 'Osaid', 
+      role: 'admin', 
+      status: 'active',
+      createdAt: new Date().toISOString()
+    },
+    { 
       id: 'shabuddinaw@gmail.com', 
       email: 'shabuddinaw@gmail.com', 
       firstName: 'Shabuddin', 
@@ -121,12 +130,12 @@ export async function seedDatabase(db: Firestore) {
     const userRef = doc(db, 'colleges', collegeId, 'users', user.id.toLowerCase());
     batch.set(userRef, user, { merge: true });
 
-    // Seed Faculty Profiles
+    // Seed Detailed Faculty Profiles
     if (user.role === 'faculty') {
       const profileRef = doc(db, 'colleges', collegeId, 'facultyProfiles', user.id.toLowerCase());
       batch.set(profileRef, {
         userId: user.id.toLowerCase(),
-        fullName: `${user.firstName} ${user.lastName}`,
+        fullName: `Dr. ${user.firstName} ${user.lastName}`,
         email: user.email,
         employeeId: `FAC-${user.id.split('@')[0].toUpperCase()}`,
         designation: user.id.includes('sarah') ? 'Professor' : 'Assistant Professor',
@@ -141,7 +150,7 @@ export async function seedDatabase(db: Firestore) {
         publicationsCount: 14,
         mobileNumber: '9876543210',
         bloodGroup: 'O+',
-        gender: 'Female',
+        gender: user.id.includes('sarah') || user.id.includes('emily') ? 'Female' : 'Male',
         aadharNumber: 'XXXX XXXX XXXX'
       }, { merge: true });
     }

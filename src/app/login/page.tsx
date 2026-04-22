@@ -100,6 +100,7 @@ export default function LoginPage() {
 
       toast({ title: 'Access Granted', description: `Welcome back, ${userData.firstName}.` });
       
+      // Intelligent Routing based on actual database role
       const routes = {
         admin: '/admin/dashboard',
         hod: '/admin/dashboard',
@@ -107,7 +108,8 @@ export default function LoginPage() {
         student: '/student/dashboard'
       };
       
-      router.push(routes[userData.role as keyof typeof routes] || '/profile');
+      const targetRoute = routes[userData.role as keyof typeof routes] || '/profile';
+      router.push(targetRoute);
 
     } catch (error: any) {
       console.error('Login error:', error);

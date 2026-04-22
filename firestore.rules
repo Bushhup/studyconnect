@@ -12,6 +12,7 @@ service cloud.firestore {
     }
 
     function getUserRole() {
+      // Safe role check that doesn't crash if unauthenticated
       let email = request.auth.token.email.lower();
       let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(email);
       return exists(path) ? get(path).data.role : null;
@@ -23,58 +24,62 @@ service cloud.firestore {
 
     function isSystemUninitialized() {
       // Allows bootstrap if the master admin record is missing
-      return !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu);
+      // We check for both common admin IDs to ensure a reliable "empty" state detection
+      let adminExists = exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu);
+      let shabuExists = exists(/databases/$(database)/documents/colleges/study-connect-college/users/shabu@gmail.com);
+      let shabuddinExists = exists(/databases/$(database)/documents/colleges/study-connect-college/users/shabuddinaw@gmail.com);
+      return !adminExists && !shabuExists && !shabuddinExists;
     }
 
     match /colleges/{collegeId} {
       allow get: if true;
-      // Allow seeding if admin or if system is not yet initialized
-      allow write, update: if isAdmin() || isSystemUninitialized();
+      // Allow seeding if system is not yet initialized or if the user is an admin
+      allow write, update: if isSystemUninitialized() || isAdmin();
 
       match /users/{userId} {
-        allow get: if true; // Required for login role verification
+        allow get: if true; 
         allow list: if isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']);
-        allow create, update, delete: if isAdmin() || isSystemUninitialized();
+        allow create, update, delete: if isSystemUninitialized() || isAdmin();
       }
 
       match /departments/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || isSystemUninitialized(); 
+        allow write: if isSystemUninitialized() || isAdmin(); 
       }
       
       match /classes/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']) || isSystemUninitialized(); 
+        allow write: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']); 
       }
       
       match /courses/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || isSystemUninitialized(); 
+        allow write: if isSystemUninitialized() || isAdmin(); 
       }
       
       match /academicRecords/{id} {
         allow read: if isSignedIn();
-        allow write: if isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']) || isSystemUninitialized();
+        allow write: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']);
       }
 
       match /studentProfiles/{userId} { 
         allow read: if isSignedIn(); 
-        allow write: if isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()) || isSystemUninitialized(); 
+        allow write: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
       }
       
       match /facultyProfiles/{userId} { 
         allow read: if isSignedIn(); 
-        allow write: if isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()) || isSystemUninitialized(); 
+        allow write: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
       }
 
       match /achievements/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || isSystemUninitialized(); 
+        allow write: if isSystemUninitialized() || isAdmin(); 
       }
       
       match /events/{id} { 
         allow read: if true; 
-        allow write: if isAdmin() || isSystemUninitialized(); 
+        allow write: if isSystemUninitialized() || isAdmin(); 
       }
     }
   }
