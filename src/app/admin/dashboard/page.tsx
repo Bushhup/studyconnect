@@ -54,9 +54,9 @@ export default function AdminDashboard() {
   const [isSeeding, setIsSeeding] = useState(false);
 
   const userProfileRef = useMemoFirebase(() => {
-    if (!db || !user?.uid) return null;
-    return doc(db, 'colleges', collegeId, 'users', user.uid);
-  }, [db, user?.uid]);
+    if (!db || !user?.email) return null;
+    return doc(db, 'colleges', collegeId, 'users', user.email.toLowerCase());
+  }, [db, user?.email]);
   
   const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
   const isAdmin = profile?.role === 'admin';

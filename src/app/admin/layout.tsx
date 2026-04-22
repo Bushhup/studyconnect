@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
@@ -67,9 +66,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   // User Profile
   const profileRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
-  }, [firestore, user?.uid]);
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
+  }, [firestore, user?.email]);
   const { data: profile } = useDoc(profileRef);
 
   const isHOD = profile?.role === 'hod';
@@ -338,7 +337,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="p-0 rounded-full border-2 border-transparent hover:border-border">
                   <Avatar className="h-9 w-9 md:h-10 md:w-10">
-                    <AvatarFallback className="bg-slate-900 text-white font-bold text-xs">{isHOD ? 'HD' : 'AD'}</AvatarFallback>
+                    <AvatarFallback className="bg-slate-900 text-white font-bold text-xs">{profile?.firstName?.[0] || 'AD'}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>

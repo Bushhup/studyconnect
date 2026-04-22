@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,9 +15,7 @@ import { signOut } from 'firebase/auth';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { 
-  BookOpen, 
-  Calendar, 
-  Award,
+  BookOpen, Calendar, Award,
   Settings,
   LayoutDashboard,
   Loader2,
@@ -63,9 +60,9 @@ export default function ProfilePage() {
   }, []);
 
   const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
-  }, [firestore, user?.uid]);
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
+  }, [firestore, user?.email]);
 
   const { data: profile, isLoading: isProfileLoading } = useDoc(userDocRef);
 
@@ -92,10 +89,10 @@ export default function ProfilePage() {
 
   const handleUpdateProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user?.uid || !firestore) return;
+    if (!user?.email || !firestore) return;
 
     setIsSubmitting(true);
-    const ref = doc(firestore, 'colleges', collegeId, 'users', user.uid);
+    const ref = doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
     
     updateDocumentNonBlocking(ref, {
       firstName,
@@ -132,7 +129,7 @@ export default function ProfilePage() {
     lastName: profile?.lastName || (isDemo ? 'User' : 'User'),
     email: profile?.email || (isDemo ? 'demo@studyconnect.edu' : user?.email || 'N/A'),
     role: displayRole,
-    id: user?.uid || 'N/A'
+    id: profile?.id || user?.uid || 'N/A'
   };
 
   return (
@@ -214,7 +211,7 @@ export default function ProfilePage() {
               <p className="text-lg font-bold text-slate-800 truncate">{displayProfile.email}</p>
             </div>
             <div className="space-y-1">
-              <p className="font-bold text-muted-foreground uppercase text-[10px] tracking-widest">User / UID</p>
+              <p className="font-bold text-muted-foreground uppercase text-[10px] tracking-widest">User / ID</p>
               <p className="text-sm font-mono font-bold text-slate-800 truncate">{displayProfile.id}</p>
             </div>
             <div className="space-y-1">
