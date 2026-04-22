@@ -52,27 +52,36 @@ export async function seedDatabase(db: Firestore) {
     batch.set(ref, cls);
   });
 
-  // 5. Initial Users (Faculty)
+  // 5. Initial Users (Admin & Faculty)
   const initialUsers = [
     { 
+      id: 'primary-admin', 
+      email: 'shabuddinaw@gmail.com', 
+      firstName: 'Master', 
+      lastName: 'Admin', 
+      role: 'admin', 
+      status: 'active',
+      createdAt: new Date().toISOString()
+    },
+    { 
       id: 'faculty-1', 
-      collegeId, 
       email: 'sarah.smith@college.edu', 
       firstName: 'Sarah', 
       lastName: 'Smith', 
       role: 'faculty', 
       departmentId: 'dept-eng', 
-      status: 'active' 
+      status: 'active',
+      createdAt: new Date().toISOString()
     },
     { 
       id: 'faculty-2', 
-      collegeId, 
       email: 'james.wilson@college.edu', 
       firstName: 'James', 
       lastName: 'Wilson', 
       role: 'faculty', 
       departmentId: 'dept-art', 
-      status: 'active' 
+      status: 'active',
+      createdAt: new Date().toISOString()
     },
   ];
   initialUsers.forEach(user => {

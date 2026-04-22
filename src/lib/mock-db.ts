@@ -20,9 +20,9 @@ export const MOCK_USERS = [
   {
     id: 'admin-uid',
     uid: 'admin-uid',
-    email: 'admin01@college.edu',
-    password: 'minister123',
-    firstName: 'System',
+    email: 'shabuddinaw@gmail.com',
+    password: 'adminpassword123',
+    firstName: 'Master',
     lastName: 'Admin',
     role: 'admin',
     status: 'active'
