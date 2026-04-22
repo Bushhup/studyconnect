@@ -16,7 +16,7 @@ export async function seedDatabase(db: Firestore) {
     logoUrl: '/logo.png',
     tagline: 'Connecting Minds, Building Futures',
     overview: 'A leading institutional hub for academic excellence and innovation.'
-  });
+  }, { merge: true });
 
   // 2. Departments
   const departments = [
@@ -25,7 +25,7 @@ export async function seedDatabase(db: Firestore) {
     { id: 'dept-sci', name: 'Applied Sciences', headOfDept: 'Dr. Emily Davis', programType: 'UG', totalSemesters: 6 },
   ];
   departments.forEach(dept => {
-    batch.set(doc(db, 'colleges', collegeId, 'departments', dept.id), dept);
+    batch.set(doc(db, 'colleges', collegeId, 'departments', dept.id), dept, { merge: true });
   });
 
   // 3. Courses
@@ -36,10 +36,10 @@ export async function seedDatabase(db: Firestore) {
     { id: 'course-ux101', code: 'UX101', name: 'User Experience Principles', departmentId: 'dept-art', credits: 3 },
   ];
   courses.forEach(course => {
-    batch.set(doc(db, 'colleges', collegeId, 'courses', course.id), course);
+    batch.set(doc(db, 'colleges', collegeId, 'courses', course.id), course, { merge: true });
   });
 
-  // 4. Users (Linked via Emails)
+  // 4. Users (Linked via Emails) - Critical for login
   const initialUsers = [
     { 
       id: 'shabuddinaw@gmail.com', email: 'shabuddinaw@gmail.com', 
@@ -63,7 +63,7 @@ export async function seedDatabase(db: Firestore) {
     },
   ];
   initialUsers.forEach(user => {
-    batch.set(doc(db, 'colleges', collegeId, 'users', user.id), user);
+    batch.set(doc(db, 'colleges', collegeId, 'users', user.id), user, { merge: true });
   });
 
   // 5. Classes
@@ -75,22 +75,7 @@ export async function seedDatabase(db: Firestore) {
     }
   ];
   classes.forEach(cls => {
-    batch.set(doc(db, 'colleges', collegeId, 'classes', cls.id), cls);
-  });
-
-  // 6. Academic Records (Attendance & Marks)
-  const records = [
-    {
-      id: 'rec-alex-ml',
-      studentId: 'alex.j@college.edu',
-      classId: 'class-cse-a',
-      subjectId: 'course-ai402',
-      attendance: 94,
-      marks: { cat1: 42, cat2: 45, final: 0 }
-    }
-  ];
-  records.forEach(rec => {
-    batch.set(doc(db, 'colleges', collegeId, 'academicRecords', rec.id), rec);
+    batch.set(doc(db, 'colleges', collegeId, 'classes', cls.id), cls, { merge: true });
   });
 
   await batch.commit();

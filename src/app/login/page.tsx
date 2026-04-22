@@ -25,7 +25,8 @@ import {
   Lock, 
   ChevronRight,
   Eye,
-  EyeOff
+  EyeOff,
+  Database
 } from 'lucide-react';
 import { useFirebase } from '@/firebase';
 import { 
@@ -35,6 +36,7 @@ import {
 import { doc, getDoc } from 'firebase/firestore';
 import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
+import { seedDatabase } from '@/lib/seed-data';
 
 type UserRole = 'student' | 'faculty' | 'admin' | 'hod';
 const collegeId = 'study-connect-college';
@@ -49,6 +51,27 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isBootstrapping, setIsBootstraping] = useState(false);
+
+  const handleBootstrap = async () => {
+    if (!firestore) return;
+    setIsBootstraping(true);
+    try {
+      await seedDatabase(firestore);
+      toast({
+        title: 'System Initialized',
+        description: 'Institutional hierarchy and admin accounts have been provisioned.',
+      });
+    } catch (e: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Bootstrap Failed',
+        description: e.message || 'Database might already be initialized or rules are blocking.',
+      });
+    } finally {
+      setIsBootstraping(false);
+    }
+  };
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,18 +94,7 @@ export default function LoginPage() {
         throw new Error("Identity record not found in institutional directory. Access Denied.");
       }
 
-      // 3. Role-Based Redirection
-      const isUserAdminRelated = userData.role === 'admin' || userData.role === 'hod';
-      const isSelectionAdminRelated = selectedRole === 'admin' || selectedRole === 'hod';
-      
-      if (userData.role !== selectedRole && !(isUserAdminRelated && isSelectionAdminRelated)) {
-        toast({
-          title: 'Portal Redirect',
-          description: `Logged in as ${userData.role.toUpperCase()}. Redirecting to your assigned dashboard.`
-        });
-      } else {
-        toast({ title: 'Access Granted', description: `Welcome back, ${userData.firstName}.` });
-      }
+      toast({ title: 'Access Granted', description: `Welcome back, ${userData.firstName}.` });
       
       const routes = {
         admin: '/admin/dashboard',
@@ -90,20 +102,30 @@ export default function LoginPage() {
         faculty: '/faculty/dashboard',
         student: '/student/dashboard'
       };
+      
       router.push(routes[userData.role as keyof typeof routes] || '/profile');
 
     } catch (error: any) {
+      let message = 'Incorrect credentials or account not provisioned.';
+      if (error.code === 'auth/user-not-found') {
+        message = 'This account does not exist in the authentication service. Please ask an admin to create it.';
+      } else if (error.code === 'auth/wrong-password') {
+        message = 'Incorrect password. Please try again.';
+      } else if (error.message.includes('Access Denied')) {
+        message = error.message;
+      }
+
       toast({
         variant: 'destructive',
         title: 'Authentication Denied',
-        description: error.message || 'Incorrect credentials or account not provisioned.'
+        description: message
       });
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="relative min-h-screen flex items-center justify-center p-4 bg-background selection:bg-primary/20">
+    <div className="relative min-h-screen flex flex-col items-center justify-center p-4 bg-background selection:bg-primary/20">
       <div className="absolute inset-0 overflow-hidden -z-10">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/5 blur-[120px]" />
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-primary/10 blur-[120px]" />
@@ -134,8 +156,18 @@ export default function LoginPage() {
               <RoleCard role="admin" title="Administrator" description="Master control for institutional hierarchy and configuration." icon={ShieldCheck} color="violet" onClick={() => setSelectedRole('admin')} />
             </div>
             
-            <div className="mt-12 text-center">
+            <div className="mt-12 text-center flex flex-col items-center gap-4">
               <p className="text-muted-foreground font-body text-sm opacity-60">Restricted institutional access. Accounts are provisioned by Admin.</p>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleBootstrap} 
+                disabled={isBootstrapping}
+                className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-2"
+              >
+                {isBootstrapping ? <Loader2 className="h-3 w-3 animate-spin" /> : <Database className="h-3 w-3" />}
+                System Bootstrap (First Time Setup)
+              </Button>
             </div>
           </motion.div>
         ) : (
