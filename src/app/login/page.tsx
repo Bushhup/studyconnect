@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -35,7 +36,7 @@ import {
   GoogleAuthProvider,
   signOut 
 } from 'firebase/auth';
-import { collection, query, where, getDocs, doc, setDoc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
 
@@ -58,27 +59,34 @@ export default function LoginPage() {
 
     try {
       const provider = new GoogleAuthProvider();
+      // Ensure Google selection is always prompted
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
       const result = await signInWithPopup(auth, provider);
       const googleUser = result.user;
 
-      const usersRef = collection(firestore, 'colleges', collegeId, 'users');
-      const q = query(usersRef, where('email', '==', googleUser.email));
-      const querySnapshot = await getDocs(q);
+      if (!googleUser.email) {
+        throw new Error('Google account must have a primary email address.');
+      }
 
-      if (querySnapshot.empty) {
+      // Directly lookup by email address (which is the document ID)
+      const userRef = doc(firestore, 'colleges', collegeId, 'users', googleUser.email);
+      const userSnap = await getDoc(userRef);
+
+      if (!userSnap.exists()) {
         await signOut(auth);
         throw new Error('Your email is not registered in the institutional directory. Please contact the administrator.');
       }
 
-      const userData = querySnapshot.docs[0].data();
-      const docId = querySnapshot.docs[0].id;
+      const userData = userSnap.data();
 
+      // Verify Role
       if (userData.role !== selectedRole && !(selectedRole === 'admin' && userData.role === 'admin')) {
         await signOut(auth);
         throw new Error(`This account is registered as a ${userData.role}, not a ${selectedRole}.`);
       }
 
-      const userRef = doc(firestore, 'colleges', collegeId, 'users', docId);
+      // Link Auth UID to Directory Record
       await updateDoc(userRef, {
         uid: googleUser.uid,
         lastLogin: new Date().toISOString(),
@@ -86,9 +94,10 @@ export default function LoginPage() {
         authProvider: 'google'
       });
 
+      // If Admin, ensure root marker exists
       if (userData.role === 'admin') {
         const rootAdminRef = doc(firestore, 'admins', googleUser.uid);
-        await setDoc(rootAdminRef, { id: googleUser.uid }, { merge: true });
+        await setDoc(rootAdminRef, { id: googleUser.uid, email: googleUser.email }, { merge: true });
       }
 
       toast({ title: 'Authentication Successful', description: `Welcome back, ${userData.firstName}.` });
@@ -103,10 +112,11 @@ export default function LoginPage() {
       router.push(routes[userData.role as keyof typeof routes] || '/profile');
 
     } catch (error: any) {
+      console.error('Google Auth Error:', error);
       toast({
         variant: 'destructive',
         title: 'Access Denied',
-        description: error.message || 'Verification failed.'
+        description: error.message || 'Institutional verification failed.'
       });
     } finally {
       setIsLoading(false);
@@ -119,24 +129,26 @@ export default function LoginPage() {
 
     setIsLoading(true);
     try {
-      const usersRef = collection(firestore, 'colleges', collegeId, 'users');
-      const q = query(usersRef, where('email', '==', username.includes('@') ? username : `${username}@college.edu`));
-      const querySnapshot = await getDocs(q);
+      const email = username.includes('@') ? username : `${username}@college.edu`;
+      const userRef = doc(firestore, 'colleges', collegeId, 'users', email);
+      const userSnap = await getDoc(userRef);
 
-      if (querySnapshot.empty) {
+      if (!userSnap.exists()) {
         throw new Error('Identity not found in directory.');
       }
 
-      const userData = querySnapshot.docs[0].data();
+      const userData = userSnap.data();
       
       if (userData.password !== password) {
         throw new Error('Invalid institutional password.');
       }
 
+      // For prototypes, we assume directory match equals auth
+      // Real apps would use signInWithEmailAndPassword after directory sync
       try {
-        await signInWithEmailAndPassword(auth, userData.email, password);
+        await signInWithEmailAndPassword(auth, email, password);
       } catch (ae) {
-        toast({ title: 'Directory Authenticated', description: `Access granted as ${userData.firstName}.` });
+        console.warn('Firebase Auth user may not exist yet, using directory match for bypass.');
       }
 
       const routes = {

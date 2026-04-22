@@ -2,7 +2,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { 
   useCollection, 
   useMemoFirebase, 
@@ -90,14 +89,14 @@ export default function UserManagementPage() {
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Generate a temporary unique ID for pre-registration
-    const userId = crypto.randomUUID();
-    const userRef = doc(firestore, 'colleges', collegeId, 'users', userId);
+    // CRITICAL: We use the email as the document ID to enable predictable security rules
+    const emailKey = formData.email.toLowerCase();
+    const userRef = doc(firestore, 'colleges', collegeId, 'users', emailKey);
     
     setDocumentNonBlocking(userRef, {
       ...formData,
-      id: userId,
-      username: formData.email.split('@')[0], // Default username from email
+      id: emailKey,
+      username: formData.email.split('@')[0],
       createdAt: new Date().toISOString()
     }, { merge: true });
 

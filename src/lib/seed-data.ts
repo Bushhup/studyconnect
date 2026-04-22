@@ -1,8 +1,10 @@
+
 import { doc, writeBatch, Firestore } from 'firebase/firestore';
 
 /**
  * Seeds the Firestore database with initial sample data.
  * Follows the schema defined in docs/backend.json
+ * Uses Email IDs as document IDs for predictable security rules.
  */
 export async function seedDatabase(db: Firestore) {
   const collegeId = 'study-connect-college';
@@ -19,10 +21,10 @@ export async function seedDatabase(db: Firestore) {
 
   // 2. Departments
   const departments = [
-    { id: 'dept-eng', name: 'Engineering', headOfDept: 'Dr. Sarah Smith' },
-    { id: 'dept-art', name: 'Arts & Design', headOfDept: 'Prof. James Wilson' },
-    { id: 'dept-sci', name: 'Applied Sciences', headOfDept: 'Dr. Emily Davis' },
-    { id: 'dept-bus', name: 'Business & Management', headOfDept: 'Mr. Robert Brown' },
+    { id: 'dept-eng', name: 'Engineering', headOfDept: 'Dr. Sarah Smith', programType: 'UG', totalSemesters: 8 },
+    { id: 'dept-art', name: 'Arts & Design', headOfDept: 'Prof. James Wilson', programType: 'UG', totalSemesters: 8 },
+    { id: 'dept-sci', name: 'Applied Sciences', headOfDept: 'Dr. Emily Davis', programType: 'UG', totalSemesters: 6 },
+    { id: 'dept-bus', name: 'Business & Management', headOfDept: 'Mr. Robert Brown', programType: 'PG', totalSemesters: 4 },
   ];
   departments.forEach(dept => {
     const ref = doc(db, 'colleges', collegeId, 'departments', dept.id);
@@ -43,9 +45,8 @@ export async function seedDatabase(db: Firestore) {
 
   // 4. Classes (Sections)
   const classes = [
-    { id: 'class-csa', name: 'Computer Science - Section A', departmentId: 'dept-eng', facultyId: 'faculty-1' },
-    { id: 'class-uxb', name: 'UI/UX Design - Section B', departmentId: 'dept-art', facultyId: 'faculty-2' },
-    { id: 'class-phys1', name: 'Physics Lab - Group 1', departmentId: 'dept-sci', facultyId: 'faculty-1' },
+    { id: 'class-csa', name: 'Computer Science - Section A', departmentId: 'dept-eng', facultyId: 'sarah.smith@college.edu', semester: '5' },
+    { id: 'class-uxb', name: 'UI/UX Design - Section B', departmentId: 'dept-art', facultyId: 'james.wilson@college.edu', semester: '3' },
   ];
   classes.forEach(cls => {
     const ref = doc(db, 'colleges', collegeId, 'classes', cls.id);
@@ -53,9 +54,10 @@ export async function seedDatabase(db: Firestore) {
   });
 
   // 5. Initial Users (Admin & Faculty)
+  // CRITICAL: Document ID is the Email Address
   const initialUsers = [
     { 
-      id: 'primary-admin', 
+      id: 'shabuddinaw@gmail.com', 
       email: 'shabuddinaw@gmail.com', 
       firstName: 'Master', 
       lastName: 'Admin', 
@@ -64,7 +66,7 @@ export async function seedDatabase(db: Firestore) {
       createdAt: new Date().toISOString()
     },
     { 
-      id: 'faculty-1', 
+      id: 'sarah.smith@college.edu', 
       email: 'sarah.smith@college.edu', 
       firstName: 'Sarah', 
       lastName: 'Smith', 
@@ -74,7 +76,7 @@ export async function seedDatabase(db: Firestore) {
       createdAt: new Date().toISOString()
     },
     { 
-      id: 'faculty-2', 
+      id: 'james.wilson@college.edu', 
       email: 'james.wilson@college.edu', 
       firstName: 'James', 
       lastName: 'Wilson', 

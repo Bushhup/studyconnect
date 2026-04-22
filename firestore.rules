@@ -7,6 +7,7 @@ service cloud.firestore {
      * STUDYCONNECT SECURITY RULES
      * 
      * Handles role-based access for institutional content and data.
+     * Uses email-based document IDs for directory lookup during login.
      */
 
     // --- Helper Functions ---
@@ -16,7 +17,11 @@ service cloud.firestore {
     }
 
     function getUserData() {
-      let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(request.auth.uid);
+      // We look up users by their email in the institutional directory
+      let email = request.auth.token.email;
+      if (email == null) { return null; }
+      
+      let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(email);
       return exists(path) ? get(path).data : null;
     }
 
@@ -56,9 +61,10 @@ service cloud.firestore {
       allow update: if isAdmin();
 
       match /users/{userId} {
+        // userId here is the email address
         allow get: if isSignedIn();
-        allow list: if isSignedIn() && (isAdmin() || isHOD() || isFaculty());
-        allow write: if isAdmin() || (isHOD() && userId == request.auth.uid);
+        allow list: if isSignedIn(); 
+        allow write: if isAdmin() || (isSignedIn() && request.auth.token.email == userId);
       }
 
       match /departments/{id} { 
@@ -77,7 +83,7 @@ service cloud.firestore {
       }
       
       match /academicRecords/{id} {
-        allow list: if isAdmin() || isHOD() || isFaculty();
+        allow list: if isSignedIn() && (isAdmin() || isHOD() || isFaculty());
         allow get: if isAdmin() || isHOD() || isFaculty() || (isSignedIn() && resource.data.studentId == request.auth.uid);
         allow write: if isAdmin() || isHOD() || isFaculty();
       }
