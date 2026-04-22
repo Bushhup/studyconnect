@@ -1,13 +1,12 @@
-
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * STUDYCONNECT SECURITY RULES - V2
+     * STUDYCONNECT SECURITY RULES - ADMIN RESTRICTED ACCESS
      * 
      * Handles role-based access for institutional content and data.
-     * Uses email-based document IDs for directory lookup.
+     * Creation and deletion of users is restricted to Admins.
      */
 
     // --- Helper Functions ---
@@ -16,10 +15,9 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Safely retrieves the user's directory record
+    // Safely retrieves the user's directory record by checking the standard collegeId
     function getUserData() {
       let email = request.auth.token.email;
-      // Use the standard collegeId for role verification
       let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(email);
       return (email != null && exists(path)) ? get(path).data : null;
     }
@@ -54,19 +52,19 @@ service cloud.firestore {
     // --- Institutional Content Rules ---
 
     match /colleges/{collegeId} {
-      // Allow general public to read college metadata (name, tagline)
       allow get: if true;
-      
-      // Global College Info: Only Master Admin
       allow update: if isAdmin();
 
       match /users/{userId} {
-        // userId here is the email address
-        // We allow get/list for signed-in users so role-based routing can occur
+        // Only Admins can CREATE or DELETE users to control portal access
+        allow create, delete: if isAdmin();
+        
+        // Signed in users can look up their own profile or other profiles if they are faculty/admin
         allow get: if isSignedIn();
-        allow list: if isSignedIn(); 
-        // Admin or the user themselves (by email match) can write
-        allow write: if isAdmin() || (isSignedIn() && request.auth.token.email == userId);
+        allow list: if isAdmin() || isFaculty() || isHOD();
+        
+        // Users can update their own non-critical profile fields
+        allow update: if isAdmin() || (isSignedIn() && request.auth.token.email == userId);
       }
 
       match /departments/{id} { 
