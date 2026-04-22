@@ -1,3 +1,4 @@
+
 /**
  * @fileOverview Centralized Local Mock Database
  * Acts as a replacement for Firestore to "disconnect" from cloud errors.
@@ -18,12 +19,22 @@ export const MOCK_DEPARTMENTS = [
 
 export const MOCK_USERS = [
   {
-    id: 'admin-uid',
-    uid: 'admin-uid',
+    id: 'shabuddinaw@gmail.com',
+    uid: 'shabu-admin-uid',
     email: 'shabuddinaw@gmail.com',
-    password: 'adminpassword123',
-    firstName: 'Master',
-    lastName: 'Admin',
+    password: 'shabu05413',
+    firstName: 'Shabuddin',
+    lastName: 'A',
+    role: 'admin',
+    status: 'active'
+  },
+  {
+    id: 'admin@college.edu',
+    uid: 'system-admin-uid',
+    email: 'admin@college.edu',
+    password: 'minister123',
+    firstName: 'System',
+    lastName: 'Administrator',
     role: 'admin',
     status: 'active'
   },
