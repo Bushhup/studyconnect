@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -8,7 +7,8 @@ import {
   useFirestore, 
   updateDocumentNonBlocking, 
   setDocumentNonBlocking,
-  useUser
+  useUser,
+  deleteDocumentNonBlocking
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, Plus, UserCog, Edit3, 
-  Loader2, Globe, Mail, Phone, Lock
+  Loader2, Globe, Mail, Phone, Lock, Trash2, ShieldCheck, UserCheck
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -30,10 +30,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const collegeId = 'study-connect-college';
 
@@ -42,9 +44,8 @@ const USER_CSV_COLUMNS: CsvColumn[] = [
   { key: 'lastName', label: 'Last Name', description: 'Legal last name.', example: 'Johnson', required: true },
   { key: 'email', label: 'System Email', description: 'Email used for authentication.', example: 'alex.j@college.edu', required: true },
   { key: 'mobileNumber', label: 'Mobile Number', description: 'Institutional contact number.', example: '9876543210', required: true },
-  { key: 'password', label: 'Initial Password', description: 'Default temporary login password.', example: 'Welcome@123', required: true },
-  { key: 'role', label: 'System Role', description: 'Access level (student, faculty, admin).', example: 'student', required: true },
-  { key: 'batchYear', label: 'Batch Year', description: 'Student batch year (e.g. Batch-2026).', example: 'Batch-2026', required: false },
+  { key: 'role', label: 'System Role', description: 'Access level (student, faculty, admin, hod).', example: 'student', required: true },
+  { key: 'departmentId', label: 'Dept ID', description: 'Mapping to a department.', example: 'dept-eng', required: false },
 ];
 
 export default function UserManagementPage() {
@@ -54,20 +55,18 @@ export default function UserManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
 
-  // Dialog States
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
-  // Form States
   const [formData, setFormData] = useState({
     username: '',
     firstName: '',
     lastName: '',
     email: '',
     mobileNumber: '',
-    password: '',
     role: 'student',
+    departmentId: '',
     batchYear: '',
     status: 'active'
   });
@@ -77,7 +76,10 @@ export default function UserManagementPage() {
     return collection(firestore, 'colleges', collegeId, 'users');
   }, [firestore, user]);
 
+  const deptsQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'departments'), [firestore]);
+
   const { data: users, isLoading: collectionLoading } = useCollection(usersQuery);
+  const { data: departments } = useCollection(deptsQuery);
 
   const filteredUsers = users?.filter(u => {
     const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
@@ -88,21 +90,34 @@ export default function UserManagementPage() {
 
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // CRITICAL: We use the email as the document ID to enable predictable security rules
-    const emailKey = formData.email.toLowerCase();
+    if (!formData.email) return;
+
+    const emailKey = formData.email.toLowerCase().trim();
     const userRef = doc(firestore, 'colleges', collegeId, 'users', emailKey);
     
     setDocumentNonBlocking(userRef, {
       ...formData,
       id: emailKey,
-      username: formData.email.split('@')[0],
+      email: emailKey,
+      username: emailKey.split('@')[0],
       createdAt: new Date().toISOString()
     }, { merge: true });
 
-    toast({ title: 'User Pre-Registered', description: `${formData.firstName} can now authenticate via Google using ${formData.email}.` });
+    toast({ title: 'Identity Provisioned', description: `User ${formData.firstName} has been added to the directory.` });
     setIsAddOpen(false);
-    setFormData({ username: '', firstName: '', lastName: '', email: '', mobileNumber: '', password: '', role: 'student', batchYear: '', status: 'active' });
+    setFormData({ username: '', firstName: '', lastName: '', email: '', mobileNumber: '', role: 'student', departmentId: '', batchYear: '', status: 'active' });
+  };
+
+  const handleDeleteUser = (userId: string) => {
+    const userRef = doc(firestore, 'colleges', collegeId, 'users', userId);
+    deleteDocumentNonBlocking(userRef);
+    toast({ title: 'Identity Terminated', description: 'User has been removed from the institutional directory.' });
+  };
+
+  const handleEditClick = (u: any) => {
+    setSelectedUser(u);
+    setFormData({ ...u });
+    setIsEditOpen(true);
   };
 
   const handleUpdateUser = (e: React.FormEvent) => {
@@ -110,24 +125,24 @@ export default function UserManagementPage() {
     if (!selectedUser) return;
 
     const userRef = doc(firestore, 'colleges', collegeId, 'users', selectedUser.id);
-    updateDocumentNonBlocking(userRef, { ...formData });
+    updateDocumentNonBlocking(userRef, { ...formData, updatedAt: new Date().toISOString() });
 
-    toast({ title: 'Profile Updated', description: 'Directory record synchronized.' });
+    toast({ title: 'Record Updated', description: 'User information has been synchronized.' });
     setIsEditOpen(false);
   };
 
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Institutional Directory</h1>
-          <p className="text-muted-foreground mt-1">Onboard staff and students by provisioning their email and credentials.</p>
-        </div>
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Identity Hub</h1>
+          <p className="text-muted-foreground mt-1">Onboard staff and students by provisioning their institutional profiles.</p>
+        </motion.div>
         
         <div className="flex gap-2">
           <CsvImportDialog 
-            title="Bulk Provision Users"
-            description="Upload a CSV file to register multiple identities with names, emails, and mobile numbers."
+            title="Bulk Provisioning"
+            description="Process multiple user records via CSV mapping."
             columns={USER_CSV_COLUMNS}
           />
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
@@ -136,8 +151,11 @@ export default function UserManagementPage() {
                 <Plus className="h-4 w-4" /> Provision New Identity
               </Button>
             </DialogTrigger>
-            <DialogContent className="rounded-[2.5rem] max-w-2xl">
-              <DialogHeader><DialogTitle>Onboard Institutional User</DialogTitle></DialogHeader>
+            <DialogContent className="rounded-[2.5rem] max-w-2xl border-none">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2"><UserCog className="h-5 w-5 text-primary" /> Onboard Institutional User</DialogTitle>
+                <DialogDescription>Assign a system role and department to initialize the identity.</DialogDescription>
+              </DialogHeader>
               <form onSubmit={handleCreateUser} className="space-y-6 pt-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -153,17 +171,11 @@ export default function UserManagementPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Institutional Email</Label>
-                    <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="pl-10 bg-muted border-none h-12 rounded-xl" required placeholder="alex@college.edu" />
-                    </div>
+                    <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="alex@college.edu" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Mobile Number</Label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input value={formData.mobileNumber} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="pl-10 bg-muted border-none h-12 rounded-xl" required placeholder="xxxxx xxxxx" />
-                    </div>
+                    <Input value={formData.mobileNumber} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="9876543210" />
                   </div>
                 </div>
 
@@ -181,28 +193,14 @@ export default function UserManagementPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Initial Password</Label>
-                    <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="pl-10 bg-muted border-none h-12 rounded-xl" required />
-                    </div>
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Department Mapping</Label>
+                    <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId}>
+                      <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Select Department" /></SelectTrigger>
+                      <SelectContent>
+                        {departments?.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
-
-                {formData.role === 'student' && (
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Batch Year</Label>
-                    <Input placeholder="e.g. Batch-2026" value={formData.batchYear} onChange={(e) => setFormData({...formData, batchYear: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
-                  </div>
-                )}
-
-                <div className="pt-2 bg-primary/5 p-4 rounded-2xl border border-primary/10">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-primary mb-1 flex items-center gap-2">
-                    <Globe className="h-3 w-3" /> Note on Authentication
-                  </p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Pre-registering this email allows the user to securely link their Google account to this institutional identity during their first sign-in attempt.
-                  </p>
                 </div>
 
                 <Button type="submit" className="w-full h-14 font-bold shadow-lg shadow-primary/20 rounded-2xl text-lg uppercase tracking-tight">
@@ -217,14 +215,14 @@ export default function UserManagementPage() {
       <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
         <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
           <TabsList className="bg-card border h-11 p-1 rounded-xl">
-            <TabsTrigger value="all" className="px-6 rounded-lg">All</TabsTrigger>
+            <TabsTrigger value="all" className="px-6 rounded-lg">All Records</TabsTrigger>
             <TabsTrigger value="student" className="px-6 rounded-lg">Students</TabsTrigger>
             <TabsTrigger value="faculty" className="px-6 rounded-lg">Faculty</TabsTrigger>
-            <TabsTrigger value="admin" className="px-6 rounded-lg">Admins</TabsTrigger>
+            <TabsTrigger value="hod" className="px-6 rounded-lg">Heads</TabsTrigger>
           </TabsList>
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search records by name or email..." className="pl-10 h-11 rounded-xl border-none shadow-sm" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <Input placeholder="Filter by name or email..." className="pl-10 h-11 rounded-xl border-none shadow-sm" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
         </div>
 
@@ -236,48 +234,58 @@ export default function UserManagementPage() {
               <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow className="hover:bg-transparent border-none">
-                    <TableHead className="pl-6 py-4 font-bold text-foreground">Identity</TableHead>
-                    <TableHead className="font-bold text-foreground">Contact & Role</TableHead>
-                    <TableHead className="font-bold text-foreground">Auth Status</TableHead>
-                    <TableHead className="text-right pr-6 font-bold text-foreground">Action</TableHead>
+                    <TableHead className="pl-6 py-4 font-bold text-foreground">Institutional Identity</TableHead>
+                    <TableHead className="font-bold text-foreground">Department & Status</TableHead>
+                    <TableHead className="font-bold text-foreground">Access Level</TableHead>
+                    <TableHead className="text-right pr-6 font-bold text-foreground">Management</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredUsers.map((u) => (
-                    <TableRow key={u.id} className="group hover:bg-muted/30 border-border">
-                      <TableCell className="pl-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10 border-2 border-background shadow-sm"><AvatarFallback className="bg-primary/5 text-primary font-bold uppercase">{u.firstName?.[0]}{u.lastName?.[0]}</AvatarFallback></Avatar>
-                          <div className="flex flex-col">
-                            <span className="font-bold text-foreground">{u.firstName} {u.lastName}</span>
-                            <span className="text-[10px] font-bold text-muted-foreground uppercase">{u.email}</span>
+                  <AnimatePresence>
+                    {filteredUsers.map((u, idx) => (
+                      <TableRow key={u.id} className="group hover:bg-muted/30 border-border">
+                        <TableCell className="pl-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
+                              <AvatarFallback className="bg-primary/5 text-primary font-bold uppercase">{u.firstName?.[0]}{u.lastName?.[0]}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                              <span className="font-bold text-foreground">{u.firstName} {u.lastName}</span>
+                              <span className="text-[10px] font-bold text-muted-foreground uppercase">{u.email}</span>
+                            </div>
                           </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <span className="text-xs font-medium text-foreground">{u.mobileNumber || 'No Contact'}</span>
-                          <Badge variant="secondary" className="font-bold uppercase text-[9px] border-none w-fit px-1.5">{u.role}</Badge>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          {u.uid ? (
-                            <Badge className="bg-emerald-50 text-emerald-700 border-none font-bold text-[9px] w-fit">LINKED (Google)</Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-[9px] font-bold text-amber-600 border-amber-200 w-fit">PENDING AUTH</Badge>
-                          )}
-                          <span className={cn("text-[10px] font-bold uppercase", u.status === 'active' ? "text-emerald-500" : "text-muted-foreground")}>{u.status}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right pr-6">
-                        <Button variant="ghost" size="icon" className="rounded-xl" onClick={() => {setSelectedUser(u); setFormData({...u}); setIsEditOpen(true);}}><Edit3 className="h-4 w-4 text-muted-foreground" /></Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-bold text-foreground uppercase tracking-widest">
+                              {departments?.find(d => d.id === u.departmentId)?.name || 'Not Assigned'}
+                            </span>
+                            <Badge variant="secondary" className={cn("font-bold uppercase text-[8px] w-fit px-1.5", u.status === 'active' ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700")}>
+                              {u.status}
+                            </Badge>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-bold uppercase text-[9px] border-primary/20 text-primary py-1 px-3 rounded-md">
+                            {u.role}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right pr-6">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary/5 text-primary" onClick={() => handleEditClick(u)}>
+                              <Edit3 className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-red-50 text-red-500" onClick={() => handleDeleteUser(u.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </AnimatePresence>
                   {filteredUsers.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="p-20 text-center text-muted-foreground italic">No institutional records found.</TableCell>
+                      <TableCell colSpan={4} className="p-20 text-center text-muted-foreground italic">No institutional records matching the filter.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -286,6 +294,53 @@ export default function UserManagementPage() {
           </CardContent>
         </Card>
       </Tabs>
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="rounded-[2.5rem] max-w-2xl border-none">
+          <DialogHeader><DialogTitle>Modify Identity Record</DialogTitle></DialogHeader>
+          <form onSubmit={handleUpdateUser} className="space-y-6 pt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold">First Name</Label>
+                <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold">Last Name</Label>
+                <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12" />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold">Role</Label>
+                <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
+                  <SelectTrigger className="bg-muted border-none h-12"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="student">Student</SelectItem>
+                    <SelectItem value="faculty">Faculty</SelectItem>
+                    <SelectItem value="hod">H.O.D</SelectItem>
+                    <SelectItem value="admin">Administrator</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold">Status</Label>
+                <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
+                  <SelectTrigger className="bg-muted border-none h-12"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="alumni">Alumni</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <Button type="submit" className="w-full h-14 font-bold uppercase tracking-tight shadow-lg">
+              Synchronize Record
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
