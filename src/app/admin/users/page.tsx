@@ -302,19 +302,25 @@ export default function UserManagementPage() {
           <form onSubmit={handleUpdateUser} className="space-y-6 pt-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold">First Name</Label>
-                <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12" />
+                <Label className="text-[10px] font-bold uppercase">First Name</Label>
+                <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold">Last Name</Label>
-                <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12" />
+                <Label className="text-[10px] font-bold uppercase">Last Name</Label>
+                <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
             </div>
+            
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase">Email Address</Label>
+              <Input value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold">Role</Label>
+                <Label className="text-[10px] font-bold uppercase">System Role</Label>
                 <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
-                  <SelectTrigger className="bg-muted border-none h-12"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="student">Student</SelectItem>
                     <SelectItem value="faculty">Faculty</SelectItem>
@@ -324,18 +330,29 @@ export default function UserManagementPage() {
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold">Status</Label>
-                <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
-                  <SelectTrigger className="bg-muted border-none h-12"><SelectValue /></SelectTrigger>
+                <Label className="text-[10px] font-bold uppercase">Department</Label>
+                <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId}>
+                  <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Assign Department" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="alumni">Alumni</SelectItem>
+                    {departments?.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            <Button type="submit" className="w-full h-14 font-bold uppercase tracking-tight shadow-lg">
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase">Enrollment Status</Label>
+              <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
+                <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="alumni">Alumni</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button type="submit" className="w-full h-14 font-bold uppercase tracking-tight shadow-lg shadow-primary/20 rounded-2xl">
               Synchronize Record
             </Button>
           </form>
