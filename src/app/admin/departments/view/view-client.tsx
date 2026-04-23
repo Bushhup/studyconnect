@@ -232,127 +232,133 @@ export default function DepartmentViewClient() {
         </div>
 
         <AnimatePresence mode="wait">
-          <TabsContent key="classes" value="classes">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {classes?.map((cls, idx) => (
-                <motion.div key={cls.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
-                  <Card className="border-none shadow-sm hover:shadow-md transition-all rounded-[2rem] overflow-hidden group bg-card h-full flex flex-col">
-                    <div className="h-1.5 w-full bg-primary/10 group-hover:bg-primary transition-colors" />
-                    <CardHeader className="flex-grow">
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-xl font-headline font-bold text-foreground">{cls.name}</CardTitle>
-                        <Badge className="bg-primary/5 text-primary border-none font-bold uppercase text-[9px]">Sem {cls.semester}</Badge>
-                      </div>
-                      <CardDescription className="text-xs font-medium">Allotted section node.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-5 pt-0">
-                      <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-                        <span>Enrollment Count</span>
-                        <span className="text-foreground">{cls.studentIds?.length || 0} Students</span>
-                      </div>
-                      <Button asChild className="w-full rounded-xl h-11 font-bold group-hover:shadow-lg transition-all">
-                        <Link href={`/admin/class-portal?id=${cls.id}`}>Open Roster Ledger <ChevronRight className="ml-2 h-4 w-4" /></Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-              {classes?.length === 0 && (
-                <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[3rem] bg-muted/20">
-                  <LayoutGrid className="h-12 w-12 mx-auto mb-4 text-muted-foreground/20" />
-                  <p className="font-bold text-muted-foreground">No sections have been provisioned yet.</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent key="faculty" value="faculty">
-            <div className="flex justify-end mb-4">
-              <Button size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 shadow-lg bg-primary" onClick={() => {setAssignRole('faculty'); setIsAssignUserOpen(true);}}>
-                <UserPlus className="h-3 w-3" /> Map from Directory
-              </Button>
-            </div>
-            <Card className="border-none shadow-sm rounded-[2rem] bg-card overflow-hidden">
-              <CardContent className="p-0">
-                <div className="divide-y divide-muted/50">
-                  {faculty.map((f, idx) => (
-                    <div key={f.id || idx} className="p-6 flex items-center justify-between group hover:bg-muted/30 transition-all">
-                      <div className="flex items-center gap-4">
-                        <Avatar className="h-12 w-12 border-2 border-background shadow-sm"><AvatarFallback className="bg-primary/5 text-primary font-bold">{f.firstName?.[0]}{f.lastName?.[0]}</AvatarFallback></Avatar>
-                        <div>
-                          <p className="font-bold text-foreground">Dr. {f.firstName} {f.lastName}</p>
-                          <p className="text-[10px] font-bold text-muted-foreground uppercase">{f.designation || 'Academic Staff'}</p>
+          <TabsContent key={`tab-content-${activeTab}`} value={activeTab}>
+            {activeTab === 'classes' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {classes?.map((cls, idx) => (
+                  <motion.div key={cls.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.05 }}>
+                    <Card className="border-none shadow-sm hover:shadow-md transition-all rounded-[2rem] overflow-hidden group bg-card h-full flex flex-col">
+                      <div className="h-1.5 w-full bg-primary/10 group-hover:bg-primary transition-colors" />
+                      <CardHeader className="flex-grow">
+                        <div className="flex justify-between items-start">
+                          <CardTitle className="text-xl font-headline font-bold text-foreground">{cls.name}</CardTitle>
+                          <Badge className="bg-primary/5 text-primary border-none font-bold uppercase text-[9px]">Sem {cls.semester}</Badge>
                         </div>
-                      </div>
-                      <Button variant="ghost" size="sm" className="rounded-xl font-bold uppercase text-[9px] hover:bg-primary hover:text-white" asChild>
-                        <Link href={`/admin/faculty?search=${f.email}`}>Professional Bio</Link>
-                      </Button>
-                    </div>
-                  ))}
-                  {faculty.length === 0 && (
-                    <div className="p-20 text-center text-muted-foreground italic">No faculty members mapped to this division.</div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent key="students" value="students">
-            <div className="flex justify-between items-center mb-6">
-              <div className="flex gap-2">
-                {batches.map(b => <Badge key={b} className="bg-primary/5 text-primary border-none font-bold uppercase text-[9px] px-3 h-6 flex items-center">{b}</Badge>)}
+                        <CardDescription className="text-xs font-medium">Allotted section node.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-5 pt-0">
+                        <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                          <span>Enrollment Count</span>
+                          <span className="text-foreground">{cls.studentIds?.length || 0} Students</span>
+                        </div>
+                        <Button asChild className="w-full rounded-xl h-11 font-bold group-hover:shadow-lg transition-all">
+                          <Link href={`/admin/class-portal?id=${cls.id}`}>Open Roster Ledger <ChevronRight className="ml-2 h-4 w-4" /></Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                ))}
+                {classes?.length === 0 && (
+                  <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[3rem] bg-muted/20">
+                    <LayoutGrid className="h-12 w-12 mx-auto mb-4 text-muted-foreground/20" />
+                    <p className="font-bold text-muted-foreground">No sections have been provisioned yet.</p>
+                  </div>
+                )}
               </div>
-              <Button size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 shadow-lg bg-primary" onClick={() => {setAssignRole('student'); setIsAssignUserOpen(true);}}>
-                <UserPlus className="h-3 w-3" /> Onboard Records
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {students.map((s, idx) => (
-                <StudentBioHover key={s.id || idx} student={s}>
-                  <Card className="p-4 border-none shadow-sm bg-card rounded-2xl flex items-center justify-between group hover:bg-primary/5 transition-all cursor-pointer">
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-primary/5 flex items-center justify-center font-bold text-xs uppercase text-primary">
-                        {s.firstName?.[0]}{s.lastName?.[0]}
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold truncate max-w-[120px]">{s.firstName} {s.lastName}</p>
-                        <p className="text-[8px] font-bold text-muted-foreground uppercase">Sem {s.semester}</p>
-                      </div>
-                    </div>
-                    <Badge className="bg-emerald-50 text-emerald-700 border-none font-bold text-[8px] uppercase">Active</Badge>
-                  </Card>
-                </StudentBioHover>
-              ))}
-              {students.length === 0 && (
-                <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[2rem] bg-muted/20">
-                  <p className="text-sm font-bold text-muted-foreground">No students enrolled in this division.</p>
-                </div>
-              )}
-            </div>
-          </TabsContent>
+            )}
 
-          <TabsContent key="subjects" value="subjects">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {courses?.map((course, idx) => (
-                <Card key={course.id || idx} className="border-none shadow-sm rounded-[1.5rem] bg-card hover:shadow-md transition-all">
-                  <CardHeader className="pb-3">
-                    <Badge variant="outline" className="w-fit border-primary/20 text-primary font-bold mb-2 uppercase text-[9px] px-3">{course.code}</Badge>
-                    <CardTitle className="text-base font-headline font-bold leading-tight">{course.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="pt-0 border-t border-dashed mt-4">
-                    <div className="flex items-center justify-between text-xs font-bold pt-4">
-                      <span className="text-muted-foreground uppercase text-[9px]">Academic Units</span>
-                      <span>{course.credits} Credits</span>
+            {activeTab === 'faculty' && (
+              <div className="space-y-4">
+                <div className="flex justify-end mb-4">
+                  <Button size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 shadow-lg bg-primary" onClick={() => {setAssignRole('faculty'); setIsAssignUserOpen(true);}}>
+                    <UserPlus className="h-3 w-3" /> Map from Directory
+                  </Button>
+                </div>
+                <Card className="border-none shadow-sm rounded-[2rem] bg-card overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="divide-y divide-muted/50">
+                      {faculty.map((f, idx) => (
+                        <div key={f.id || `f-${idx}`} className="p-6 flex items-center justify-between group hover:bg-muted/30 transition-all">
+                          <div className="flex items-center gap-4">
+                            <Avatar className="h-12 w-12 border-2 border-background shadow-sm"><AvatarFallback className="bg-primary/5 text-primary font-bold">{f.firstName?.[0]}{f.lastName?.[0]}</AvatarFallback></Avatar>
+                            <div>
+                              <p className="font-bold text-foreground">Dr. {f.firstName} {f.lastName}</p>
+                              <p className="text-[10px] font-bold text-muted-foreground uppercase">{f.designation || 'Academic Staff'}</p>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm" className="rounded-xl font-bold uppercase text-[9px] hover:bg-primary hover:text-white" asChild>
+                            <Link href={`/admin/faculty?search=${f.email}`}>Professional Bio</Link>
+                          </Button>
+                        </div>
+                      ))}
+                      {faculty.length === 0 && (
+                        <div className="p-20 text-center text-muted-foreground italic">No faculty members mapped to this division.</div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
-              ))}
-              {courses?.length === 0 && (
-                <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[2rem] bg-muted/20">
-                  <p className="text-sm font-bold text-muted-foreground">Curriculum nodes not defined for this program.</p>
+              </div>
+            )}
+
+            {activeTab === 'students' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="flex gap-2">
+                    {batches.map(b => <Badge key={b} className="bg-primary/5 text-primary border-none font-bold uppercase text-[9px] px-3 h-6 flex items-center">{b}</Badge>)}
+                  </div>
+                  <Button size="sm" className="rounded-xl gap-2 font-bold uppercase text-[10px] h-10 shadow-lg bg-primary" onClick={() => {setAssignRole('student'); setIsAssignUserOpen(true);}}>
+                    <UserPlus className="h-3 w-3" /> Onboard Records
+                  </Button>
                 </div>
-              )}
-            </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {students.map((s, idx) => (
+                    <StudentBioHover key={s.id || `s-${idx}`} student={s}>
+                      <Card className="p-4 border-none shadow-sm bg-card rounded-2xl flex items-center justify-between group hover:bg-primary/5 transition-all cursor-pointer">
+                        <div className="flex items-center gap-3">
+                          <div className="h-10 w-10 rounded-full bg-primary/5 flex items-center justify-center font-bold text-xs uppercase text-primary">
+                            {s.firstName?.[0]}{s.lastName?.[0]}
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold truncate max-w-[120px]">{s.firstName} {s.lastName}</p>
+                            <p className="text-[8px] font-bold text-muted-foreground uppercase">Sem {s.semester}</p>
+                          </div>
+                        </div>
+                        <Badge className="bg-emerald-50 text-emerald-700 border-none font-bold text-[8px] uppercase">Active</Badge>
+                      </Card>
+                    </StudentBioHover>
+                  ))}
+                  {students.length === 0 && (
+                    <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[2rem] bg-muted/20">
+                      <p className="text-sm font-bold text-muted-foreground">No students enrolled in this division.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'subjects' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {courses?.map((course, idx) => (
+                  <Card key={course.id || `c-${idx}`} className="border-none shadow-sm rounded-[1.5rem] bg-card hover:shadow-md transition-all">
+                    <CardHeader className="pb-3">
+                      <Badge variant="outline" className="w-fit border-primary/20 text-primary font-bold mb-2 uppercase text-[9px] px-3">{course.code}</Badge>
+                      <CardTitle className="text-base font-headline font-bold leading-tight">{course.name}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0 border-t border-dashed mt-4">
+                      <div className="flex items-center justify-between text-xs font-bold pt-4">
+                        <span className="text-muted-foreground uppercase text-[9px]">Academic Units</span>
+                        <span>{course.credits} Credits</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+                {courses?.length === 0 && (
+                  <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[2rem] bg-muted/20">
+                    <p className="text-sm font-bold text-muted-foreground">Curriculum nodes not defined for this program.</p>
+                  </div>
+                )}
+              </div>
+            )}
           </TabsContent>
         </AnimatePresence>
       </Tabs>

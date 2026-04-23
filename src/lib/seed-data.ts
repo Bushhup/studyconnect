@@ -1,4 +1,3 @@
-
 import { doc, writeBatch, Firestore } from 'firebase/firestore';
 
 /**
@@ -52,7 +51,7 @@ export async function seedDatabase(db: Firestore) {
   // 4. Users (Using Email as ID for predictable rule-based access)
   const users = [
     { id: 'shabu@gmail.com', email: 'shabu@gmail.com', password: 'shabu123', firstName: 'Shabu', lastName: 'Osaid', role: 'admin', status: 'active', mobileNumber: '9344941725' },
-    { id: 'shabuddinaw@gmail.com', email: 'shabuddinaw@gmail.com', password: 'shabu05413', firstName: 'Shabu', lastName: 'Osaid', role: 'admin', status: 'active', mobileNumber: '9344941725' },
+    { id: 'shabuddinaw@gmail.com', email: 'shabuddinaw@gmail.com', password: 'shabu05413', firstName: 'Shabuddin', lastName: 'A', role: 'admin', status: 'active', mobileNumber: '9344941725' },
     { id: 'admin@college.edu', email: 'admin@college.edu', password: 'minister123', firstName: 'Master', lastName: 'Admin', role: 'admin', status: 'active', mobileNumber: '9003341725' },
     { id: 'sarah.smith@college.edu', email: 'sarah.smith@college.edu', password: 'password123', firstName: 'Sarah', lastName: 'Smith', role: 'faculty', departmentId: 'dept-eng', status: 'active', designation: 'Professor', mobileNumber: '9944885566' },
     { id: 'robert.fox@college.edu', email: 'robert.fox@college.edu', password: 'password123', firstName: 'Robert', lastName: 'Fox', role: 'faculty', departmentId: 'dept-eng', status: 'active', designation: 'Associate Professor', mobileNumber: '9911223344' },
@@ -84,7 +83,7 @@ export async function seedDatabase(db: Firestore) {
         feedbackRating: 4.8,
         publicationsCount: 14,
         bloodGroup: 'O+',
-        gender: 'Female',
+        gender: user.firstName === 'Sarah' ? 'Female' : 'Male',
         aadharNumber: 'XXXX XXXX XXXX',
         mobileNumber: user.mobileNumber || ''
       }, { merge: true });
@@ -98,7 +97,7 @@ export async function seedDatabase(db: Firestore) {
         fullName: `${user.firstName} ${user.lastName}`,
         studentEmail: user.email,
         studentMobileNo: user.mobileNumber || '',
-        gender: 'Male',
+        gender: user.firstName === 'Alex' ? 'Male' : 'Female',
         dob: '2004-05-15',
         aadharNumber: 'XXXX XXXX XXXX',
         bloodGroup: 'B+',

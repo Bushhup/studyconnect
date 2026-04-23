@@ -35,6 +35,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 const collegeId = 'study-connect-college';
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
@@ -125,7 +126,7 @@ export default function ClassViewClient() {
         </TabsList>
 
         <AnimatePresence mode="wait">
-          <TabsContent value="roster">
+          <TabsContent value="roster" key="tab-roster">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
               <div className="lg:col-span-2">
                 <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
@@ -203,7 +204,7 @@ export default function ClassViewClient() {
             </div>
           </TabsContent>
 
-          <TabsContent value="timetable">
+          <TabsContent value="timetable" key="tab-timetable">
             <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
               <CardHeader className="border-b bg-muted/30 flex flex-row items-center justify-between">
                 <div>
@@ -263,7 +264,7 @@ export default function ClassViewClient() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="handlers">
+          <TabsContent value="handlers" key="tab-handlers">
             <div className="grid gap-6">
               <Card className="border-none shadow-sm rounded-[2rem] bg-card overflow-hidden">
                 <CardHeader className="bg-slate-900 text-white pb-8">
