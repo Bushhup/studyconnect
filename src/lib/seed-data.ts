@@ -1,3 +1,4 @@
+
 import { doc, writeBatch, Firestore } from 'firebase/firestore';
 
 /**
@@ -50,12 +51,13 @@ export async function seedDatabase(db: Firestore) {
 
   // 4. Users (Using Email as ID for predictable rule-based access)
   const users = [
-    { id: 'shabu@gmail.com', email: 'shabu@gmail.com', firstName: 'Shabu', lastName: 'Osaid', role: 'admin', status: 'active', mobileNumber: '9344941725' },
-    { id: 'admin@college.edu', email: 'admin@college.edu', firstName: 'Master', lastName: 'Admin', role: 'admin', status: 'active', mobileNumber: '9003341725' },
-    { id: 'sarah.smith@college.edu', email: 'sarah.smith@college.edu', firstName: 'Sarah', lastName: 'Smith', role: 'faculty', departmentId: 'dept-eng', status: 'active', designation: 'Professor' },
-    { id: 'robert.fox@college.edu', email: 'robert.fox@college.edu', firstName: 'Robert', lastName: 'Fox', role: 'faculty', departmentId: 'dept-eng', status: 'active', designation: 'Associate Professor' },
-    { id: 'alex.j@college.edu', email: 'alex.j@college.edu', firstName: 'Alex', lastName: 'Johnson', role: 'student', departmentId: 'dept-eng', semester: '5', batchYear: 'Batch-2026', status: 'active', classId: 'class-cse-a' },
-    { id: 'jessica.m@college.edu', email: 'jessica.m@college.edu', firstName: 'Jessica', lastName: 'Miller', role: 'student', departmentId: 'dept-eng', semester: '5', batchYear: 'Batch-2026', status: 'active', classId: 'class-cse-a' },
+    { id: 'shabu@gmail.com', email: 'shabu@gmail.com', password: 'shabu123', firstName: 'Shabu', lastName: 'Osaid', role: 'admin', status: 'active', mobileNumber: '9344941725' },
+    { id: 'shabuddinaw@gmail.com', email: 'shabuddinaw@gmail.com', password: 'shabu05413', firstName: 'Shabu', lastName: 'Osaid', role: 'admin', status: 'active', mobileNumber: '9344941725' },
+    { id: 'admin@college.edu', email: 'admin@college.edu', password: 'minister123', firstName: 'Master', lastName: 'Admin', role: 'admin', status: 'active', mobileNumber: '9003341725' },
+    { id: 'sarah.smith@college.edu', email: 'sarah.smith@college.edu', password: 'password123', firstName: 'Sarah', lastName: 'Smith', role: 'faculty', departmentId: 'dept-eng', status: 'active', designation: 'Professor', mobileNumber: '9944885566' },
+    { id: 'robert.fox@college.edu', email: 'robert.fox@college.edu', password: 'password123', firstName: 'Robert', lastName: 'Fox', role: 'faculty', departmentId: 'dept-eng', status: 'active', designation: 'Associate Professor', mobileNumber: '9911223344' },
+    { id: 'alex.j@college.edu', email: 'alex.j@college.edu', password: 'password123', firstName: 'Alex', lastName: 'Johnson', role: 'student', departmentId: 'dept-eng', semester: '5', batchYear: 'Batch-2026', status: 'active', classId: 'class-cse-a', mobileNumber: '9988776655' },
+    { id: 'jessica.m@college.edu', email: 'jessica.m@college.edu', password: 'password123', firstName: 'Jessica', lastName: 'Miller', role: 'student', departmentId: 'dept-eng', semester: '5', batchYear: 'Batch-2026', status: 'active', classId: 'class-cse-a', mobileNumber: '9988112233' },
   ];
 
   users.forEach(user => {
@@ -79,7 +81,8 @@ export async function seedDatabase(db: Firestore) {
         publicationsCount: 14,
         bloodGroup: 'O+',
         gender: 'Female',
-        aadharNumber: 'XXXX XXXX XXXX'
+        aadharNumber: 'XXXX XXXX XXXX',
+        mobileNumber: user.mobileNumber
       }, { merge: true });
     }
 
@@ -90,7 +93,7 @@ export async function seedDatabase(db: Firestore) {
         userId: user.id.toLowerCase(),
         fullName: `${user.firstName} ${user.lastName}`,
         studentEmail: user.email,
-        studentMobileNo: '9988776655',
+        studentMobileNo: user.mobileNumber,
         gender: 'Male',
         dob: '2004-05-15',
         aadharNumber: 'XXXX XXXX XXXX',

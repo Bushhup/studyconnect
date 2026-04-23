@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -18,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, Plus, UserCog, Edit3, 
-  Loader2, Globe, Mail, Phone, Lock, Trash2, ShieldCheck, UserCheck
+  Loader2, Mail, Phone, Lock, Trash2, Key, UserCheck
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -44,6 +45,7 @@ const USER_CSV_COLUMNS: CsvColumn[] = [
   { key: 'lastName', label: 'Last Name', description: 'Legal last name.', example: 'Johnson', required: true },
   { key: 'email', label: 'System Email', description: 'Email used for authentication.', example: 'alex.j@college.edu', required: true },
   { key: 'mobileNumber', label: 'Mobile Number', description: 'Institutional contact number.', example: '9876543210', required: true },
+  { key: 'password', label: 'Password', description: 'Initial password for the user.', example: 'password123', required: true },
   { key: 'role', label: 'System Role', description: 'Access level (student, faculty, admin, hod).', example: 'student', required: true },
   { key: 'departmentId', label: 'Dept ID', description: 'Mapping to a department.', example: 'dept-eng', required: false },
 ];
@@ -65,6 +67,7 @@ export default function UserManagementPage() {
     lastName: '',
     email: '',
     mobileNumber: '',
+    password: '',
     role: 'student',
     departmentId: '',
     batchYear: '',
@@ -105,7 +108,7 @@ export default function UserManagementPage() {
 
     toast({ title: 'Identity Provisioned', description: `User ${formData.firstName} has been added to the directory.` });
     setIsAddOpen(false);
-    setFormData({ username: '', firstName: '', lastName: '', email: '', mobileNumber: '', role: 'student', departmentId: '', batchYear: '', status: 'active' });
+    setFormData({ username: '', firstName: '', lastName: '', email: '', mobileNumber: '', password: '', role: 'student', departmentId: '', batchYear: '', status: 'active' });
   };
 
   const handleDeleteUser = (userId: string) => {
@@ -136,7 +139,7 @@ export default function UserManagementPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Identity Hub</h1>
-          <p className="text-muted-foreground mt-1">Onboard staff and students by provisioning their institutional profiles.</p>
+          <p className="text-muted-foreground mt-1">Manage staff and students by provisioning their institutional profiles and credentials.</p>
         </motion.div>
         
         <div className="flex gap-2">
@@ -148,13 +151,13 @@ export default function UserManagementPage() {
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
-                <Plus className="h-4 w-4" /> Provision New Identity
+                <Plus className="h-4 w-4" /> Onboard New User
               </Button>
             </DialogTrigger>
             <DialogContent className="rounded-[2.5rem] max-w-2xl border-none">
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2"><UserCog className="h-5 w-5 text-primary" /> Onboard Institutional User</DialogTitle>
-                <DialogDescription>Assign a system role and department to initialize the identity.</DialogDescription>
+                <DialogTitle className="flex items-center gap-2"><UserCog className="h-5 w-5 text-primary" /> Create User Profile</DialogTitle>
+                <DialogDescription>Initialize identity, contact details, and initial portal access key.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreateUser} className="space-y-6 pt-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -174,12 +177,16 @@ export default function UserManagementPage() {
                     <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="alex@college.edu" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Mobile Number</Label>
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Contact Number</Label>
                     <Input value={formData.mobileNumber} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="9876543210" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Access Key (Password)</Label>
+                    <Input value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Set initial password" />
+                  </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">System Role</Label>
                     <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
@@ -192,15 +199,16 @@ export default function UserManagementPage() {
                       </SelectContent>
                     </Select>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Department Mapping</Label>
-                    <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId}>
-                      <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Select Department" /></SelectTrigger>
-                      <SelectContent>
-                        {departments?.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Department Mapping</Label>
+                  <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId}>
+                    <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Assign Department" /></SelectTrigger>
+                    <SelectContent>
+                      {departments?.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <Button type="submit" className="w-full h-14 font-bold shadow-lg shadow-primary/20 rounded-2xl text-lg uppercase tracking-tight">
@@ -222,7 +230,7 @@ export default function UserManagementPage() {
           </TabsList>
           <div className="relative w-full sm:w-80">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Filter by name or email..." className="pl-10 h-11 rounded-xl border-none shadow-sm" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <Input placeholder="Search global directory..." className="pl-10 h-11 rounded-xl border-none shadow-sm" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
         </div>
 
@@ -235,9 +243,9 @@ export default function UserManagementPage() {
                 <TableHeader className="bg-muted/50">
                   <TableRow className="hover:bg-transparent border-none">
                     <TableHead className="pl-6 py-4 font-bold text-foreground">Institutional Identity</TableHead>
-                    <TableHead className="font-bold text-foreground">Department & Status</TableHead>
-                    <TableHead className="font-bold text-foreground">Access Level</TableHead>
-                    <TableHead className="text-right pr-6 font-bold text-foreground">Management</TableHead>
+                    <TableHead className="font-bold text-foreground">Contact & Access</TableHead>
+                    <TableHead className="font-bold text-foreground">Dept & Role</TableHead>
+                    <TableHead className="text-right pr-6 font-bold text-foreground">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -257,18 +265,23 @@ export default function UserManagementPage() {
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
-                            <span className="text-[10px] font-bold text-foreground uppercase tracking-widest">
-                              {departments?.find(d => d.id === u.departmentId)?.name || 'Not Assigned'}
-                            </span>
-                            <Badge variant="secondary" className={cn("font-bold uppercase text-[8px] w-fit px-1.5", u.status === 'active' ? "bg-emerald-50 text-emerald-700" : "bg-red-50 text-red-700")}>
-                              {u.status}
-                            </Badge>
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-foreground">
+                              <Phone className="h-3 w-3 text-muted-foreground" /> {u.mobileNumber || 'N/A'}
+                            </div>
+                            <div className="flex items-center gap-1.5 text-xs font-mono font-bold text-primary">
+                              <Key className="h-3 w-3 text-primary/50" /> {u.password || '••••••'}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Badge variant="outline" className="font-bold uppercase text-[9px] border-primary/20 text-primary py-1 px-3 rounded-md">
-                            {u.role}
-                          </Badge>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-[10px] font-bold text-foreground uppercase tracking-widest">
+                              {departments?.find(d => d.id === u.departmentId)?.name || 'General'}
+                            </span>
+                            <Badge variant="outline" className="font-bold uppercase text-[8px] w-fit px-1.5 border-primary/20 text-primary">
+                              {u.role}
+                            </Badge>
+                          </div>
                         </TableCell>
                         <TableCell className="text-right pr-6">
                           <div className="flex justify-end gap-1">
@@ -285,7 +298,7 @@ export default function UserManagementPage() {
                   </AnimatePresence>
                   {filteredUsers.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="p-20 text-center text-muted-foreground italic">No institutional records matching the filter.</TableCell>
+                      <TableCell colSpan={4} className="p-20 text-center text-muted-foreground italic">No matching identity records found.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -311,12 +324,22 @@ export default function UserManagementPage() {
               </div>
             </div>
             
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase">Email Address</Label>
-              <Input value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase">Email Address</Label>
+                <Input value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase">Contact Number</Label>
+                <Input value={formData.mobileNumber} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase">Access Key (Password)</Label>
+                <Input value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+              </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">System Role</Label>
                 <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
@@ -329,6 +352,9 @@ export default function UserManagementPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Department</Label>
                 <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId}>
@@ -338,18 +364,17 @@ export default function UserManagementPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase">Enrollment Status</Label>
-              <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
-                <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                  <SelectItem value="alumni">Alumni</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase">Status</Label>
+                <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
+                  <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                    <SelectItem value="alumni">Alumni</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <Button type="submit" className="w-full h-14 font-bold uppercase tracking-tight shadow-lg shadow-primary/20 rounded-2xl">

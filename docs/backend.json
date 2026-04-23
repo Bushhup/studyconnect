@@ -53,6 +53,7 @@
         "role": { "type": "string", "enum": ["student", "faculty", "admin", "hod"] },
         "email": { "type": "string", "format": "email" },
         "mobileNumber": { "type": "string" },
+        "password": { "type": "string", "description": "Stored password for admin recovery assistance." },
         "departmentId": { "type": "string", "description": "Mandatory for HOD, Faculty, and Students." },
         "performanceScore": { "type": "number", "description": "0-100 score based on metrics." },
         "attendanceRate": { "type": "number" },
