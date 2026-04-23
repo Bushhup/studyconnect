@@ -141,21 +141,20 @@ export default function CourseManagementPage() {
                       ) || [];
                       
                       const handlerIds = Array.from(new Set(relevantClasses.map(cls => cls.subjectHandlers?.[course.id]).filter(Boolean)));
-                      const handlers = facultyMembers?.filter(f => handlerIds.includes(f.id)) || [];
+                      const handlers = facultyMembers?.filter(f => handlerIds.includes(f.email)) || [];
 
-                      // Aggregate Performance (Mocked aggregation logic for prototype)
-                      // In real scenario, filter 'records' by subjectId and average the scores
+                      // Aggregate Performance
                       const subjectRecords = records?.filter(r => r.subjectId === course.id) || [];
                       const avgAttendance = subjectRecords.length > 0 
                         ? Math.round(subjectRecords.reduce((acc, r) => acc + (r.attendance || 0), 0) / subjectRecords.length)
-                        : Math.floor(Math.random() * (98 - 85) + 85); // Prototype fallback
+                        : 0;
 
                       const avgMarks = subjectRecords.length > 0
                         ? Math.round(subjectRecords.reduce((acc, r) => {
                             const total = (r.marks?.cat1 || 0) + (r.marks?.cat2 || 0) + (r.marks?.final || 0);
                             return acc + total;
                           }, 0) / subjectRecords.length)
-                        : Math.floor(Math.random() * (95 - 70) + 70); // Prototype fallback
+                        : 0;
 
                       return (
                         <TableRow key={course.id} className="group hover:bg-muted/30 transition-colors border-border">
@@ -171,8 +170,8 @@ export default function CourseManagementPage() {
                           <TableCell>
                             <div className="flex -space-x-2">
                               {handlers.length > 0 ? (
-                                handlers.map((h, i) => (
-                                  <div key={h.id} title={`Dr. ${h.firstName} ${h.lastName}`} className="h-8 w-8 rounded-full border-2 border-background bg-muted flex items-center justify-center text-[10px] font-bold text-primary overflow-hidden">
+                                handlers.map((h) => (
+                                  <div key={h.id} title={`Dr. ${h.firstName} ${h.lastName}`} className="h-8 w-8 rounded-full border-2 border-background bg-primary/5 flex items-center justify-center text-[10px] font-bold text-primary overflow-hidden">
                                     {h.firstName?.[0]}{h.lastName?.[0]}
                                   </div>
                                 ))
@@ -185,20 +184,22 @@ export default function CourseManagementPage() {
                             <div className="flex flex-col items-center gap-1">
                               <span className={cn(
                                 "text-xs font-bold",
-                                avgAttendance < 75 ? "text-red-500" : "text-emerald-600"
-                              )}>{avgAttendance}%</span>
-                              <Progress value={avgAttendance} className="h-1 w-16 bg-muted" />
+                                avgAttendance > 0 && avgAttendance < 75 ? "text-red-500" : "text-emerald-600"
+                              )}>{avgAttendance > 0 ? `${avgAttendance}%` : '--'}</span>
+                              {avgAttendance > 0 && <Progress value={avgAttendance} className="h-1 w-16 bg-muted" />}
                             </div>
                           </TableCell>
                           <TableCell>
                             <div className="flex flex-col items-center gap-1">
-                              <Badge className={cn(
-                                "border-none font-bold text-[9px] px-2",
-                                avgMarks > 85 ? "bg-emerald-500/10 text-emerald-600" : 
-                                avgMarks > 70 ? "bg-blue-500/10 text-blue-600" : "bg-amber-500/10 text-amber-600"
-                              )}>
-                                {avgMarks}% Index
-                              </Badge>
+                              {avgMarks > 0 ? (
+                                <Badge className={cn(
+                                  "border-none font-bold text-[9px] px-2",
+                                  avgMarks > 85 ? "bg-emerald-500/10 text-emerald-600" : 
+                                  avgMarks > 70 ? "bg-blue-500/10 text-blue-600" : "bg-amber-500/10 text-amber-600"
+                                )}>
+                                  {avgMarks}% Index
+                                </Badge>
+                              ) : <span className="text-xs text-muted-foreground">No Data</span>}
                             </div>
                           </TableCell>
                           <TableCell className="text-right pr-6">
@@ -219,8 +220,8 @@ export default function CourseManagementPage() {
         {groupedCourses.length === 0 && !isLoading && (
           <div className="py-32 text-center border-2 border-dashed rounded-[3rem] bg-muted/20">
             <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground/20" />
-            <p className="font-bold text-foreground">No subjects provisioned in the architecture.</p>
-            <p className="text-xs text-muted-foreground mt-1">Start by defining subjects within the Department Portals.</p>
+            <p className="font-bold text-foreground">No curriculum data found for the current divisions.</p>
+            <p className="text-xs text-muted-foreground mt-1">Syllabus nodes are managed within individual Department Portals.</p>
           </div>
         )}
       </div>
