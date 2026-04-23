@@ -12,11 +12,12 @@ import {
   MessageSquare, Edit3, MoreHorizontal, 
   Briefcase, CheckCircle2, Loader2, AlertCircle,
   FileSpreadsheet, FileUser, Save, GraduationCap,
-  Award, TrendingUp
+  Award, TrendingUp, Download, Info
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc, setDocumentNonBlocking } from '@/firebase';
@@ -69,6 +70,20 @@ export default function FacultyManagementPage() {
     `${f.firstName} ${f.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
     f.email?.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleExportTemplate = () => {
+    const headers = FACULTY_CSV_COLUMNS.map(c => c.key).join(',');
+    const example = FACULTY_CSV_COLUMNS.map(c => c.example).join(',');
+    const csvContent = `data:text/csv;charset=utf-8,${headers}\n${example}`;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "faculty_roster_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Template Exported', description: 'Headers: ' + headers });
+  };
 
   const selectedProfileRef = useMemoFirebase(() => {
     if (!firestore || !selectedFacultyId) return null;
@@ -127,6 +142,19 @@ export default function FacultyManagementPage() {
             description="Quickly onboard staff by uploading a CSV with names, emails, and department mapping."
             columns={FACULTY_CSV_COLUMNS}
           />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" className="gap-2 shadow-sm rounded-full h-11 bg-card" onClick={handleExportTemplate}>
+                  <Download className="h-4 w-4" /> Export Format
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-slate-900 text-white rounded-xl p-3 max-w-xs">
+                <p className="text-[10px] font-bold uppercase mb-1">Required Headers</p>
+                <code className="text-[9px] break-all">{FACULTY_CSV_COLUMNS.map(c => c.key).join(', ')}</code>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 

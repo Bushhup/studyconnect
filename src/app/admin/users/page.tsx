@@ -18,10 +18,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, Plus, UserCog, Edit3, 
-  Loader2, Mail, Phone, Lock, Trash2, Key, UserCheck
+  Loader2, Mail, Phone, Lock, Trash2, Key, UserCheck, Info, Download
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -90,6 +91,20 @@ export default function UserManagementPage() {
     return matchesSearch && matchesRole;
   }) || [];
 
+  const handleExportTemplate = () => {
+    const headers = USER_CSV_COLUMNS.map(c => c.key).join(',');
+    const example = USER_CSV_COLUMNS.map(c => c.example).join(',');
+    const csvContent = `data:text/csv;charset=utf-8,${headers}\n${example}`;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "user_directory_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Template Exported', description: 'Headers: ' + headers });
+  };
+
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email) return;
@@ -118,7 +133,6 @@ export default function UserManagementPage() {
 
   const handleEditClick = (u: any) => {
     setSelectedUser(u);
-    // Sanitize data to avoid React controlled/uncontrolled warnings
     setFormData({
       username: u.username || '',
       firstName: u.firstName || '',
@@ -159,6 +173,19 @@ export default function UserManagementPage() {
             description="Process multiple user records via CSV mapping."
             columns={USER_CSV_COLUMNS}
           />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" className="gap-2 shadow-sm rounded-full h-11 bg-card" onClick={handleExportTemplate}>
+                  <Download className="h-4 w-4" /> Export Template
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-slate-900 text-white rounded-xl p-3 max-w-xs">
+                <p className="text-[10px] font-bold uppercase mb-1">Required Headers</p>
+                <code className="text-[9px] break-all">{USER_CSV_COLUMNS.map(c => c.key).join(', ')}</code>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
@@ -174,33 +201,33 @@ export default function UserManagementPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">First Name</Label>
-                    <Input value={formData.firstName || ""} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Alex" />
+                    <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Alex" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Last Name</Label>
-                    <Input value={formData.lastName || ""} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Johnson" />
+                    <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Johnson" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Institutional Email</Label>
-                    <Input type="email" value={formData.email || ""} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="alex@college.edu" />
+                    <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="alex@college.edu" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Contact Number</Label>
-                    <Input value={formData.mobileNumber || ""} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="9876543210" />
+                    <Input value={formData.mobileNumber} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="9876543210" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Access Key (Password)</Label>
-                    <Input value={formData.password || ""} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Set initial password" />
+                    <Input value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Set initial password" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">System Role</Label>
-                    <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role || "student"}>
+                    <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
                       <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="student">Student</SelectItem>
@@ -218,7 +245,7 @@ export default function UserManagementPage() {
                     <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Assign Department" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="unassigned">No Department</SelectItem>
-                      {departments?.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                      {departments?.map(d => <SelectItem key={`dept-${d.id}`} value={d.id}>{d.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
@@ -328,33 +355,33 @@ export default function UserManagementPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">First Name</Label>
-                <Input value={formData.firstName || ""} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Last Name</Label>
-                <Input value={formData.lastName || ""} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Email Address</Label>
-                <Input value={formData.email || ""} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Contact Number</Label>
-                <Input value={formData.mobileNumber || ""} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.mobileNumber} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Access Key (Password)</Label>
-                <Input value={formData.password || ""} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">System Role</Label>
-                <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role || "student"}>
+                <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
                   <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="student">Student</SelectItem>
@@ -373,13 +400,13 @@ export default function UserManagementPage() {
                   <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Assign Department" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="unassigned">No Department</SelectItem>
-                    {departments?.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+                    {departments?.map(d => <SelectItem key={`edit-dept-${d.id}`} value={d.id}>{d.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Status</Label>
-                <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status || "active"}>
+                <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
                   <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>

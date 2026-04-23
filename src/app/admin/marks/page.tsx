@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -14,7 +13,7 @@ import {
   Search, FileSpreadsheet, Download, Send, 
   TrendingUp, Trophy, Edit3, CheckCircle2,
   Building2, ChevronRight, ArrowLeft, Loader2,
-  GraduationCap, Users, Award, ArrowUpRight
+  GraduationCap, Users, Award, ArrowUpRight, Info
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -22,13 +21,14 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Toolti
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { TooltipProvider, Tooltip as UiTooltip, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 
 const collegeId = 'study-connect-college';
 
 const MARKS_CSV_COLUMNS: CsvColumn[] = [
-  { key: 'studentId', label: 'Student ID', description: 'Unique institutional ID of the student.', example: 'S-101', required: true },
-  { key: 'subject', label: 'Subject Name', description: 'Course name or code.', example: 'Machine Learning', required: true },
+  { key: 'studentId', label: 'Student ID', description: 'Unique institutional ID of the student.', example: 'alex.j@college.edu', required: true },
+  { key: 'subjectId', label: 'Course ID', description: 'Reference ID of the course.', example: 'course-ai402', required: true },
   { key: 'cat1', label: 'CAT-1', description: 'Continuous Assessment 1 score.', example: '42', required: true },
   { key: 'cat2', label: 'CAT-2', description: 'Continuous Assessment 2 score.', example: '45', required: true },
   { key: 'final', label: 'Final Exam', description: 'Main semester exam score.', example: '94', required: false },
@@ -90,10 +90,23 @@ export default function MarksManagementPage() {
     }
   }, [isHOD, profile?.departmentId, viewState]);
 
-  // Aggregation Logic (Mocked performance for sorting)
+  const handleExportTemplate = () => {
+    const headers = MARKS_CSV_COLUMNS.map(c => c.key).join(',');
+    const example = MARKS_CSV_COLUMNS.map(c => c.example).join(',');
+    const csvContent = `data:text/csv;charset=utf-8,${headers}\n${example}`;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "academic_marks_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Template Exported', description: 'Headers: ' + headers });
+  };
+
   const departmentsWithPerformance = departments?.map(d => ({
     ...d,
-    performanceScore: Math.floor(Math.random() * (98 - 75) + 75), // Mocked for prototype sorting
+    performanceScore: Math.floor(Math.random() * (98 - 75) + 75), 
     totalStudents: Math.floor(Math.random() * 500 + 100),
   })).sort((a, b) => b.performanceScore - a.performanceScore) || [];
 
@@ -160,9 +173,19 @@ export default function MarksManagementPage() {
                 description="Publish results for this section by uploading a CSV with student scores."
                 columns={MARKS_CSV_COLUMNS}
               />
-              <Button variant="outline" className="gap-2 shadow-sm rounded-full h-11 bg-card">
-                <Download className="h-4 w-4" /> Export CSV
-              </Button>
+              <TooltipProvider>
+                <UiTooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="outline" className="gap-2 shadow-sm rounded-full h-11 bg-card" onClick={handleExportTemplate}>
+                      <Download className="h-4 w-4" /> Export Format
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-slate-900 text-white rounded-xl p-3 max-w-xs">
+                    <p className="text-[10px] font-bold uppercase mb-1">Required Headers</p>
+                    <code className="text-[9px] break-all">{MARKS_CSV_COLUMNS.map(c => c.key).join(', ')}</code>
+                  </TooltipContent>
+                </UiTooltip>
+              </TooltipProvider>
             </>
           )}
           <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
@@ -345,11 +368,11 @@ export default function MarksManagementPage() {
                           </div>
                           <div className="flex flex-col">
                             <span className="font-bold text-foreground">{student.firstName} {student.lastName}</span>
-                            <span className="text-[10px] font-mono text-muted-foreground">ID: {student.id.slice(0, 8).toUpperCase()}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground">ID: {student.id.slice(0, 8).toUpperCase() ?? student.email}</span>
                           </div>
                         </div>
                       </TableCell>
-                      <TableCell className="text-center font-bold text-muted-foreground">5</TableCell>
+                      <TableCell className="text-center font-bold text-muted-foreground">{student.semester ?? 'N/A'}</TableCell>
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center gap-1">
                           <span className="font-bold text-foreground">92%</span>

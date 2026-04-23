@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { 
   ArrowLeft, Loader2, ClipboardCheck, 
   UserCheck, Search, Download, TrendingUp,
-  Calendar, Clock, Edit3, Save, Users, Trash2, BookPlus
+  Calendar, Clock, Edit3, Save, Users, Trash2, BookPlus, Info
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -33,6 +33,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -41,9 +42,10 @@ const collegeId = 'study-connect-college';
 const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
 const TIME_SLOTS = ['09:00 AM - 10:00 AM', '10:00 AM - 11:00 AM', '11:15 AM - 12:15 PM', '01:30 PM - 02:30 PM', '02:30 PM - 03:30 PM'];
 
+const ROSTER_COLUMNS = ['firstName', 'lastName', 'email', 'status', 'enrollmentDate'];
+
 export default function ClassViewClient() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const id = searchParams.get('id');
   const firestore = useFirestore();
   const { user } = useUser();
@@ -92,13 +94,25 @@ export default function ClassViewClient() {
     toast({ title: 'Handler Mapped', description: `Instructor updated for institutional syllabus node.` });
   };
 
+  const downloadRosterTemplate = () => {
+    const csvContent = `data:text/csv;charset=utf-8,${ROSTER_COLUMNS.join(',')}\nJohn,Doe,john.d@college.edu,active,2024-01-15`;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `roster_${classData?.name || 'class'}_template.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Template Exported', description: 'Headers: ' + ROSTER_COLUMNS.join(', ') });
+  };
+
   const filteredStudents = students?.filter(s => `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())) || [];
 
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="icon" className="rounded-full bg-card shadow-sm hover:bg-primary/5">
+          <Button asChild variant="ghost" size="icon" className="rounded-full bg-card shadow-sm hover:bg-primary/5 transition-colors">
             <Link href={`/admin/department-portal?id=${classData?.departmentId}`}><ArrowLeft className="h-4 w-4" /></Link>
           </Button>
           <div>
@@ -109,9 +123,19 @@ export default function ClassViewClient() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2 bg-card rounded-full shadow-sm" onClick={() => toast({ title: 'Exporting Roster', description: 'Generating CSV for current active cohort...' })}>
-            <Download className="h-4 w-4" /> Export Roster
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" className="gap-2 bg-card rounded-full shadow-sm" onClick={downloadRosterTemplate}>
+                  <Download className="h-4 w-4" /> Export Roster
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-slate-900 text-white rounded-xl p-3 max-w-xs">
+                <p className="text-[10px] font-bold uppercase mb-1">Required Headers</p>
+                <code className="text-[9px] break-all">{ROSTER_COLUMNS.join(', ')}</code>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button className="gap-2 rounded-full shadow-lg shadow-primary/20 h-11 px-8 font-bold" asChild>
              <Link href="/admin/attendance"><ClipboardCheck className="h-4 w-4" /> Presence Hub</Link>
           </Button>
@@ -225,12 +249,12 @@ export default function ClassViewClient() {
                   <TableHeader className="bg-muted/50">
                     <TableRow className="border-none">
                       <TableHead className="w-[180px] font-bold text-center border-r">Session Slot</TableHead>
-                      {DAYS.map(day => <TableHead key={day} className="text-center font-bold">{day}</TableHead>)}
+                      {DAYS.map(day => <TableHead key={`head-${day}`} className="text-center font-bold">{day}</TableHead>)}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {TIME_SLOTS.map(slot => (
-                      <TableRow key={slot} className="border-border">
+                      <TableRow key={`row-${slot}`} className="border-border">
                         <TableCell className="font-bold text-[10px] text-muted-foreground uppercase text-center border-r bg-muted/10 h-20">
                           {slot}
                         </TableCell>
@@ -238,13 +262,13 @@ export default function ClassViewClient() {
                           const courseId = classData?.timetable?.[day]?.[slot];
                           const course = courses?.find(c => c.id === courseId);
                           return (
-                            <TableCell key={day} className="p-2 border-r last:border-r-0">
+                            <TableCell key={`cell-${day}-${slot}`} className="p-2 border-r last:border-r-0">
                               {isEditingTimetable ? (
                                 <Select value={courseId || "empty"} onValueChange={(val) => handleUpdateTimetable(day, slot, val)}>
                                   <SelectTrigger className="h-12 border-none bg-muted/50 font-bold text-[9px] uppercase"><SelectValue /></SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="empty">Break / Recess</SelectItem>
-                                    {courses?.map(c => <SelectItem key={c.id} value={c.id}>{c.code}</SelectItem>)}
+                                    {courses?.map(c => <SelectItem key={`opt-${c.id}`} value={c.id}>{c.code}</SelectItem>)}
                                   </SelectContent>
                                 </Select>
                               ) : (
@@ -278,7 +302,7 @@ export default function ClassViewClient() {
                         const handlerEmail = classData?.subjectHandlers?.[course.id];
                         const faculty = facultyMembers?.find(f => f.email === handlerEmail);
                         return (
-                          <div key={course.id} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:bg-muted/30 transition-all">
+                          <div key={`handler-${course.id}`} className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 group hover:bg-muted/30 transition-all">
                             <div className="space-y-1">
                               <Badge variant="outline" className="text-[8px] font-bold uppercase border-primary/20 text-primary">{course.code}</Badge>
                               <p className="font-bold text-foreground text-base leading-tight">{course.name}</p>
@@ -289,7 +313,7 @@ export default function ClassViewClient() {
                                 <SelectContent>
                                   <SelectItem value="unassigned">Not Assigned (TBD)</SelectItem>
                                   {facultyMembers?.map(f => (
-                                    <SelectItem key={f.id} value={f.email}>Dr. {f.firstName} {f.lastName}</SelectItem>
+                                    <SelectItem key={`fac-${f.id}`} value={f.email}>Dr. {f.firstName} {f.lastName}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
@@ -312,19 +336,5 @@ export default function ClassViewClient() {
         </AnimatePresence>
       </Tabs>
     </div>
-  );
-}
-
-function StatCard({ label, value, icon: Icon, color, bg }: any) {
-  return (
-    <Card className="border-none shadow-sm rounded-[2rem] bg-card overflow-hidden">
-      <CardContent className="p-6 flex items-center gap-4">
-        <div className={cn("p-3 rounded-2xl", bg)}><Icon className={cn("h-6 w-6", color)} /></div>
-        <div>
-          <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none mb-1">{label}</p>
-          <p className="text-2xl font-bold">{value}</p>
-        </div>
-      </CardContent>
-    </Card>
   );
 }

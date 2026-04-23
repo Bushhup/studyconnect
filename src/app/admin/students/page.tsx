@@ -25,7 +25,9 @@ import {
   AlertCircle,
   FileUser,
   Save,
-  CheckCircle2
+  CheckCircle2,
+  Download,
+  Info
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -33,6 +35,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc, setDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
@@ -82,10 +85,24 @@ export default function StudentManagementPage() {
   const { data: users, isLoading: collectionLoading } = useCollection(studentsQuery);
   const students = users?.filter(u => u.role === 'student') || [];
 
+  const handleExportTemplate = () => {
+    const headers = STUDENT_CSV_COLUMNS.map(c => c.key).join(',');
+    const example = STUDENT_CSV_COLUMNS.map(c => c.example).join(',');
+    const csvContent = `data:text/csv;charset=utf-8,${headers}\n${example}`;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "student_enrollment_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Template Exported', description: 'Headers: ' + headers });
+  };
+
   const filteredStudents = students.filter(s => 
     `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    s.username?.toLowerCase().includes(searchQuery.toLowerCase())
+    (s.id && s.id.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (s.username && s.username.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   const selectedBioRef = useMemoFirebase(() => {
@@ -144,6 +161,19 @@ export default function StudentManagementPage() {
             description="Onboard an entire batch via CSV."
             columns={STUDENT_CSV_COLUMNS}
           />
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" className="gap-2 shadow-sm rounded-full h-11 bg-card" onClick={handleExportTemplate}>
+                  <Download className="h-4 w-4" /> Export Format
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-slate-900 text-white rounded-xl p-3 max-w-xs">
+                <p className="text-[10px] font-bold uppercase mb-1">Required Headers</p>
+                <code className="text-[9px] break-all">{STUDENT_CSV_COLUMNS.map(c => c.key).join(', ')}</code>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 

@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Calendar, CheckCircle2, AlertCircle, 
   Search, Download, Clock, Filter, ChevronDown, 
-  Loader2, XCircle, TrendingUp
+  Loader2, XCircle, TrendingUp, Activity
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { 
@@ -33,6 +33,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 import { useToast } from '@/hooks/use-toast';
@@ -44,6 +46,7 @@ const ATTENDANCE_CSV_COLUMNS: CsvColumn[] = [
   { key: 'studentId', label: 'Student ID', description: 'Institutional unique identifier.', example: 'alex.j@college.edu', required: true },
   { key: 'subjectId', label: 'Course ID', description: 'Academic course identifier.', example: 'course-ai402', required: true },
   { key: 'status', label: 'Presence Status', description: 'present, absent, or late.', example: 'present', required: true },
+  { key: 'date', label: 'Date', description: 'YYYY-MM-DD format.', example: '2024-10-24', required: false },
 ];
 
 const weeklyData = [
@@ -77,6 +80,20 @@ export default function AttendancePage() {
     average: Math.round((records?.reduce((acc, r) => acc + (r.attendance || 0), 0) || 0) / (records?.length || 1))
   };
 
+  const handleExportTemplate = () => {
+    const headers = ATTENDANCE_CSV_COLUMNS.map(c => c.key).join(',');
+    const example = ATTENDANCE_CSV_COLUMNS.map(c => c.example).join(',');
+    const csvContent = `data:text/csv;charset=utf-8,${headers}\n${example}`;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", "attendance_ledger_template.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Template Exported', description: 'Follow the header format: ' + headers });
+  };
+
   const filteredRecords = records?.filter(r => {
     const student = users?.find(u => u.id === r.studentId);
     const fullName = `${student?.firstName || ''} ${student?.lastName || ''}`.toLowerCase();
@@ -96,9 +113,19 @@ export default function AttendancePage() {
             description="Process daily attendance mapping for a department."
             columns={ATTENDANCE_CSV_COLUMNS}
           />
-          <Button variant="outline" className="gap-2 shadow-sm rounded-full bg-card" onClick={() => toast({ title: 'Export Initiated', description: 'Generating CSV log for current term...' })}>
-            <Download className="h-4 w-4" /> Export Ledger
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button variant="outline" className="gap-2 shadow-sm rounded-full bg-card" onClick={handleExportTemplate}>
+                  <Download className="h-4 w-4" /> Export Template
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-slate-900 text-white rounded-xl p-3 max-w-xs">
+                <p className="text-[10px] font-bold uppercase mb-1">Required Headers</p>
+                <code className="text-[9px] break-all">{ATTENDANCE_CSV_COLUMNS.map(c => c.key).join(', ')}</code>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 

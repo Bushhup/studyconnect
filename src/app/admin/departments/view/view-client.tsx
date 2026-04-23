@@ -17,7 +17,7 @@ import {
   Building2, Users, GraduationCap, BookOpen, 
   Calendar, ArrowLeft, Loader2, Plus, 
   ChevronRight, TrendingUp, Search,
-  RefreshCcw, UserPlus, BookPlus, LayoutGrid
+  RefreshCcw, UserPlus, BookPlus, LayoutGrid, Info, Download
 } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -35,12 +35,14 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { StudentBioHover } from '@/components/StudentBioHover';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const collegeId = 'study-connect-college';
+const STUDENT_COLUMNS = ['firstName', 'lastName', 'email', 'mobileNumber', 'batchYear', 'semester'];
 
 export default function DepartmentViewClient() {
   const searchParams = useSearchParams();
@@ -122,6 +124,18 @@ export default function DepartmentViewClient() {
     setIsAddSubjectOpen(false);
   };
 
+  const downloadTemplate = () => {
+    const csvContent = `data:text/csv;charset=utf-8,${STUDENT_COLUMNS.join(',')}\nJohn,Doe,john.d@college.edu,1234567890,Batch-2027,1`;
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `department_${dept?.name}_template.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast({ title: 'Template Exported', description: 'Headers: ' + STUDENT_COLUMNS.join(', ') });
+  };
+
   const handleAssignUser = (userId: string, userName: string) => {
     const userRef = doc(firestore, 'colleges', collegeId, 'users', userId);
     updateDocumentNonBlocking(userRef, { departmentId: id, updatedAt: new Date().toISOString() });
@@ -146,9 +160,19 @@ export default function DepartmentViewClient() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button onClick={() => toast({ title: 'Sync Triggered', description: 'Institutional nodes updated successfully.' })} variant="outline" className="rounded-full gap-2 bg-card border-primary/20 text-primary font-bold">
-            <RefreshCcw className="h-4 w-4" /> Refresh Data
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button onClick={downloadTemplate} variant="outline" className="rounded-full gap-2 bg-card border-primary/20 text-primary font-bold">
+                  <Download className="h-4 w-4" /> Export Format
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent className="bg-slate-900 text-white rounded-xl p-3 max-w-xs">
+                <p className="text-[10px] font-bold uppercase mb-1">Required Headers</p>
+                <code className="text-[9px] break-all">{STUDENT_COLUMNS.join(', ')}</code>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
           <Button className="rounded-full shadow-lg shadow-primary/20 h-11 px-8 font-bold">
             Performance Analytics
           </Button>
