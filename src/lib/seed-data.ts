@@ -62,7 +62,11 @@ export async function seedDatabase(db: Firestore) {
 
   users.forEach(user => {
     const userRef = doc(db, 'colleges', collegeId, 'users', user.id.toLowerCase());
-    batch.set(userRef, { ...user, createdAt: new Date().toISOString() }, { merge: true });
+    batch.set(userRef, { 
+      ...user, 
+      username: user.email.split('@')[0],
+      createdAt: new Date().toISOString() 
+    }, { merge: true });
 
     // Seed Faculty Profiles
     if (user.role === 'faculty') {
@@ -72,8 +76,8 @@ export async function seedDatabase(db: Firestore) {
         fullName: `Dr. ${user.firstName} ${user.lastName}`,
         email: user.email,
         employeeId: `FAC-${user.id.split('@')[0].toUpperCase()}`,
-        designation: user.designation,
-        departmentId: user.departmentId,
+        designation: user.designation || 'Faculty Member',
+        departmentId: user.departmentId || 'unassigned',
         yearsOfExperience: 12,
         employmentType: 'Permanent',
         specialization: 'Information Systems',
@@ -82,7 +86,7 @@ export async function seedDatabase(db: Firestore) {
         bloodGroup: 'O+',
         gender: 'Female',
         aadharNumber: 'XXXX XXXX XXXX',
-        mobileNumber: user.mobileNumber
+        mobileNumber: user.mobileNumber || ''
       }, { merge: true });
     }
 
@@ -93,7 +97,7 @@ export async function seedDatabase(db: Firestore) {
         userId: user.id.toLowerCase(),
         fullName: `${user.firstName} ${user.lastName}`,
         studentEmail: user.email,
-        studentMobileNo: user.mobileNumber,
+        studentMobileNo: user.mobileNumber || '',
         gender: 'Male',
         dob: '2004-05-15',
         aadharNumber: 'XXXX XXXX XXXX',

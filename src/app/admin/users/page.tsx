@@ -119,7 +119,19 @@ export default function UserManagementPage() {
 
   const handleEditClick = (u: any) => {
     setSelectedUser(u);
-    setFormData({ ...u });
+    // Sanitize data to avoid React controlled/uncontrolled warnings
+    setFormData({
+      username: u.username || '',
+      firstName: u.firstName || '',
+      lastName: u.lastName || '',
+      email: u.email || '',
+      mobileNumber: u.mobileNumber || '',
+      password: u.password || '',
+      role: u.role || 'student',
+      departmentId: u.departmentId || '',
+      batchYear: u.batchYear || '',
+      status: u.status || 'active'
+    });
     setIsEditOpen(true);
   };
 
@@ -163,33 +175,33 @@ export default function UserManagementPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">First Name</Label>
-                    <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Alex" />
+                    <Input value={formData.firstName || ""} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Alex" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Last Name</Label>
-                    <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Johnson" />
+                    <Input value={formData.lastName || ""} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Johnson" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Institutional Email</Label>
-                    <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="alex@college.edu" />
+                    <Input type="email" value={formData.email || ""} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="alex@college.edu" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Contact Number</Label>
-                    <Input value={formData.mobileNumber} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="9876543210" />
+                    <Input value={formData.mobileNumber || ""} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="9876543210" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Access Key (Password)</Label>
-                    <Input value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Set initial password" />
+                    <Input value={formData.password || ""} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Set initial password" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">System Role</Label>
-                    <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
+                    <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role || "student"}>
                       <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="student">Student</SelectItem>
@@ -203,9 +215,10 @@ export default function UserManagementPage() {
 
                 <div className="space-y-2">
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Department Mapping</Label>
-                  <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId}>
+                  <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId || "unassigned"}>
                     <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Assign Department" /></SelectTrigger>
                     <SelectContent>
+                      <SelectItem value="unassigned">No Department</SelectItem>
                       {departments?.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                     </SelectContent>
                   </Select>
@@ -316,33 +329,33 @@ export default function UserManagementPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">First Name</Label>
-                <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.firstName || ""} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Last Name</Label>
-                <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.lastName || ""} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Email Address</Label>
-                <Input value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.email || ""} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Contact Number</Label>
-                <Input value={formData.mobileNumber} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.mobileNumber || ""} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Access Key (Password)</Label>
-                <Input value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.password || ""} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">System Role</Label>
-                <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
+                <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role || "student"}>
                   <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="student">Student</SelectItem>
@@ -357,16 +370,17 @@ export default function UserManagementPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Department</Label>
-                <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId}>
+                <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId || "unassigned"}>
                   <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Assign Department" /></SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="unassigned">No Department</SelectItem>
                     {departments?.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Status</Label>
-                <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
+                <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status || "active"}>
                   <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="active">Active</SelectItem>
