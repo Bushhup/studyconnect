@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -18,11 +19,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, Plus, UserCog, Edit3, 
-  Loader2, Phone, Trash2, Key, Download
+  Loader2, Phone, Trash2, Key, Download, CheckCircle2,
+  Users, Filter, ShieldCheck, FileSpreadsheet
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -32,6 +34,7 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -59,7 +62,10 @@ export default function UserManagementPage() {
 
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [isExportOpen, setIsExportOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  
+  const [exportRoles, setExportRoles] = useState<string[]>(['student', 'faculty', 'hod']);
 
   const [formData, setFormData] = useState({
     username: '',
@@ -91,18 +97,41 @@ export default function UserManagementPage() {
     return matchesSearch && matchesRole;
   }) || [];
 
-  const handleExportTemplate = () => {
-    const headers = USER_CSV_COLUMNS.map(c => c.key).join(',');
-    const example = USER_CSV_COLUMNS.map(c => c.example).join(',');
-    const csvContent = `data:text/csv;charset=utf-8,${headers}\n${example}`;
-    const encodedUri = encodeURI(csvContent);
+  const handleExportData = () => {
+    if (!users) return;
+    
+    const recordsToExport = users.filter(u => exportRoles.includes(u.role));
+    
+    if (recordsToExport.length === 0) {
+      toast({ variant: 'destructive', title: 'Export Failed', description: 'No records found for selected roles.' });
+      return;
+    }
+
+    const headers = ['First Name', 'Last Name', 'Email', 'Mobile', 'Role', 'Department', 'Status'];
+    const csvContent = [
+      headers.join(','),
+      ...recordsToExport.map(u => [
+        `"${u.firstName || ''}"`,
+        `"${u.lastName || ''}"`,
+        `"${u.email || ''}"`,
+        `"${u.mobileNumber || ''}"`,
+        `"${u.role || ''}"`,
+        `"${departments?.find(d => d.id === u.departmentId)?.name || 'General'}"`,
+        `"${u.status || 'active'}"`
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "user_directory_template.csv");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `institutional_directory_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast({ title: 'Template Exported', description: 'Headers: ' + headers });
+    
+    toast({ title: 'Export Generated', description: `Successfully compiled ${recordsToExport.length} identity records.` });
+    setIsExportOpen(false);
   };
 
   const handleImport = (data: any[]) => {
@@ -174,6 +203,12 @@ export default function UserManagementPage() {
     setIsEditOpen(false);
   };
 
+  const toggleExportRole = (role: string) => {
+    setExportRoles(prev => 
+      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
+    );
+  };
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -189,19 +224,51 @@ export default function UserManagementPage() {
             columns={USER_CSV_COLUMNS}
             onImport={handleImport}
           />
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" className="gap-2 shadow-sm rounded-full h-11 bg-card" onClick={handleExportTemplate}>
-                  <Download className="h-4 w-4" /> Export Template
+          
+          <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 shadow-sm rounded-full h-11 bg-card border-primary/10 text-primary font-bold">
+                <Download className="h-4 w-4" /> Export Directory
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="rounded-[2.5rem] border-none shadow-2xl bg-card max-w-md">
+              <DialogHeader>
+                <DialogTitle className="text-2xl font-headline flex items-center gap-3">
+                  <FileSpreadsheet className="h-6 w-6 text-primary" /> Export Records
+                </DialogTitle>
+                <DialogDescription className="text-base">Select the roles you wish to include in the data export.</DialogDescription>
+              </DialogHeader>
+              <div className="py-6 space-y-4">
+                {[
+                  { id: 'admin', label: 'Administrators', icon: ShieldCheck },
+                  { id: 'hod', label: 'Heads of Dept (HOD)', icon: UserCog },
+                  { id: 'faculty', label: 'Teaching Faculty', icon: Users },
+                  { id: 'student', label: 'Enrolled Students', icon: Plus },
+                ].map((role) => (
+                  <div key={role.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => toggleExportRole(role.id)}>
+                    <div className="flex items-center gap-3">
+                      <div className={cn("p-2 rounded-xl", exportRoles.includes(role.id) ? "bg-primary text-white" : "bg-card text-muted-foreground")}>
+                        <role.icon className="h-4 w-4" />
+                      </div>
+                      <span className="font-bold text-sm">{role.label}</span>
+                    </div>
+                    <Checkbox checked={exportRoles.includes(role.id)} onCheckedChange={() => toggleExportRole(role.id)} />
+                  </div>
+                ))}
+              </div>
+              <div className="bg-primary/5 p-4 rounded-2xl mb-4 text-center">
+                <p className="text-xs font-bold text-primary uppercase tracking-widest">
+                  Ready to process {users?.filter(u => exportRoles.includes(u.role)).length || 0} nodes
+                </p>
+              </div>
+              <DialogFooter className="sm:justify-center">
+                <Button onClick={handleExportData} className="w-full h-14 rounded-2xl font-bold text-lg shadow-lg shadow-primary/20">
+                  Generate Tabular Report
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent className="bg-slate-900 text-white rounded-xl p-3 max-w-xs">
-                <p className="text-[10px] font-bold uppercase mb-1">Required Headers</p>
-                <code className="text-[9px] break-all">{USER_CSV_COLUMNS.map(c => c.key).join(', ')}</code>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
@@ -232,7 +299,7 @@ export default function UserManagementPage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Contact Number</Label>
-                    <Input value={formData.mobileNumber || ''} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="9876543210" />
+                    <Input value={formData.mobileNumber || ''} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="98765 43210" />
                   </div>
                 </div>
 

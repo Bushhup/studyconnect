@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -85,18 +86,32 @@ export default function StudentManagementPage() {
   const { data: users, isLoading: collectionLoading } = useCollection(studentsQuery);
   const students = users?.filter(u => u.role === 'student') || [];
 
-  const handleExportTemplate = () => {
-    const headers = STUDENT_CSV_COLUMNS.map(c => c.key).join(',');
-    const example = STUDENT_CSV_COLUMNS.map(c => c.example).join(',');
-    const csvContent = `data:text/csv;charset=utf-8,${headers}\n${example}`;
-    const encodedUri = encodeURI(csvContent);
+  const handleExportData = () => {
+    if (students.length === 0) return;
+    
+    const headers = ['First Name', 'Last Name', 'Email', 'Dept ID', 'Semester', 'Status'];
+    const csvContent = [
+      headers.join(','),
+      ...students.map(s => [
+        `"${s.firstName || ''}"`,
+        `"${s.lastName || ''}"`,
+        `"${s.email || ''}"`,
+        `"${s.departmentId || ''}"`,
+        `"${s.semester || ''}"`,
+        `"${s.status || 'active'}"`
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", "student_enrollment_template.csv");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `student_roster_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast({ title: 'Template Exported', description: 'Headers: ' + headers });
+    
+    toast({ title: 'Roster Exported', description: `Tabular data for ${students.length} students is ready.` });
   };
 
   const filteredStudents = students.filter(s => 
@@ -161,19 +176,9 @@ export default function StudentManagementPage() {
             description="Onboard an entire batch via CSV."
             columns={STUDENT_CSV_COLUMNS}
           />
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" className="gap-2 shadow-sm rounded-full h-11 bg-card" onClick={handleExportTemplate}>
-                  <Download className="h-4 w-4" /> Export Format
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent className="bg-slate-900 text-white rounded-xl p-3 max-w-xs">
-                <p className="text-[10px] font-bold uppercase mb-1">Required Headers</p>
-                <code className="text-[9px] break-all">{STUDENT_CSV_COLUMNS.map(c => c.key).join(', ')}</code>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Button onClick={handleExportData} variant="outline" className="gap-2 shadow-sm rounded-full h-11 bg-card border-primary/10 text-primary font-bold">
+            <Download className="h-4 w-4" /> Export Roster
+          </Button>
         </div>
       </div>
 
