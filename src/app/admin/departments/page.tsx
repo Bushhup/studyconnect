@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -89,6 +88,11 @@ export default function DepartmentManagement() {
   const { data: departments, isLoading } = useCollection(deptQuery);
 
   const deptImages = placeholderImages.filter(img => img.category === 'Departments');
+  const fallbackImage = {
+    imageUrl: 'https://images.unsplash.com/photo-1541339907198-e08756c83f2d?auto=format&fit=crop&q=80&w=1080',
+    description: 'Institutional Hub',
+    imageHint: 'university architecture'
+  };
 
   const handleCreate = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -250,7 +254,10 @@ export default function DepartmentManagement() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <AnimatePresence mode="popLayout">
               {departments?.map((dept, idx) => {
-                const displayImage = deptImages[idx % deptImages.length];
+                const displayImage = deptImages.length > 0 
+                  ? deptImages[idx % deptImages.length] 
+                  : fallbackImage;
+                
                 return (
                   <motion.div 
                     key={dept.id} 
