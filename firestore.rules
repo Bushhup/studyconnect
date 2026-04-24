@@ -21,6 +21,10 @@ service cloud.firestore {
     function isAdmin() {
       return isSignedIn() && getUserRole() == 'admin';
     }
+    
+    function isHOD() {
+      return isSignedIn() && getUserRole() == 'hod';
+    }
 
     function isSystemUninitialized() {
       // Allows bootstrap if the master admin record is missing
@@ -43,7 +47,8 @@ service cloud.firestore {
 
       match /departments/{id} { 
         allow read: if true; 
-        allow write: if isSystemUninitialized() || isAdmin(); 
+        // Allow admin or HOD to manage department metadata
+        allow write: if isSystemUninitialized() || isAdmin() || isHOD(); 
       }
       
       match /classes/{id} { 
