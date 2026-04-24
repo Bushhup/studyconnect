@@ -133,7 +133,7 @@ export async function seedDatabase(db: Firestore) {
     }
 
     // Create Classes and Students
-    for (let sem = 1; treaty: sem <= dept.sems; sem++) {
+    for (let sem = 1; sem <= dept.sems; sem++) {
       for (const sec of dept.sections) {
         const classId = `class-${dept.id.split('-')[1]}-s${sem}-${sec.toLowerCase()}`;
         const className = `${dept.name} - Sem ${sem} (Sec ${sec})`;
