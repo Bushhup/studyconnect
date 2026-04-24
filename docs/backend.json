@@ -9,9 +9,9 @@
         "name": { "type": "string" },
         "headOfDept": { "type": "string" },
         "description": { "type": "string" },
-        "imageUrl": { "type": "string", "description": "Custom header image URL or data string." },
+        "imageUrl": { "type": "string" },
         "programType": { "type": "string", "enum": ["UG", "PG"] },
-        "totalSemesters": { "type": "number", "description": "Number of semesters in the program." }
+        "totalSemesters": { "type": "number" }
       }
     },
     "Class": {
@@ -24,135 +24,31 @@
         "departmentId": { "type": "string" },
         "semester": { "type": "string" },
         "studentIds": { "type": "array", "items": { "type": "string" } },
-        "timetable": { "type": "object", "description": "Day-wise slot-to-subject mapping" },
-        "subjectHandlers": { 
-          "type": "object", 
-          "description": "Map of SubjectID to FacultyID",
-          "additionalProperties": { "type": "string" }
-        }
-      }
-    },
-    "Course": {
-      "title": "Course (Subject)",
-      "type": "object",
-      "description": "An academic subject with credit weightage.",
-      "properties": {
-        "id": { "type": "string" },
-        "code": { "type": "string" },
-        "name": { "type": "string" },
-        "credits": { "type": "number" },
-        "departmentId": { "type": "string" }
+        "timetable": { "type": "object" },
+        "subjectHandlers": { "type": "object" }
       }
     },
     "InstitutionalUser": {
       "title": "InstitutionalUser",
       "type": "object",
-      "description": "User profile with role-specific data.",
+      "description": "User profile with role-specific data and institutional mapping.",
       "properties": {
         "id": { "type": "string" },
         "role": { "type": "string", "enum": ["student", "faculty", "admin", "hod"] },
         "email": { "type": "string", "format": "email" },
-        "mobileNumber": { "type": "string" },
-        "password": { "type": "string", "description": "Stored password for admin recovery assistance." },
-        "departmentId": { "type": "string", "description": "Mandatory for HOD, Faculty, and Students." },
-        "performanceScore": { "type": "number", "description": "0-100 score based on metrics." },
-        "attendanceRate": { "type": "number" },
-        "batchYear": { "type": "string", "description": "Grouping for students, e.g., Batch-2026." },
-        "status": { "type": "string", "enum": ["active", "inactive", "alumni"] },
-        "semester": { "type": "string" }
-      }
-    },
-    "StudentProfile": {
-      "title": "StudentProfile",
-      "type": "object",
-      "description": "Verified biographical and background data for a student.",
-      "properties": {
-        "userId": { "type": "string" },
-        "fullName": { "type": "string", "description": "As per birth certificate" },
-        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
-        "dob": { "type": "string", "format": "date" },
-        "studentMobileNo": { "type": "string" },
-        "studentEmail": { "type": "string" },
-        "aadharNumber": { "type": "string" },
-        "bloodGroup": { "type": "string" },
-        "motherTongue": { "type": "string" },
-        "nationality": { "type": "string", "default": "Indian" },
-        "religion": { "type": "string" },
-        "community": { "type": "string", "enum": ["BC (muslim)", "OC", "BC", "MBC", "SC", "SCC", "ST"] },
-        "casteName": { "type": "string" },
-        "address": { "type": "string" },
-        "pincode": { "type": "string" },
-        "fatherName": { "type": "string" },
-        "fatherOccupation": { "type": "string" },
-        "fatherAnnualIncome": { "type": "string" },
-        "fatherMobileNo": { "type": "string" },
-        "motherName": { "type": "string" },
-        "motherOccupation": { "type": "string" },
-        "motherAnnualIncome": { "type": "string" },
-        "motherMobileNo": { "type": "string" },
-        "quota": { "type": "string", "enum": ["Management", "Government"] },
-        "dateOfAdmission": { "type": "string", "format": "date-time" }
-      }
-    },
-    "FacultyProfile": {
-      "title": "FacultyProfile",
-      "type": "object",
-      "description": "Comprehensive professional and academic record for teaching staff.",
-      "properties": {
-        "userId": { "type": "string" },
-        "employeeId": { "type": "string" },
-        "fullName": { "type": "string" },
-        "dob": { "type": "string", "format": "date" },
-        "gender": { "type": "string", "enum": ["Male", "Female", "Other"] },
-        "mobileNumber": { "type": "string" },
-        "email": { "type": "string" },
-        "address": { "type": "string" },
-        "pincode": { "type": "string" },
-        "nationality": { "type": "string", "default": "Indian" },
-        "aadharNumber": { "type": "string" },
-        "bloodGroup": { "type": "string" },
-        "fatherName": { "type": "string" },
-        "motherName": { "type": "string" },
-        "emergencyContact": { "type": "string" },
-        "ugDegree": { "type": "string" },
-        "pgDegree": { "type": "string" },
-        "phd": { "type": "string", "enum": ["Yes", "No"] },
-        "phdSpecialization": { "type": "string" },
-        "specialization": { "type": "string" },
-        "certifications": { "type": "string" },
-        "designation": { "type": "string", "enum": ["Assistant Professor", "Associate Professor", "Professor"] },
-        "dateOfJoining": { "type": "string", "format": "date" },
-        "yearsOfExperience": { "type": "number" },
-        "employmentType": { "type": "string", "enum": ["Permanent", "Contract", "Guest"] },
-        "feedbackRating": { "type": "number" },
-        "publicationsCount": { "type": "number" },
-        "linkedin": { "type": "string" },
-        "googleScholar": { "type": "string" },
-        "areasOfInterest": { "type": "string" }
-      }
-    },
-    "AcademicRecord": {
-      "title": "AcademicRecord",
-      "type": "object",
-      "description": "Stores attendance and marks for a student in a specific class and subject.",
-      "properties": {
-        "studentId": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "mobileNumber": { "type": "string", "description": "Format: xxxxx xxxxx" },
+        "password": { "type": "string" },
+        "departmentId": { "type": "string" },
         "classId": { "type": "string" },
-        "subjectId": { "type": "string" },
-        "attendance": { "type": "number" },
-        "marks": { 
-          "type": "object",
-          "properties": {
-            "cat1": { "type": "number" },
-            "cat2": { "type": "number" },
-            "final": { "type": "number" }
-          }
-        }
+        "semester": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "inactive", "alumni"] }
       }
     }
   },
   "auth": {
-    "providers": ["password", "anonymous", "google"]
+    "providers": ["password", "google"]
   },
   "firestore": {
     "structure": [
@@ -165,24 +61,8 @@
         "definition": { "entityName": "Class", "description": "Academic sections." }
       },
       {
-        "path": "/colleges/{collegeId}/courses/{courseId}",
-        "definition": { "entityName": "Course", "description": "Subject master list." }
-      },
-      {
         "path": "/colleges/{collegeId}/users/{userId}",
         "definition": { "entityName": "InstitutionalUser", "description": "Staff and student directory." }
-      },
-      {
-        "path": "/colleges/{collegeId}/academicRecords/{recordId}",
-        "definition": { "entityName": "AcademicRecord", "description": "Aggregated performance data." }
-      },
-      {
-        "path": "/colleges/{collegeId}/studentProfiles/{userId}",
-        "definition": { "entityName": "StudentProfile", "description": "Verified bio data." }
-      },
-      {
-        "path": "/colleges/{collegeId}/facultyProfiles/{userId}",
-        "definition": { "entityName": "FacultyProfile", "description": "Staff professional data." }
       }
     ]
   }

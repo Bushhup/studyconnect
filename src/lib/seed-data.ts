@@ -1,151 +1,196 @@
-import { doc, writeBatch, Firestore } from 'firebase/firestore';
+import { doc, writeBatch, Firestore, collection } from 'firebase/firestore';
 
 /**
- * Seeds the Firestore database with initial high-fidelity institutional data.
- * Provides real, linked data for all portals and ensures admin access.
+ * High-Fidelity Academic Seeding Engine
+ * Generates a complete institutional hierarchy following specific UG/PG rules.
  */
 export async function seedDatabase(db: Firestore) {
   const collegeId = 'study-connect-college';
-  const batch = writeBatch(db);
+  
+  // Helper to commit batches in chunks of 450 (Firestore limit is 500)
+  const commitBatch = async (batch: any) => {
+    await batch.commit();
+    return writeBatch(db);
+  };
 
-  // 1. College Root
+  let batch = writeBatch(db);
+  let opCount = 0;
+
+  const checkBatch = async () => {
+    opCount++;
+    if (opCount >= 450) {
+      batch = await commitBatch(batch);
+      opCount = 0;
+    }
+  };
+
+  // 1. Institutional Root
   const collegeRef = doc(db, 'colleges', collegeId);
   batch.set(collegeRef, {
     id: collegeId,
     name: 'StudyConnect Enterprise Institute',
-    logoUrl: '/logo.png',
     tagline: 'Connecting Minds, Building Futures',
-    overview: 'A premium, multi-disciplinary institutional ecosystem dedicated to research-driven excellence and student-centric academic growth.',
-    statisticHighlights: [
-      '120+ Programs',
-      '5500+ Students',
-      '85+ Research Labs',
-      '94.2% Placement Rate'
-    ],
+    statisticHighlights: ['120+ Programs', '5500+ Students', '94.2% Placement Rate'],
     updatedAt: new Date().toISOString()
   }, { merge: true });
+  await checkBatch();
 
-  // 2. Departments
-  const departments = [
-    { id: 'dept-eng', name: 'School of Engineering', headOfDept: 'Dr. Sarah Smith', programType: 'UG', totalSemesters: 8 },
-    { id: 'dept-art', name: 'Design & Creative Arts', headOfDept: 'Prof. James Wilson', programType: 'UG', totalSemesters: 8 },
-    { id: 'dept-sci', name: 'Applied Sciences Hub', headOfDept: 'Dr. Emily Davis', programType: 'UG', totalSemesters: 6 },
-    { id: 'dept-bus', name: 'Global Management Studies', headOfDept: 'Dr. Michael Chen', programType: 'PG', totalSemesters: 4 },
-  ];
-  departments.forEach(dept => {
-    batch.set(doc(db, 'colleges', collegeId, 'departments', dept.id), dept, { merge: true });
-  });
-
-  // 3. Courses (Syllabus)
-  const courses = [
-    { id: 'course-cs101', code: 'CS101', name: 'Intro to Computer Science', departmentId: 'dept-eng', credits: 4 },
-    { id: 'course-ai402', code: 'AI402', name: 'Machine Learning Systems', departmentId: 'dept-eng', credits: 4 },
-    { id: 'course-ds201', code: 'DS201', name: 'Data Structures & Algorithms', departmentId: 'dept-eng', credits: 3 },
-    { id: 'course-ux101', code: 'UX101', name: 'User Experience Principles', departmentId: 'dept-art', credits: 3 },
-    { id: 'course-ph101', code: 'PH101', name: 'Applied Physics', departmentId: 'dept-sci', credits: 4 },
-  ];
-  courses.forEach(course => {
-    batch.set(doc(db, 'colleges', collegeId, 'courses', course.id), course, { merge: true });
-  });
-
-  // 4. Users (Using Email as ID for predictable rule-based access)
-  const users = [
-    { id: 'shabu@gmail.com', email: 'shabu@gmail.com', password: 'shabu123', firstName: 'shabu', lastName: 'osaid', role: 'admin', status: 'active', mobileNumber: '9344941725' },
-    { id: 'shabuddinaw@gmail.com', email: 'shabuddinaw@gmail.com', password: 'shabu05413', firstName: 'Shabuddin', lastName: 'A', role: 'admin', status: 'active', mobileNumber: '9344941725' },
-    { id: 'admin@college.edu', email: 'admin@college.edu', password: 'minister123', firstName: 'Master', lastName: 'Admin', role: 'admin', status: 'active', mobileNumber: '9003341725' },
-    { id: 'sarah.smith@college.edu', email: 'sarah.smith@college.edu', password: 'password123', firstName: 'Sarah', lastName: 'Smith', role: 'faculty', departmentId: 'dept-eng', status: 'active', designation: 'Professor', mobileNumber: '9944885566' },
-    { id: 'robert.fox@college.edu', email: 'robert.fox@college.edu', password: 'password123', firstName: 'Robert', lastName: 'Fox', role: 'faculty', departmentId: 'dept-eng', status: 'active', designation: 'Associate Professor', mobileNumber: '9911223344' },
-    { id: 'alex.j@college.edu', email: 'alex.j@college.edu', password: 'password123', firstName: 'Alex', lastName: 'Johnson', role: 'student', departmentId: 'dept-eng', semester: '5', batchYear: 'Batch-2026', status: 'active', classId: 'class-cse-a', mobileNumber: '9988776655' },
-    { id: 'jessica.m@college.edu', email: 'jessica.m@college.edu', password: 'password123', firstName: 'Jessica', lastName: 'Miller', role: 'student', departmentId: 'dept-eng', semester: '5', batchYear: 'Batch-2026', status: 'active', classId: 'class-cse-a', mobileNumber: '9988112233' },
+  // 2. Department Definitions
+  const DEPARTMENTS = [
+    { id: 'dept-cse', name: 'Computer Science and Engineering', type: 'UG', sems: 8, sections: ['A', 'B'] },
+    { id: 'dept-ece', name: 'Electronics and Communication', type: 'UG', sems: 8, sections: ['A', 'B'] },
+    { id: 'dept-mba', name: 'School of Business Management', type: 'PG', sems: 4, sections: ['A'] },
+    { id: 'dept-msc', name: 'Applied Data Science Hub', type: 'PG', sems: 4, sections: ['A'] },
   ];
 
-  users.forEach(user => {
-    const userRef = doc(db, 'colleges', collegeId, 'users', user.id.toLowerCase());
-    batch.set(userRef, { 
-      ...user, 
-      username: user.email.split('@')[0],
-      createdAt: new Date().toISOString() 
+  // Global Admins
+  const globalAdmins = [
+    { email: 'shabu@gmail.com', fName: 'Shabu', lName: 'Osaid', pass: 'shabu123' },
+    { email: 'shabuddinaw@gmail.com', fName: 'Shabuddin', lName: 'A', pass: 'shabu05413' },
+    { email: 'admin@college.edu', fName: 'Master', lName: 'Admin', pass: 'minister123' }
+  ];
+
+  for (const admin of globalAdmins) {
+    const ref = doc(db, 'colleges', collegeId, 'users', admin.email.toLowerCase());
+    batch.set(ref, {
+      id: admin.email.toLowerCase(),
+      email: admin.email.toLowerCase(),
+      firstName: admin.fName,
+      lastName: admin.lName,
+      role: 'admin',
+      password: admin.pass,
+      status: 'active',
+      mobileNumber: '90033 41725',
+      createdAt: new Date().toISOString()
     }, { merge: true });
+    await checkBatch();
+  }
 
-    // Seed Faculty Profiles
-    if (user.role === 'faculty') {
-      const profileRef = doc(db, 'colleges', collegeId, 'facultyProfiles', user.id.toLowerCase());
-      batch.set(profileRef, {
-        userId: user.id.toLowerCase(),
-        fullName: `Dr. ${user.firstName} ${user.lastName}`,
-        email: user.email,
-        employeeId: `FAC-${user.id.split('@')[0].toUpperCase()}`,
-        designation: user.designation || 'Faculty Member',
-        departmentId: user.departmentId || 'unassigned',
-        yearsOfExperience: 12,
-        employmentType: 'Permanent',
-        specialization: 'Information Systems',
-        feedbackRating: 4.8,
-        publicationsCount: 14,
-        bloodGroup: 'O+',
-        gender: user.firstName === 'Sarah' ? 'Female' : 'Male',
-        aadharNumber: 'XXXX XXXX XXXX',
-        mobileNumber: user.mobileNumber || ''
+  // Iterate Departments
+  for (const dept of DEPARTMENTS) {
+    const deptRef = doc(db, 'colleges', collegeId, 'departments', dept.id);
+    const hodName = `Dr. ${dept.name.split(' ')[0]} Head`;
+    const hodEmail = `hod.${dept.id.split('-')[1]}@college.edu`;
+
+    batch.set(deptRef, {
+      id: dept.id,
+      name: dept.name,
+      headOfDept: hodName,
+      programType: dept.type,
+      totalSemesters: dept.sems,
+      createdAt: new Date().toISOString()
+    }, { merge: true });
+    await checkBatch();
+
+    // Create HOD Identity
+    const hodUserRef = doc(db, 'colleges', collegeId, 'users', hodEmail);
+    batch.set(hodUserRef, {
+      id: hodEmail,
+      email: hodEmail,
+      firstName: hodName.split(' ')[0],
+      lastName: hodName.split(' ').slice(1).join(' '),
+      role: 'hod',
+      departmentId: dept.id,
+      password: 'password123',
+      status: 'active',
+      mobileNumber: `98400 ${Math.floor(10000 + Math.random() * 90000)}`,
+      createdAt: new Date().toISOString()
+    }, { merge: true });
+    await checkBatch();
+
+    // Create Faculty (8 per dept)
+    for (let f = 1; f <= 8; f++) {
+      const fEmail = `faculty${f}.${dept.id.split('-')[1]}@college.edu`;
+      const fUserRef = doc(db, 'colleges', collegeId, 'users', fEmail);
+      batch.set(fUserRef, {
+        id: fEmail,
+        email: fEmail,
+        firstName: `Faculty_${f}`,
+        lastName: dept.id.split('-')[1].toUpperCase(),
+        role: 'faculty',
+        departmentId: dept.id,
+        password: 'password123',
+        status: 'active',
+        designation: f < 3 ? 'Professor' : 'Assistant Professor',
+        mobileNumber: `99440 ${Math.floor(10000 + Math.random() * 90000)}`,
+        createdAt: new Date().toISOString()
       }, { merge: true });
+      await checkBatch();
+      
+      // Detailed Faculty Profile
+      const fProfRef = doc(db, 'colleges', collegeId, 'facultyProfiles', fEmail);
+      batch.set(fProfRef, {
+        userId: fEmail,
+        fullName: `Dr. Faculty_${f} ${dept.id.split('-')[1].toUpperCase()}`,
+        email: fEmail,
+        employeeId: `FAC-${dept.id.split('-')[1].toUpperCase()}-${f}`,
+        designation: f < 3 ? 'Professor' : 'Assistant Professor',
+        departmentId: dept.id,
+        yearsOfExperience: 5 + f,
+        employmentType: 'Permanent'
+      }, { merge: true });
+      await checkBatch();
     }
 
-    // Seed Student Profiles
-    if (user.role === 'student') {
-      const profileRef = doc(db, 'colleges', collegeId, 'studentProfiles', user.id.toLowerCase());
-      batch.set(profileRef, {
-        userId: user.id.toLowerCase(),
-        fullName: `${user.firstName} ${user.lastName}`,
-        studentEmail: user.email,
-        studentMobileNo: user.mobileNumber || '',
-        gender: user.firstName === 'Alex' ? 'Male' : 'Female',
-        dob: '2004-05-15',
-        aadharNumber: 'XXXX XXXX XXXX',
-        bloodGroup: 'B+',
-        nationality: 'Indian',
-        religion: 'Universal',
-        community: 'OC',
-        address: 'Institutional Hostels, Block B, Room 402',
-        pincode: '600001',
-        fatherName: 'Mr. Johnson',
-        fatherOccupation: 'Government Services',
-        motherName: 'Mrs. Johnson',
-        motherOccupation: 'Home Maker',
-        quota: 'Government',
-        dateOfAdmission: new Date().toISOString()
-      }, { merge: true });
-    }
-  });
+    // Create Classes and Students
+    for (let sem = 1; treaty: sem <= dept.sems; sem++) {
+      for (const sec of dept.sections) {
+        const classId = `class-${dept.id.split('-')[1]}-s${sem}-${sec.toLowerCase()}`;
+        const className = `${dept.name} - Sem ${sem} (Sec ${sec})`;
+        
+        const classRef = doc(db, 'colleges', collegeId, 'classes', classId);
+        
+        // Generate 35 unique students per section
+        const studentIds: string[] = [];
+        for (let s = 1; s <= 35; s++) {
+          const sEmail = `s${s}.${classId}@college.edu`;
+          studentIds.push(sEmail);
 
-  // 5. Classes (Sections)
-  const classes = [
-    { 
-      id: 'class-cse-a', name: 'B.Tech CSE - Section A', departmentId: 'dept-eng', 
-      facultyId: 'sarah.smith@college.edu', semester: '5', 
-      studentIds: ['alex.j@college.edu', 'jessica.m@college.edu'],
-      subjectHandlers: { 'course-ai402': 'sarah.smith@college.edu', 'course-cs101': 'robert.fox@college.edu' },
-      timetable: {
-        'Monday': { '09:00 AM - 10:00 AM': 'course-ai402', '10:00 AM - 11:00 AM': 'course-cs101' },
-        'Wednesday': { '09:00 AM - 10:00 AM': 'course-cs101' }
+          const sUserRef = doc(db, 'colleges', collegeId, 'users', sEmail);
+          batch.set(sUserRef, {
+            id: sEmail,
+            email: sEmail,
+            firstName: `Student_${s}`,
+            lastName: `Batch_${classId.split('-')[2].toUpperCase()}${sec}`,
+            role: 'student',
+            departmentId: dept.id,
+            classId: classId,
+            semester: sem.toString(),
+            password: 'password123',
+            status: 'active',
+            mobileNumber: `70100 ${Math.floor(10000 + Math.random() * 90000)}`,
+            createdAt: new Date().toISOString()
+          }, { merge: true });
+          await checkBatch();
+
+          // Detailed Student Profile
+          const sBioRef = doc(db, 'colleges', collegeId, 'studentProfiles', sEmail);
+          batch.set(sBioRef, {
+            userId: sEmail,
+            fullName: `Student_${s} Batch_${classId.split('-')[2].toUpperCase()}${sec}`,
+            studentEmail: sEmail,
+            studentMobileNo: `70100 ${Math.floor(10000 + Math.random() * 90000)}`,
+            gender: s % 2 === 0 ? 'Female' : 'Male',
+            dateOfAdmission: new Date().toISOString(),
+            nationality: 'Indian'
+          }, { merge: true });
+          await checkBatch();
+        }
+
+        batch.set(classRef, {
+          id: classId,
+          name: className,
+          departmentId: dept.id,
+          semester: sem.toString(),
+          studentIds: studentIds,
+          facultyId: `faculty1.${dept.id.split('-')[1]}@college.edu`,
+          createdAt: new Date().toISOString()
+        }, { merge: true });
+        await checkBatch();
       }
-    },
-    { 
-      id: 'class-cse-b', name: 'B.Tech CSE - Section B', departmentId: 'dept-eng', 
-      facultyId: 'robert.fox@college.edu', semester: '5', studentIds: [],
-      subjectHandlers: { 'course-ai402': 'sarah.smith@college.edu' }
     }
-  ];
-  classes.forEach(cls => {
-    batch.set(doc(db, 'colleges', collegeId, 'classes', cls.id), cls, { merge: true });
-  });
+  }
 
-  // 6. Academic Records (Simulated Performance)
-  const records = [
-    { id: 'rec-1', studentId: 'alex.j@college.edu', subjectId: 'course-ai402', attendance: 96, marks: { cat1: 45, cat2: 48, final: 92 } },
-    { id: 'rec-2', studentId: 'jessica.m@college.edu', subjectId: 'course-ai402', attendance: 92, marks: { cat1: 42, cat2: 44, final: 88 } },
-  ];
-  records.forEach(rec => {
-    batch.set(doc(db, 'colleges', collegeId, 'academicRecords', rec.id), rec, { merge: true });
-  });
-
+  // Final Commit
   await batch.commit();
 }
