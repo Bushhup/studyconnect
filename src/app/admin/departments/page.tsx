@@ -96,6 +96,11 @@ export default function DepartmentManagement() {
         updatedAt: new Date().toISOString()
       }, { merge: true });
     });
+    
+    toast({ 
+      title: 'Bulk Sync Triggered', 
+      description: `Processing ${data.length} academic divisions.` 
+    });
   };
 
   const handleDelete = (deptId: string, deptName: string) => {

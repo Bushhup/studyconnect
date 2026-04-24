@@ -8,7 +8,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { 
@@ -86,7 +85,7 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.endsWith('.csv')) {
+    if (!file.name.toLowerCase().endsWith('.csv')) {
       toast({
         variant: 'destructive',
         title: 'Invalid File',
@@ -97,28 +96,46 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
 
     try {
       const text = await file.text();
-      const lines = text.split(/\r?\n/);
+      // Split by lines and remove empty ones
+      const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
       
       if (lines.length < 2) {
         throw new Error("CSV file must contain a header row and at least one data row.");
       }
 
-      const headers = lines[0].split(',').map(h => h.trim());
-      const rows = lines.slice(1)
-        .filter(line => line.trim().length > 0)
-        .map(line => {
-          const values = line.split(',');
-          const obj: any = {};
-          headers.forEach((header, index) => {
-            const colConfig = columns.find(c => c.key === header);
-            if (colConfig) {
-              obj[header] = values[index]?.trim() || '';
+      const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+      const dataRows = lines.slice(1);
+      
+      const rows = dataRows.map(line => {
+        const values = line.split(',').map(v => v.trim());
+        const obj: any = {};
+        
+        // Map based on columns provided in props
+        columns.forEach(col => {
+          const headerIndex = headers.indexOf(col.key.toLowerCase());
+          if (headerIndex !== -1) {
+            obj[col.key] = values[headerIndex] || '';
+          } else {
+            // Fallback: try matching by label if key doesn't match
+            const labelIndex = headers.indexOf(col.label.toLowerCase());
+            if (labelIndex !== -1) {
+              obj[col.key] = values[labelIndex] || '';
+            } else {
+              obj[col.key] = '';
             }
-          });
-          return obj;
+          }
         });
+        return obj;
+      });
 
-      setParsedData(rows);
+      // Filter out rows that are completely empty
+      const validRows = rows.filter(r => Object.values(r).some(v => v !== ''));
+
+      if (validRows.length === 0) {
+        throw new Error("No data rows found in the uploaded file.");
+      }
+
+      setParsedData(validRows);
       setStep('review');
     } catch (error: any) {
       toast({
@@ -126,6 +143,7 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
         title: 'Parsing Error',
         description: error.message
       });
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -136,7 +154,11 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
   };
 
   const handleRemoveRow = (index: number) => {
-    setParsedData(parsedData.filter((_, i) => i !== index));
+    const newData = parsedData.filter((_, i) => i !== index);
+    setParsedData(newData);
+    if (newData.length === 0) {
+      reset();
+    }
   };
 
   const confirmImport = async () => {
@@ -149,13 +171,9 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
       if (onImport) {
         onImport(parsedData);
       }
-      // Simulation delay for write buffer
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Artificial delay to show progress for large datasets
+      await new Promise(resolve => setTimeout(resolve, 800));
       setStep('success');
-      toast({
-        title: 'Bulk Import Complete',
-        description: `Successfully processed ${parsedData.length} records.`
-      });
     } catch (error: any) {
       setStep('review');
       toast({
@@ -185,7 +203,7 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
       </DialogTrigger>
       <DialogContent className={cn(
         "rounded-[2.5rem] border-none shadow-2xl bg-card transition-all duration-300",
-        step === 'review' ? "max-w-5xl h-[85vh]" : "max-w-2xl"
+        step === 'review' ? "max-w-6xl h-[85vh] flex flex-col" : "max-w-2xl"
       )}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-headline flex items-center gap-3">
@@ -195,7 +213,7 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
             {title}
           </DialogTitle>
           <DialogDescription className="font-body text-base">
-            {step === 'review' ? `Verify and edit the ${parsedData.length} detected records before adding to the system.` : description}
+            {step === 'review' ? `Detected ${parsedData.length} records. Verify or edit them before synchronizing.` : description}
           </DialogDescription>
         </DialogHeader>
 
@@ -203,7 +221,7 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
           <div className="space-y-6 pt-4">
             <div className="bg-muted/30 rounded-2xl p-6 border border-border">
               <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
-                <Info className="h-3.5 w-3.5" /> CSV Data Requirements
+                <Info className="h-3.5 w-3.5" /> Data Mapping Requirements
               </h4>
               <div className="grid gap-4">
                 {columns.map((col) => (
@@ -216,7 +234,7 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
                       <p className="text-xs text-muted-foreground">{col.description}</p>
                     </div>
                     <code className="text-[10px] bg-muted px-2 py-1 rounded font-mono text-primary opacity-60 group-hover:opacity-100 transition-opacity">
-                      e.g. {col.example}
+                      key: {col.key}
                     </code>
                   </div>
                 ))}
@@ -250,8 +268,8 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
                 >
                   <Upload className="h-8 w-8 text-primary" />
                   <div className="text-center">
-                    <p className="text-xs font-bold">2. Upload Filled CSV</p>
-                    <p className="text-[10px] text-primary/60 mt-1">Select file to proceed</p>
+                    <p className="text-xs font-bold">2. Upload Data File</p>
+                    <p className="text-[10px] text-primary/60 mt-1">Select .csv to process</p>
                   </div>
                 </Button>
               </div>
@@ -260,14 +278,14 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
         )}
 
         {step === 'review' && (
-          <div className="flex-1 flex flex-col min-h-0 space-y-4 pt-4">
-            <div className="border rounded-2xl overflow-hidden flex-1 flex flex-col bg-muted/20">
+          <div className="flex-1 flex flex-col min-h-0 space-y-4 pt-4 overflow-hidden">
+            <div className="border rounded-2xl overflow-hidden flex-1 flex flex-col bg-muted/10">
               <ScrollArea className="flex-1">
                 <Table>
                   <TableHeader className="bg-card sticky top-0 z-10">
-                    <TableRow className="border-b">
+                    <TableRow className="border-b bg-muted/50">
                       {columns.map(col => (
-                        <TableHead key={col.key} className="text-[10px] font-bold uppercase tracking-widest py-4">
+                        <TableHead key={col.key} className="text-[10px] font-bold uppercase tracking-widest py-4 px-4 min-w-[150px]">
                           {col.label}
                         </TableHead>
                       ))}
@@ -278,11 +296,11 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
                     {parsedData.map((row, rowIndex) => (
                       <TableRow key={`row-${rowIndex}`} className="hover:bg-primary/5 border-b last:border-0 group">
                         {columns.map(col => (
-                          <TableCell key={`${rowIndex}-${col.key}`} className="p-2">
+                          <TableCell key={`${rowIndex}-${col.key}`} className="p-0">
                             <Input 
                               value={row[col.key] || ''} 
                               onChange={(e) => handleUpdateCell(rowIndex, col.key, e.target.value)}
-                              className="h-9 border-none bg-transparent hover:bg-white focus:bg-white focus:shadow-sm text-xs font-medium transition-all"
+                              className="h-12 border-none rounded-none bg-transparent hover:bg-white focus:bg-white focus:ring-0 text-sm font-medium transition-all px-4"
                             />
                           </TableCell>
                         ))}
@@ -303,17 +321,17 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
               </ScrollArea>
             </div>
             
-            <div className="flex justify-between items-center py-2 px-4 bg-muted/30 rounded-2xl">
-              <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-tight">
+            <div className="flex justify-between items-center py-4 px-6 bg-muted/30 rounded-2xl">
+              <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
                 <Info className="h-3.5 w-3.5" />
-                <span>Double-click any cell to edit details</span>
+                <span>You can edit data directly in the table cells above</span>
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" className="rounded-xl h-11 px-6 font-bold" onClick={reset}>
-                  <ArrowLeft className="h-4 w-4 mr-2" /> Start Over
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Reset
                 </Button>
                 <Button className="rounded-xl h-11 px-8 font-bold gap-2 shadow-lg shadow-primary/20" onClick={confirmImport}>
-                  Confirm & Sync Records <ChevronRight className="h-4 w-4" />
+                  Confirm & Sync {parsedData.length} Records <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             </div>
@@ -329,8 +347,8 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
               </div>
             </div>
             <div className="text-center space-y-1">
-              <h3 className="text-xl font-bold">Synchronizing Records...</h3>
-              <p className="text-sm text-muted-foreground">Writing {parsedData.length} records to institutional database.</p>
+              <h3 className="text-xl font-bold font-headline">Synchronizing Records...</h3>
+              <p className="text-sm text-muted-foreground">Writing {parsedData.length} nodes to the institutional database.</p>
             </div>
           </div>
         )}
@@ -341,11 +359,11 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
               <CheckCircle2 className="h-10 w-10" />
             </div>
             <div className="text-center space-y-1">
-              <h3 className="text-2xl font-bold">Import Successful</h3>
-              <p className="text-sm text-muted-foreground">{parsedData.length} new nodes have been added to the hierarchy.</p>
+              <h3 className="text-2xl font-bold font-headline text-foreground">Import Successful</h3>
+              <p className="text-sm text-muted-foreground">The institutional directory has been updated with {parsedData.length} new records.</p>
             </div>
-            <Button className="rounded-xl h-12 px-10 font-bold" onClick={() => reset()}>
-              Close Dialog
+            <Button className="rounded-xl h-12 px-10 font-bold uppercase text-[10px] tracking-widest" onClick={() => reset()}>
+              Done
             </Button>
           </div>
         )}
