@@ -1,14 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useCollection, useMemoFirebase, useFirestore, useUser, useDoc, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useMemoFirebase, useFirestore, useUser, useDoc, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Plus, Loader2, ArrowRight, Trash2 } from 'lucide-react';
+import { Building2, Plus, Loader2, ArrowRight, Trash2, Edit3, Save } from 'lucide-react';
 import Link from 'next/link';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 import { cn } from '@/lib/utils';
@@ -24,6 +24,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -46,10 +54,21 @@ export default function DepartmentManagement() {
   const { user } = useUser();
   const { toast } = useToast();
   
+  // Creation Form State
   const [name, setName] = useState('');
   const [hod, setHod] = useState('');
   const [programType, setProgramType] = useState<'UG' | 'PG'>('UG');
   const [totalSemesters, setTotalSemesters] = useState('8');
+
+  // Editing State
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingDept, setEditingDept] = useState<any>(null);
+  const [editData, setEditData] = useState({
+    name: '',
+    headOfDept: '',
+    programType: 'UG' as 'UG' | 'PG',
+    totalSemesters: '8'
+  });
 
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.email) return null;
@@ -82,10 +101,37 @@ export default function DepartmentManagement() {
     setName(''); setHod(''); setProgramType('UG'); setTotalSemesters('8');
   };
 
+  const handleOpenEdit = (dept: any) => {
+    setEditingDept(dept);
+    setEditData({
+      name: dept.name || '',
+      headOfDept: dept.headOfDept || '',
+      programType: (dept.programType as 'UG' | 'PG') || 'UG',
+      totalSemesters: dept.totalSemesters?.toString() || '8'
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDept || !isAdmin) return;
+
+    const deptRef = doc(firestore, 'colleges', collegeId, 'departments', editingDept.id);
+    updateDocumentNonBlocking(deptRef, {
+      name: editData.name,
+      headOfDept: editData.headOfDept,
+      programType: editData.programType,
+      totalSemesters: parseInt(editData.totalSemesters),
+      updatedAt: new Date().toISOString()
+    });
+
+    toast({ title: 'Division Updated', description: `${editData.name} details have been synchronized.` });
+    setIsEditOpen(false);
+  };
+
   const handleImport = (data: any[]) => {
     data.forEach(item => {
       if (!item.name) return;
-      // Use clean IDs for consistency
       const id = item.name.toLowerCase().replace(/\s+/g, '-').slice(0, 20);
       const deptRef = doc(firestore, 'colleges', collegeId, 'departments', id);
       
@@ -97,10 +143,7 @@ export default function DepartmentManagement() {
       }, { merge: true });
     });
     
-    toast({ 
-      title: 'Bulk Sync Triggered', 
-      description: `Processing ${data.length} academic divisions.` 
-    });
+    toast({ title: 'Bulk Sync Triggered', description: `Processing ${data.length} academic divisions.` });
   };
 
   const handleDelete = (deptId: string, deptName: string) => {
@@ -199,31 +242,41 @@ export default function DepartmentManagement() {
                             <Building2 className="h-6 w-6 text-primary" />
                           </div>
                           <div className="flex gap-2">
-                            <Badge className="bg-primary/5 text-primary border-none font-bold text-[9px] uppercase tracking-tighter px-3 h-6 flex items-center border">
+                            <Badge className="bg-primary/5 text-primary border-none font-bold text-[9px] uppercase tracking-tighter px-3 h-6 flex items-center">
                               {dept.programType || 'UG'} • {dept.totalSemesters || 8} Sems
                             </Badge>
                             {isAdmin && (
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full hover:bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl bg-card">
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Decommission Division?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Confirming the deletion of <strong>{dept.name}</strong> will remove all curricular mapping from the master hierarchy.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel className="rounded-xl border-none bg-muted">Cancel</AlertDialogCancel>
-                                    <AlertDialogAction className="bg-destructive hover:bg-destructive/90 rounded-xl" onClick={() => handleDelete(dept.id, dept.name)}>
-                                      Confirm Removal
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
+                              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-7 w-7 rounded-full hover:bg-primary/10 text-primary"
+                                  onClick={() => handleOpenEdit(dept)}
+                                >
+                                  <Edit3 className="h-3.5 w-3.5" />
+                                </Button>
+                                <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full hover:bg-destructive/10 text-destructive">
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl bg-card">
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Decommission Division?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Confirming the deletion of <strong>{dept.name}</strong> will remove all curricular mapping from the master hierarchy.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel className="rounded-xl border-none bg-muted">Cancel</AlertDialogCancel>
+                                      <AlertDialogAction className="bg-destructive hover:bg-destructive/90 rounded-xl" onClick={() => handleDelete(dept.id, dept.name)}>
+                                        Confirm Removal
+                                      </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                              </div>
                             )}
                           </div>
                         </div>
@@ -252,6 +305,59 @@ export default function DepartmentManagement() {
           )}
         </div>
       </div>
+
+      {/* Edit Department Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><Edit3 className="h-5 w-5 text-primary" /> Modify Division</DialogTitle>
+            <DialogDescription>Update institutional metadata for the selected department.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleSaveEdit} className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest">Division Name</Label>
+              <Input 
+                value={editData.name} 
+                onChange={(e) => setEditData({...editData, name: e.target.value})} 
+                required 
+                className="bg-muted border-none h-12 rounded-xl"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest">Head of Department (Lead)</Label>
+              <Input 
+                value={editData.headOfDept} 
+                onChange={(e) => setEditData({...editData, headOfDept: e.target.value})} 
+                className="bg-muted border-none h-12 rounded-xl"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase">Program Type</Label>
+                <Select value={editData.programType} onValueChange={(v: any) => setEditData({...editData, programType: v})}>
+                  <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="UG">UG</SelectItem>
+                    <SelectItem value="PG">PG</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase">Total Semesters</Label>
+                <Input 
+                  type="number" 
+                  value={editData.totalSemesters} 
+                  onChange={(e) => setEditData({...editData, totalSemesters: e.target.value})} 
+                  className="bg-muted border-none h-12 rounded-xl"
+                />
+              </div>
+            </div>
+            <Button type="submit" className="w-full h-14 font-bold uppercase shadow-lg shadow-primary/20 rounded-2xl mt-4">
+              <Save className="mr-2 h-4 w-4" /> Save Division Changes
+            </Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
