@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -228,11 +227,11 @@ export default function DepartmentManagement() {
                   <form onSubmit={handleCreate} className="space-y-6">
                     <div className="space-y-2">
                       <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Division Name</Label>
-                      <Input value={name} onChange={(e) => setName(e.target.value)} required className="bg-muted border-none h-14 rounded-2xl text-lg px-6" placeholder="e.g. Bio-Engineering" />
+                      <Input value={name || ''} onChange={(e) => setName(e.target.value)} required className="bg-muted border-none h-14 rounded-2xl text-lg px-6" placeholder="e.g. Bio-Engineering" />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Head of Department (Dean)</Label>
-                      <Input value={hod} onChange={(e) => setHod(e.target.value)} placeholder="Dr. Jane Doe" className="bg-muted border-none h-14 rounded-2xl px-6" />
+                      <Input value={hod || ''} onChange={(e) => setHod(e.target.value)} placeholder="Dr. Jane Doe" className="bg-muted border-none h-14 rounded-2xl px-6" />
                     </div>
 
                     <div className="space-y-2">
@@ -240,7 +239,7 @@ export default function DepartmentManagement() {
                       <div className="flex gap-2">
                         <div className="relative flex-1">
                           <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Paste image link..." className="bg-muted border-none h-12 rounded-xl px-11" />
+                          <Input value={imageUrl || ''} onChange={(e) => setImageUrl(e.target.value)} placeholder="Paste image link..." className="bg-muted border-none h-12 rounded-xl px-11" />
                         </div>
                         <div className="relative">
                           <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleImageFileChange(e)} />
@@ -267,7 +266,7 @@ export default function DepartmentManagement() {
                       </div>
                       <div className="space-y-2">
                         <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Total Semesters</Label>
-                        <Input type="number" value={totalSemesters} onChange={(e) => setTotalSemesters(e.target.value)} className="bg-muted border-none h-14 rounded-2xl px-6 font-bold" />
+                        <Input type="number" value={totalSemesters || '8'} onChange={(e) => setTotalSemesters(e.target.value)} className="bg-muted border-none h-14 rounded-2xl px-6 font-bold" />
                       </div>
                     </div>
 
@@ -431,7 +430,7 @@ export default function DepartmentManagement() {
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest ml-1 opacity-50">Division Name</Label>
                 <Input 
-                  value={editData.name} 
+                  value={editData.name || ''} 
                   onChange={(e) => setEditData({...editData, name: e.target.value})} 
                   required 
                   className="bg-muted border-none h-14 rounded-2xl px-6 text-lg"
@@ -440,7 +439,7 @@ export default function DepartmentManagement() {
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest ml-1 opacity-50">Head of Department (Lead)</Label>
                 <Input 
-                  value={editData.headOfDept} 
+                  value={editData.headOfDept || ''} 
                   onChange={(e) => setEditData({...editData, headOfDept: e.target.value})} 
                   className="bg-muted border-none h-14 rounded-2xl px-6"
                 />
@@ -485,8 +484,8 @@ export default function DepartmentManagement() {
                   <Label className="text-[10px] font-bold uppercase ml-1 opacity-50">Total Semesters</Label>
                   <Input 
                     type="number" 
-                    value={editData.totalSemesters} 
-                    onChange={(e) => setEditData({...totalSemesters: e.target.value})} 
+                    value={editData.totalSemesters || '8'} 
+                    onChange={(e) => setEditData({...editData, totalSemesters: e.target.value})} 
                     className="bg-muted border-none h-14 rounded-2xl px-6 font-bold"
                   />
                 </div>
