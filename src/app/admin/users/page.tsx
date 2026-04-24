@@ -12,13 +12,13 @@ import {
 } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, Plus, UserCog, Edit3, 
-  Loader2, Mail, Phone, Lock, Trash2, Key, UserCheck, Info, Download
+  Loader2, Phone, Trash2, Key, Download
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -105,6 +105,21 @@ export default function UserManagementPage() {
     toast({ title: 'Template Exported', description: 'Headers: ' + headers });
   };
 
+  const handleImport = (data: any[]) => {
+    data.forEach(item => {
+      if (!item.email) return;
+      const emailKey = item.email.toLowerCase().trim();
+      const userRef = doc(firestore, 'colleges', collegeId, 'users', emailKey);
+      setDocumentNonBlocking(userRef, {
+        ...item,
+        id: emailKey,
+        username: emailKey.split('@')[0],
+        status: item.status || 'active',
+        createdAt: new Date().toISOString()
+      }, { merge: true });
+    });
+  };
+
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email) return;
@@ -172,6 +187,7 @@ export default function UserManagementPage() {
             title="Bulk Provisioning"
             description="Process multiple user records via CSV mapping."
             columns={USER_CSV_COLUMNS}
+            onImport={handleImport}
           />
           <TooltipProvider>
             <Tooltip>
@@ -201,29 +217,29 @@ export default function UserManagementPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">First Name</Label>
-                    <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Alex" />
+                    <Input value={formData.firstName || ''} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Alex" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Last Name</Label>
-                    <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Johnson" />
+                    <Input value={formData.lastName || ''} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Johnson" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Institutional Email</Label>
-                    <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="alex@college.edu" />
+                    <Input type="email" value={formData.email || ''} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="alex@college.edu" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Contact Number</Label>
-                    <Input value={formData.mobileNumber} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="9876543210" />
+                    <Input value={formData.mobileNumber || ''} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="9876543210" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Access Key (Password)</Label>
-                    <Input value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Set initial password" />
+                    <Input value={formData.password || ''} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Set initial password" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">System Role</Label>
@@ -290,7 +306,7 @@ export default function UserManagementPage() {
                 <TableBody>
                   <AnimatePresence>
                     {filteredUsers.map((u, idx) => (
-                      <TableRow key={u.id} className="group hover:bg-muted/30 border-border">
+                      <TableRow key={u.id || idx} className="group hover:bg-muted/30 border-border">
                         <TableCell className="pl-6 py-4">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
@@ -355,29 +371,29 @@ export default function UserManagementPage() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">First Name</Label>
-                <Input value={formData.firstName} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.firstName || ''} onChange={(e) => setFormData({...formData, firstName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Last Name</Label>
-                <Input value={formData.lastName} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.lastName || ''} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Email Address</Label>
-                <Input value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.email || ''} onChange={(e) => setFormData({...formData, email: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Contact Number</Label>
-                <Input value={formData.mobileNumber} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.mobileNumber || ''} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Access Key (Password)</Label>
-                <Input value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.password || ''} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">System Role</Label>

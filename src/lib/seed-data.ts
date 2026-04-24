@@ -50,7 +50,7 @@ export async function seedDatabase(db: Firestore) {
 
   // 4. Users (Using Email as ID for predictable rule-based access)
   const users = [
-    { id: 'shabu@gmail.com', email: 'shabu@gmail.com', password: 'shabu123', firstName: 'Shabu', lastName: 'Osaid', role: 'admin', status: 'active', mobileNumber: '9344941725' },
+    { id: 'shabu@gmail.com', email: 'shabu@gmail.com', password: 'shabu123', firstName: 'shabu', lastName: 'osaid', role: 'admin', status: 'active', mobileNumber: '9344941725' },
     { id: 'shabuddinaw@gmail.com', email: 'shabuddinaw@gmail.com', password: 'shabu05413', firstName: 'Shabuddin', lastName: 'A', role: 'admin', status: 'active', mobileNumber: '9344941725' },
     { id: 'admin@college.edu', email: 'admin@college.edu', password: 'minister123', firstName: 'Master', lastName: 'Admin', role: 'admin', status: 'active', mobileNumber: '9003341725' },
     { id: 'sarah.smith@college.edu', email: 'sarah.smith@college.edu', password: 'password123', firstName: 'Sarah', lastName: 'Smith', role: 'faculty', departmentId: 'dept-eng', status: 'active', designation: 'Professor', mobileNumber: '9944885566' },

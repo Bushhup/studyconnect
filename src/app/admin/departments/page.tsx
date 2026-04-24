@@ -1,15 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useCollection, useMemoFirebase, useFirestore, useUser, useDoc } from '@/firebase';
-import { collection, doc, query, where } from 'firebase/firestore';
-import { addDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { useCollection, useMemoFirebase, useFirestore, useUser, useDoc, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Plus, Loader2, ArrowRight, Users, BookOpen, GraduationCap, Trash2, Layers } from 'lucide-react';
+import { Building2, Plus, Loader2, ArrowRight, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 import { cn } from '@/lib/utils';
@@ -39,6 +38,7 @@ const DEPT_CSV_COLUMNS: CsvColumn[] = [
   { key: 'name', label: 'Department Name', description: 'Official academic title.', example: 'Mechanical Engineering', required: true },
   { key: 'headOfDept', label: 'H.O.D', description: 'Lead faculty name.', example: 'Dr. John Doe', required: true },
   { key: 'programType', label: 'Program', description: 'UG or PG.', example: 'UG', required: true },
+  { key: 'totalSemesters', label: 'Duration', description: 'Total number of semesters.', example: '8', required: false },
 ];
 
 export default function DepartmentManagement() {
@@ -62,8 +62,8 @@ export default function DepartmentManagement() {
   const deptQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'departments'), [firestore]);
   const { data: departments, isLoading } = useCollection(deptQuery);
 
-  const handleCreate = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreate = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!name || !isAdmin) return;
 
     const id = name.toLowerCase().replace(/\s+/g, '-').slice(0, 15) + '-' + Math.random().toString(36).substr(2, 4);
@@ -80,6 +80,20 @@ export default function DepartmentManagement() {
 
     toast({ title: 'Division Provisioned', description: `${name} has been added to the institutional architecture.` });
     setName(''); setHod(''); setProgramType('UG'); setTotalSemesters('8');
+  };
+
+  const handleImport = (data: any[]) => {
+    data.forEach(item => {
+      if (!item.name) return;
+      const id = item.name.toLowerCase().replace(/\s+/g, '-').slice(0, 15) + '-' + Math.random().toString(36).substr(2, 4);
+      const deptRef = doc(firestore, 'colleges', collegeId, 'departments', id);
+      setDocumentNonBlocking(deptRef, {
+        ...item,
+        id,
+        totalSemesters: parseInt(item.totalSemesters || '8'),
+        createdAt: new Date().toISOString()
+      }, { merge: true });
+    });
   };
 
   const handleDelete = (deptId: string, deptName: string) => {
@@ -100,8 +114,9 @@ export default function DepartmentManagement() {
           <div className="flex gap-2">
             <CsvImportDialog 
               title="Bulk Dept Import"
-              description="Register multiple academic divisions via CSV."
+              description="Register multiple academic divisions via CSV mapping."
               columns={DEPT_CSV_COLUMNS}
+              onImport={handleImport}
             />
             <Button onClick={() => (document.getElementById('deptName') as any)?.focus()} className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
               <Plus className="h-4 w-4" /> New Division
@@ -234,6 +249,6 @@ export default function DepartmentManagement() {
   );
 }
 
-function Badge({ children, className }: any) {
+function Badge({ children, className }: { children: React.ReactNode; className?: string }) {
   return <span className={cn("px-2 py-0.5 rounded-full text-[10px] border", className)}>{children}</span>;
 }

@@ -62,7 +62,7 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
     });
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -76,16 +76,52 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
     }
 
     setIsUploading(true);
-    // Simulate parsing and importing
-    setTimeout(() => {
+    
+    try {
+      const text = await file.text();
+      const lines = text.split(/\r?\n/);
+      
+      if (lines.length < 2) {
+        throw new Error("CSV file must contain a header row and at least one data row.");
+      }
+
+      const headers = lines[0].split(',').map(h => h.trim());
+      const rows = lines.slice(1)
+        .filter(line => line.trim().length > 0)
+        .map(line => {
+          const values = line.split(',');
+          const obj: any = {};
+          headers.forEach((header, index) => {
+            const colConfig = columns.find(c => c.key === header);
+            if (colConfig) {
+              obj[header] = values[index]?.trim() || '';
+            }
+          });
+          return obj;
+        });
+
+      // Simulation delay for processing feel
+      await new Promise(resolve => setTimeout(resolve, 1500));
+
+      if (onImport) {
+        onImport(rows);
+      }
+
       setIsUploading(false);
       setIsSuccess(true);
-      if (onImport) onImport([]);
+      
       toast({
         title: 'Bulk Import Complete',
-        description: `Successfully processed institutional records from ${file.name}.`
+        description: `Successfully processed ${rows.length} institutional records.`
       });
-    }, 2000);
+    } catch (error: any) {
+      setIsUploading(false);
+      toast({
+        variant: 'destructive',
+        title: 'Processing Error',
+        description: error.message
+      });
+    }
   };
 
   return (
