@@ -84,7 +84,7 @@ export default function DepartmentManagement() {
   }, [firestore, user?.email]);
   
   const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
-  const hasWriteAccess = profile?.role === 'admin' || profile?.role === 'hod' || user?.email?.toLowerCase() === 'admin@college.edu';
+  const hasWriteAccess = profile?.role === 'admin' || profile?.role === 'hod' || user?.email?.toLowerCase() === 'admin@college.edu' || user?.email?.toLowerCase() === 'shabu@gmail.com';
 
   const deptQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'departments'), [firestore]);
   const { data: departments, isLoading } = useCollection(deptQuery);
@@ -100,9 +100,14 @@ export default function DepartmentManagement() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate size for prototype (Firestore has 1MB doc limit)
-    if (file.size > 800000) {
-      toast({ variant: 'destructive', title: 'File too large', description: 'Please upload an image smaller than 800KB for institutional indexing.' });
+    // Validate size (Firestore document limit is 1MB. Base64 adds ~33% overhead)
+    // 800KB raw file is approx 1.06MB base64. 600KB is safer.
+    if (file.size > 700000) {
+      toast({ 
+        variant: 'destructive', 
+        title: 'Image too large', 
+        description: 'Please upload an image smaller than 700KB to ensure database synchronization.' 
+      });
       return;
     }
 
@@ -315,8 +320,9 @@ export default function DepartmentManagement() {
                     transition={{ delay: idx * 0.05, type: 'spring', stiffness: 100 }}
                   >
                     <Card className="group hover:shadow-2xl transition-all duration-500 border-none shadow-sm bg-card rounded-[2.5rem] overflow-hidden flex flex-col h-full relative">
-                      <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                        {hasWriteAccess && (
+                      {/* Action Bar - Always visible for authorized users in admin view */}
+                      {hasWriteAccess && (
+                        <div className="absolute top-4 right-4 z-20 flex gap-2">
                           <div className="bg-white/90 backdrop-blur-md rounded-2xl p-1 shadow-xl flex gap-1 border border-white">
                             <Button 
                               variant="ghost" 
@@ -353,10 +359,10 @@ export default function DepartmentManagement() {
                               </AlertDialogContent>
                             </AlertDialog>
                           </div>
-                        )}
-                      </div>
+                        </div>
+                      )}
 
-                      <div className="h-56 relative overflow-hidden">
+                      <div className="h-56 relative overflow-hidden shrink-0">
                         <Image
                           src={finalImageUrl}
                           alt={dept.name}
@@ -364,7 +370,7 @@ export default function DepartmentManagement() {
                           className="object-cover transition-transform duration-700 group-hover:scale-110"
                           unoptimized
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
                         <div className="absolute bottom-6 left-8 right-8">
                            <div className="flex flex-wrap gap-2 mb-3">
                             <Badge className="bg-white/20 backdrop-blur-md text-white border-none font-bold text-[8px] uppercase tracking-wider px-3 h-6 rounded-full flex items-center gap-1">
