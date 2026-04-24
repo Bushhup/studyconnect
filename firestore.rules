@@ -4,7 +4,7 @@ service cloud.firestore {
 
     /**
      * STUDYCONNECT SECURITY RULES
-     * Implements "Bootstrap Loophole" to allow initial setup.
+     * Implements "Bootstrap Loophole" and robust role-based access.
      */
 
     function isSignedIn() {
@@ -13,13 +13,19 @@ service cloud.firestore {
 
     function getUserRole() {
       // Safely check role if user is signed in and has an email token
+      let email = request.auth.token.email.lower();
       return (isSignedIn() && "email" in request.auth.token) 
-        ? get(/databases/$(database)/documents/colleges/study-connect-college/users/$(request.auth.token.email.lower())).data.role 
+        ? get(/databases/$(database)/documents/colleges/study-connect-college/users/$(email)).data.role 
         : null;
     }
 
     function isAdmin() {
-      return isSignedIn() && getUserRole() == 'admin';
+      // Allow if specific master emails or if role is admin in DB
+      return isSignedIn() && (
+        request.auth.token.email.lower() == 'admin@college.edu' ||
+        request.auth.token.email.lower() == 'shabu@gmail.com' ||
+        getUserRole() == 'admin'
+      );
     }
     
     function isHOD() {
@@ -48,42 +54,42 @@ service cloud.firestore {
       match /departments/{id} { 
         allow read: if true; 
         // Allow admin or HOD to manage department metadata
-        allow write: if isSystemUninitialized() || isAdmin() || isHOD(); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || isHOD(); 
       }
       
       match /classes/{id} { 
         allow read: if true; 
-        allow write: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']); 
       }
       
       match /courses/{id} { 
         allow read: if true; 
-        allow write: if isSystemUninitialized() || isAdmin(); 
+        allow write, update: if isSystemUninitialized() || isAdmin(); 
       }
       
       match /academicRecords/{id} {
         allow read: if isSignedIn();
-        allow write: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']);
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']);
       }
 
       match /studentProfiles/{userId} { 
         allow read: if isSignedIn(); 
-        allow write: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
       }
       
       match /facultyProfiles/{userId} { 
         allow read: if isSignedIn(); 
-        allow write: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
       }
 
       match /achievements/{id} { 
         allow read: if true; 
-        allow write: if isSystemUninitialized() || isAdmin(); 
+        allow write, update: if isSystemUninitialized() || isAdmin(); 
       }
       
       match /events/{id} { 
         allow read: if true; 
-        allow write: if isSystemUninitialized() || isAdmin(); 
+        allow write, update: if isSystemUninitialized() || isAdmin(); 
       }
     }
   }

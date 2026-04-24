@@ -84,7 +84,7 @@ export default function DepartmentManagement() {
   }, [firestore, user?.email]);
   
   const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
-  const hasWriteAccess = profile?.role === 'admin' || profile?.role === 'hod';
+  const hasWriteAccess = profile?.role === 'admin' || profile?.role === 'hod' || user?.email?.toLowerCase() === 'admin@college.edu';
 
   const deptQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'departments'), [firestore]);
   const { data: departments, isLoading } = useCollection(deptQuery);
@@ -116,7 +116,7 @@ export default function DepartmentManagement() {
     if (e) e.preventDefault();
     if (!name || !hasWriteAccess) return;
 
-    const id = name.toLowerCase().replace(/\s+/g, '-').slice(0, 15) + '-' + Math.random().toString(36).substr(2, 4);
+    const id = name.toLowerCase().replace(/\s+/g, '-').slice(0, 20) + '-' + Math.random().toString(36).substr(2, 4);
     const deptRef = doc(firestore, 'colleges', collegeId, 'departments', id);
     
     setDocumentNonBlocking(deptRef, {
@@ -125,7 +125,7 @@ export default function DepartmentManagement() {
       headOfDept: hod,
       programType,
       imageUrl,
-      totalSemesters: parseInt(totalSemesters),
+      totalSemesters: parseInt(totalSemesters) || 8,
       createdAt: new Date().toISOString()
     }, { merge: true });
 
@@ -156,7 +156,7 @@ export default function DepartmentManagement() {
       headOfDept: editData.headOfDept,
       programType: editData.programType,
       imageUrl: editData.imageUrl,
-      totalSemesters: parseInt(editData.totalSemesters),
+      totalSemesters: parseInt(editData.totalSemesters) || 8,
       updatedAt: new Date().toISOString()
     });
 
@@ -167,7 +167,7 @@ export default function DepartmentManagement() {
   const handleImport = (data: any[]) => {
     data.forEach(item => {
       if (!item.name) return;
-      const id = item.name.toLowerCase().replace(/\s+/g, '-').slice(0, 20);
+      const id = item.name.toLowerCase().replace(/\s+/g, '-').slice(0, 25);
       const deptRef = doc(firestore, 'colleges', collegeId, 'departments', id);
       
       setDocumentNonBlocking(deptRef, {
@@ -404,7 +404,7 @@ export default function DepartmentManagement() {
                 </div>
                 <div className="space-y-3">
                   <p className="text-2xl font-headline font-bold text-foreground">No Academic Divisions</p>
-                  <p className="text-muted-foreground max-w-md mx-auto leading-relaxed">Your institutional hierarchy is currently empty. Start by registering your first department or use the bulk import tool.</p>
+                  <p className="text-muted-foreground max-md mx-auto leading-relaxed">Your institutional hierarchy is currently empty. Start by registering your first department or use the bulk import tool.</p>
                 </div>
                 <Button onClick={() => setIsCreateOpen(true)} className="rounded-full px-12 h-14 font-bold uppercase text-[10px] tracking-[0.2em] gap-3 shadow-2xl shadow-primary/20 scale-110 hover:scale-105 transition-transform">
                   <Plus className="h-5 w-5" /> Initialize First Node
