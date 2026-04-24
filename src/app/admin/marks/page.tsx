@@ -58,6 +58,7 @@ export default function MarksManagementPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isMarkDialogOpen, setIsMarkDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
+  const [deptsWithPerformance, setDeptsWithPerformance] = useState<any[]>([]);
 
   // Data Fetching
   const deptsQuery = useMemoFirebase(() => {
@@ -82,6 +83,18 @@ export default function MarksManagementPage() {
   const { data: classes, isLoading: classesLoading } = useCollection(classesQuery);
   const { data: students, isLoading: studentsLoading } = useCollection(studentsQuery);
 
+  // Avoid hydration mismatch by calculating performance data on the client
+  useEffect(() => {
+    if (departments) {
+      const withPerformance = departments.map(d => ({
+        ...d,
+        performanceScore: Math.floor(Math.random() * (98 - 75) + 75), 
+        totalStudents: Math.floor(Math.random() * 500 + 100),
+      })).sort((a, b) => b.performanceScore - a.performanceScore);
+      setDeptsWithPerformance(withPerformance);
+    }
+  }, [departments]);
+
   // Auto-select department for HOD
   useEffect(() => {
     if (isHOD && profile?.departmentId && viewState === 'depts') {
@@ -101,16 +114,10 @@ export default function MarksManagementPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    toast({ title: 'Template Exported', description: 'Headers: ' + headers });
+    toast({ title: 'Template Exported', description: 'Follow the header format: ' + headers });
   };
 
-  const departmentsWithPerformance = departments?.map(d => ({
-    ...d,
-    performanceScore: Math.floor(Math.random() * (98 - 75) + 75), 
-    totalStudents: Math.floor(Math.random() * 500 + 100),
-  })).sort((a, b) => b.performanceScore - a.performanceScore) || [];
-
-  const leaderboardChartData = departmentsWithPerformance.map((d, i) => ({
+  const leaderboardChartData = deptsWithPerformance.map((d, i) => ({
     name: d.name,
     score: d.performanceScore,
     color: COLORS[i % COLORS.length]
@@ -225,7 +232,7 @@ export default function MarksManagementPage() {
                 <div className="flex justify-center p-20"><Loader2 className="animate-spin h-10 w-10 text-primary" /></div>
               ) : (
                 <div className="grid gap-4">
-                  {departmentsWithPerformance.map((dept, index) => (
+                  {deptsWithPerformance.map((dept, index) => (
                     <Card key={dept.id} className="border-none shadow-sm hover:shadow-md transition-all cursor-pointer group bg-card rounded-2xl overflow-hidden" onClick={() => handleDeptClick(dept.id)}>
                       <div className="flex items-center p-6 gap-6">
                         <div className="flex flex-col items-center justify-center h-12 w-12 rounded-xl bg-primary/5 text-primary font-bold text-lg">
@@ -259,9 +266,9 @@ export default function MarksManagementPage() {
                 <Trophy className="absolute right-[-20px] bottom-[-20px] h-40 w-40 text-white/5 -rotate-12" />
                 <div className="relative z-10 space-y-2">
                   <Badge className="bg-white/20 text-white border-none uppercase text-[9px] font-bold px-3">Top Performer</Badge>
-                  <h3 className="text-2xl font-headline font-bold">{departmentsWithPerformance[0]?.name || 'Fetching...'}</h3>
+                  <h3 className="text-2xl font-headline font-bold">{deptsWithPerformance[0]?.name || 'Fetching...'}</h3>
                   <p className="text-sm text-white/70 leading-relaxed">
-                    Leading the institution with a consistent <strong>{departmentsWithPerformance[0]?.performanceScore || 0}%</strong> average score across all semesters.
+                    Leading the institution with a consistent <strong>{deptsWithPerformance[0]?.performanceScore || 0}%</strong> average score across all semesters.
                   </p>
                 </div>
                 <Button className="w-full bg-white text-primary hover:bg-slate-100 font-bold rounded-xl h-12 relative z-10 shadow-lg">

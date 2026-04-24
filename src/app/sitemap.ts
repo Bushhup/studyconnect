@@ -1,5 +1,7 @@
 import type { MetadataRoute } from 'next'
 
+export const dynamic = 'force-static';
+
 /**
  * Technical Sitemap Generator
  * Provides search engines with a clear map of public-facing routes.
