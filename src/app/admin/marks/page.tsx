@@ -41,11 +41,11 @@ export default function MarksManagementPage() {
   const firestore = useFirestore();
   const { user } = useUser();
 
-  // User Profile for HOD Role Check
+  // User Profile for HOD Role Check - Aligned with Email ID strategy
   const profileRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
-  }, [firestore, user?.uid]);
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
+  }, [firestore, user?.email]);
   const { data: profile, isLoading: profileLoading } = useDoc(profileRef);
   const isHOD = profile?.role === 'hod';
 
@@ -59,6 +59,11 @@ export default function MarksManagementPage() {
   const [isMarkDialogOpen, setIsMarkDialogOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<any>(null);
   const [deptsWithPerformance, setDeptsWithPerformance] = useState<any[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // Data Fetching
   const deptsQuery = useMemoFirebase(() => {
@@ -83,9 +88,9 @@ export default function MarksManagementPage() {
   const { data: classes, isLoading: classesLoading } = useCollection(classesQuery);
   const { data: students, isLoading: studentsLoading } = useCollection(studentsQuery);
 
-  // Avoid hydration mismatch by calculating performance data on the client
+  // Avoid hydration mismatch by calculating performance data strictly on client
   useEffect(() => {
-    if (departments) {
+    if (departments && isMounted) {
       const withPerformance = departments.map(d => ({
         ...d,
         performanceScore: Math.floor(Math.random() * (98 - 75) + 75), 
@@ -93,7 +98,7 @@ export default function MarksManagementPage() {
       })).sort((a, b) => b.performanceScore - a.performanceScore);
       setDeptsWithPerformance(withPerformance);
     }
-  }, [departments]);
+  }, [departments, isMounted]);
 
   // Auto-select department for HOD
   useEffect(() => {
@@ -146,13 +151,13 @@ export default function MarksManagementPage() {
   };
 
   const filteredStudents = students?.filter(s => 
-    `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchQuery.toLowerCase())
+    `${s.firstName || ''} ${s.lastName || ''}`.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
   const selectedDept = departments?.find(d => d.id === (selectedDeptId || profile?.departmentId));
   const selectedClass = classes?.find(c => c.id === selectedClassId);
 
-  if (profileLoading) return <div className="flex justify-center p-40"><Loader2 className="animate-spin" /></div>;
+  if (profileLoading) return <div className="flex justify-center p-40"><Loader2 className="animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-8 pb-12">
@@ -210,19 +215,23 @@ export default function MarksManagementPage() {
               <CardDescription>Aggregate success scores per academic division.</CardDescription>
             </CardHeader>
             <CardContent className="h-[250px] pt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={leaderboardChartData} layout="vertical" margin={{ left: 40, right: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
-                  <XAxis type="number" hide />
-                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} width={120} />
-                  <Tooltip cursor={{fill: 'transparent'}} />
-                  <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={20}>
-                    {leaderboardChartData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+              {isMounted ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={leaderboardChartData} layout="vertical" margin={{ left: 40, right: 40 }}>
+                    <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+                    <XAxis type="number" hide />
+                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} width={120} />
+                    <Tooltip cursor={{fill: 'transparent'}} />
+                    <Bar dataKey="score" radius={[0, 4, 4, 0]} barSize={20}>
+                      {leaderboardChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="w-full h-full bg-muted/20 animate-pulse rounded-xl" />
+              )}
             </CardContent>
           </Card>
 
@@ -266,7 +275,7 @@ export default function MarksManagementPage() {
                 <Trophy className="absolute right-[-20px] bottom-[-20px] h-40 w-40 text-white/5 -rotate-12" />
                 <div className="relative z-10 space-y-2">
                   <Badge className="bg-white/20 text-white border-none uppercase text-[9px] font-bold px-3">Top Performer</Badge>
-                  <h3 className="text-2xl font-headline font-bold">{deptsWithPerformance[0]?.name || 'Fetching...'}</h3>
+                  <h3 className="text-2xl font-headline font-bold">{deptsWithPerformance[0]?.name || 'Institutional Lead'}</h3>
                   <p className="text-sm text-white/70 leading-relaxed">
                     Leading the institution with a consistent <strong>{deptsWithPerformance[0]?.performanceScore || 0}%</strong> average score across all semesters.
                   </p>
@@ -308,7 +317,7 @@ export default function MarksManagementPage() {
                       <div className="h-8 w-8 rounded-full bg-primary/5 flex items-center justify-center text-primary">
                         <Users className="h-4 w-4" />
                       </div>
-                      <span className="text-xs font-bold">45 Students</span>
+                      <span className="text-xs font-bold">Verified Identity Node</span>
                     </div>
                     <Button variant="ghost" size="sm" className="font-bold text-primary text-[10px] uppercase">Review Ledger</Button>
                   </div>
@@ -371,11 +380,13 @@ export default function MarksManagementPage() {
                       <TableCell className="pl-6 py-4">
                         <div className="flex items-center gap-3">
                           <div className="h-9 w-9 rounded-full bg-primary/5 flex items-center justify-center font-bold text-primary text-xs uppercase">
-                            {student.firstName?.[0]}{student.lastName?.[0]}
+                            {student.firstName?.[0] || 'S'}{student.lastName?.[0] || 'T'}
                           </div>
                           <div className="flex flex-col">
                             <span className="font-bold text-foreground">{student.firstName} {student.lastName}</span>
-                            <span className="text-[10px] font-mono text-muted-foreground">ID: {student.id.slice(0, 8).toUpperCase() ?? student.email}</span>
+                            <span className="text-[10px] font-mono text-muted-foreground truncate max-w-[150px]">
+                              ID: {student.email}
+                            </span>
                           </div>
                         </div>
                       </TableCell>
@@ -383,7 +394,7 @@ export default function MarksManagementPage() {
                       <TableCell className="text-center">
                         <div className="flex flex-col items-center gap-1">
                           <span className="font-bold text-foreground">92%</span>
-                          <Progress value={92} className="h-1 w-12" />
+                          <Progress value={92} className="h-1 w-12 bg-muted" />
                         </div>
                       </TableCell>
                       <TableCell>

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -24,11 +23,11 @@ export default function ContentManagementPage() {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  // User Profile
+  // User Profile - Aligned with institutional Email ID strategy
   const userProfileRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
-  }, [firestore, user?.uid]);
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
+  }, [firestore, user?.email]);
   const { data: profile } = useDoc(userProfileRef);
 
   const isAdmin = profile?.role === 'admin';

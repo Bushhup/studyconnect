@@ -29,7 +29,7 @@ export default function AlumniRegistryPage() {
   const { data: depts } = useCollection(deptsQuery);
 
   const filteredAlumni = alumni?.filter(a => 
-    `${a.firstName} ${a.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
+    `${a.firstName || ''} ${a.lastName || ''}`.toLowerCase().includes(search.toLowerCase()) ||
     String(a.batchYear || '').toLowerCase().includes(search.toLowerCase())
   ) || [];
 
@@ -104,7 +104,7 @@ export default function AlumniRegistryPage() {
                       <TableCell className="pl-6 py-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
-                            <AvatarFallback className="bg-primary/5 text-primary font-bold uppercase">{a.firstName?.[0]}{a.lastName?.[0]}</AvatarFallback>
+                            <AvatarFallback className="bg-primary/5 text-primary font-bold uppercase">{a.firstName?.[0] || 'A'}{a.lastName?.[0] || 'L'}</AvatarFallback>
                           </Avatar>
                           <div>
                             <p className="font-bold text-foreground">{a.firstName} {a.lastName}</p>
