@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -105,7 +104,7 @@ const collegeId = 'study-connect-college';
 export default function Home() {
   const firestore = useFirestore();
   const profileRef = useMemoFirebase(() => doc(firestore, 'colleges', collegeId), [firestore]);
-  const { data: profile, isLoading } = useDoc(profileRef);
+  const { data: profile } = useDoc(profileRef);
 
   const heroImage = placeholderImages.find(p => p.id === 'home-hero');
   const aboutImage = placeholderImages.find(p => p.id === 'about-us-image');
@@ -122,7 +121,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] overflow-hidden">
       <main className="flex-1">
-        <section className="relative w-full h-[70vh] md:h-[85vh] flex items-center justify-center overflow-hidden">
+        <section className="relative w-full h-[75vh] md:h-[90vh] flex items-center justify-center overflow-hidden">
           {heroImage && (
             <motion.div 
               initial={{ scale: 1.1 }}
@@ -140,9 +139,9 @@ export default function Home() {
               />
             </motion.div>
           )}
-          <div className="absolute inset-0 bg-slate-900/60 z-10" />
+          <div className="absolute inset-0 bg-slate-900/65 z-10" />
           
-          <div className="relative container mx-auto text-center text-primary-foreground px-4 z-20">
+          <div className="relative container mx-auto text-center text-primary-foreground px-4 z-20 pb-20 md:pb-32">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -168,7 +167,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="stats" className="py-16 md:py-24 bg-white relative z-30 -mt-12 rounded-t-[3rem] shadow-2xl">
+        <section id="stats" className="py-16 md:py-24 bg-white relative z-30 -mt-16 md:-mt-24 rounded-t-[3rem] shadow-2xl">
           <div className="container mx-auto px-4">
             <motion.div 
               variants={staggerContainer}
@@ -217,7 +216,7 @@ export default function Home() {
             >
               {facilities.map((facility) => (
                 <motion.div key={facility.name} variants={fadeInUp}>
-                  <Card className="flex flex-col text-center hover:shadow-2xl transition-all duration-500 border-none bg-white rounded-[2rem] p-4 group">
+                  <Card className="flex flex-col text-center hover:shadow-2xl transition-all duration-500 border-none bg-white rounded-[2rem] p-4 group h-full">
                     <CardHeader>
                       <div className="mx-auto bg-primary/5 text-primary rounded-3xl p-6 w-fit group-hover:scale-110 transition-transform duration-500">
                         <facility.icon className="h-10 w-10" strokeWidth={1.5} />
@@ -261,7 +260,7 @@ export default function Home() {
                 const image = placeholderImages.find(p => p.id === program.imageId);
                 return (
                   <motion.div key={program.name} variants={fadeInUp}>
-                    <Card className="overflow-hidden group hover:shadow-2xl transition-all duration-500 border-none rounded-[2.5rem] bg-slate-50">
+                    <Card className="overflow-hidden group hover:shadow-2xl transition-all duration-500 border-none rounded-[2.5rem] bg-slate-50 h-full flex flex-col">
                       <div className="relative aspect-[4/3]">
                         {image && (
                           <Image
@@ -280,7 +279,7 @@ export default function Home() {
                           <h3 className="text-2xl font-headline font-bold text-white">{program.name}</h3>
                         </div>
                       </div>
-                      <CardContent className="pt-6">
+                      <CardContent className="pt-6 flex-grow">
                         <p className="text-muted-foreground font-body leading-relaxed">{program.description}</p>
                       </CardContent>
                       <CardFooter className="pb-8">
@@ -373,14 +372,14 @@ export default function Home() {
                 const image = placeholderImages.find(p => p.id === testimonial.imageId);
                 return (
                   <motion.div key={testimonial.name} variants={fadeInUp}>
-                    <Card className="flex flex-col bg-slate-50 hover:bg-white hover:shadow-2xl transition-all duration-500 border-none rounded-[2.5rem] p-8 group">
+                    <Card className="flex flex-col bg-slate-50 hover:bg-white hover:shadow-2xl transition-all duration-500 border-none rounded-[2.5rem] p-8 group h-full">
                       <CardContent className="p-0 flex-grow flex flex-col items-center text-center">
                         <div className="mb-8">
                           <Quote className="w-12 h-12 text-primary opacity-20 group-hover:opacity-100 transition-opacity duration-500" />
                         </div>
                         <p className="text-slate-600 font-body text-lg italic leading-relaxed mb-8">"{testimonial.quote}"</p>
                       </CardContent>
-                      <CardFooter className="flex-col items-center pt-0 pb-0">
+                      <CardFooter className="flex-col items-center pt-0 pb-0 mt-auto">
                         {image && (
                             <Avatar className="mx-auto h-20 w-20 mb-4 border-4 border-white shadow-xl">
                                 <AvatarImage src={image.imageUrl} alt={testimonial.name} className="object-cover" />

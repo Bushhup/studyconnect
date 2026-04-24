@@ -12,15 +12,20 @@ export function Footer() {
   }
 
   return (
-    <footer className="border-t bg-secondary/50">
-      <div className="container py-8 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Logo className="h-6 w-6 text-primary" />
-          <span className="font-bold font-headline text-md">StudyConnect</span>
+    <footer className="border-t bg-secondary/30">
+      <div className="container py-12 px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-8">
+        <div className="flex items-center gap-4">
+          <Logo className="h-8 w-8 text-primary" />
+          <span className="font-bold font-headline text-lg tracking-tight">StudyConnect</span>
         </div>
-        <p className="text-sm text-muted-foreground">
-          © {new Date().getFullYear()} StudyConnect. All rights reserved.
-        </p>
+        <div className="flex flex-col items-center md:items-end gap-2">
+          <p className="text-sm text-muted-foreground font-medium">
+            © {new Date().getFullYear()} StudyConnect Enterprise. All rights reserved.
+          </p>
+          <p className="text-[10px] text-muted-foreground/60 uppercase tracking-widest font-bold">
+            Connecting Minds • Building Futures
+          </p>
+        </div>
       </div>
     </footer>
   );
