@@ -1,6 +1,8 @@
+
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { useCollection, useMemoFirebase, useFirestore, useUser, useDoc, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
@@ -13,6 +15,7 @@ import Link from 'next/link';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { placeholderImages } from '@/lib/placeholder-images';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,6 +87,8 @@ export default function DepartmentManagement() {
 
   const deptQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'departments'), [firestore]);
   const { data: departments, isLoading } = useCollection(deptQuery);
+
+  const deptImages = placeholderImages.filter(img => img.category === 'Departments');
 
   const handleCreate = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -244,101 +249,104 @@ export default function DepartmentManagement() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <AnimatePresence mode="popLayout">
-              {departments?.map((dept, idx) => (
-                <motion.div 
-                  key={dept.id} 
-                  layout
-                  initial={{ opacity: 0, y: 20 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  transition={{ delay: idx * 0.05, type: 'spring', stiffness: 100 }}
-                >
-                  <Card className="group hover:shadow-2xl transition-all duration-500 border-none shadow-sm bg-card rounded-[2.5rem] overflow-hidden flex flex-col h-full relative">
-                    <div className="absolute top-4 right-4 z-10 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                      {isAdmin && (
-                        <>
-                          <Button 
-                            variant="secondary" 
-                            size="icon" 
-                            className="h-10 w-10 rounded-2xl bg-white/90 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-white transition-all"
-                            onClick={() => handleOpenEdit(dept)}
-                          >
-                            <Edit3 className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button 
-                                variant="secondary" 
-                                size="icon" 
-                                className="h-10 w-10 rounded-2xl bg-white/90 backdrop-blur-md shadow-lg text-destructive hover:bg-destructive hover:text-white transition-all"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl bg-card">
-                              <AlertDialogHeader>
-                                <AlertDialogTitle className="text-2xl font-headline">Decommission Division?</AlertDialogTitle>
-                                <AlertDialogDescription className="text-base">
-                                  Are you sure you want to remove <strong>{dept.name}</strong>? This will detach all associated courses and classes from the hierarchy.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter className="gap-3 pt-4">
-                                <AlertDialogCancel className="rounded-2xl border-none bg-muted h-12 px-6 font-bold uppercase text-[10px]">Cancel</AlertDialogCancel>
-                                <AlertDialogAction className="bg-destructive hover:bg-destructive/90 rounded-2xl h-12 px-6 font-bold uppercase text-[10px]" onClick={() => handleDelete(dept.id, dept.name)}>
-                                  Confirm Removal
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </>
-                      )}
-                    </div>
+              {departments?.map((dept, idx) => {
+                const displayImage = deptImages[idx % deptImages.length];
+                return (
+                  <motion.div 
+                    key={dept.id} 
+                    layout
+                    initial={{ opacity: 0, y: 20 }} 
+                    animate={{ opacity: 1, y: 0 }} 
+                    exit={{ opacity: 0, scale: 0.95 }}
+                    transition={{ delay: idx * 0.05, type: 'spring', stiffness: 100 }}
+                  >
+                    <Card className="group hover:shadow-2xl transition-all duration-500 border-none shadow-sm bg-card rounded-[2.5rem] overflow-hidden flex flex-col h-full relative">
+                      <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
+                        {isAdmin && (
+                          <>
+                            <Button 
+                              variant="secondary" 
+                              size="icon" 
+                              className="h-10 w-10 rounded-2xl bg-white/90 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-white transition-all"
+                              onClick={(e) => { e.preventDefault(); handleOpenEdit(dept); }}
+                            >
+                              <Edit3 className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="secondary" 
+                                  size="icon" 
+                                  className="h-10 w-10 rounded-2xl bg-white/90 backdrop-blur-md shadow-lg text-destructive hover:bg-destructive hover:text-white transition-all"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl bg-card">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-2xl font-headline">Decommission Division?</AlertDialogTitle>
+                                  <AlertDialogDescription className="text-base">
+                                    Are you sure you want to remove <strong>{dept.name}</strong>? This will detach all associated courses and classes from the hierarchy.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="gap-3 pt-4">
+                                  <AlertDialogCancel className="rounded-2xl border-none bg-muted h-12 px-6 font-bold uppercase text-[10px]">Cancel</AlertDialogCancel>
+                                  <AlertDialogAction className="bg-destructive hover:bg-destructive/90 rounded-2xl h-12 px-6 font-bold uppercase text-[10px]" onClick={() => handleDelete(dept.id, dept.name)}>
+                                    Confirm Removal
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
+                        )}
+                      </div>
 
-                    <div className="h-40 bg-gradient-to-br from-primary/5 to-primary/10 relative group-hover:from-primary/10 group-hover:to-primary/20 transition-all duration-500 overflow-hidden">
-                       <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-primary/10 transition-all" />
-                       <div className="absolute bottom-0 left-0 w-32 h-32 bg-primary/5 rounded-full -ml-16 -mb-16 blur-2xl group-hover:bg-primary/10 transition-all" />
-                      <div className="absolute -bottom-8 left-10">
-                        <div className="p-6 bg-white rounded-[2rem] shadow-2xl ring-[12px] ring-background group-hover:scale-110 group-hover:-rotate-3 transition-all duration-500">
-                          <Building2 className="h-10 w-10 text-primary" strokeWidth={1.5} />
+                      <div className="h-56 relative overflow-hidden">
+                        <Image
+                          src={displayImage.imageUrl}
+                          alt={displayImage.description}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover:scale-110"
+                          data-ai-hint={displayImage.imageHint}
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        <div className="absolute bottom-6 left-8 right-8">
+                           <div className="flex flex-wrap gap-2 mb-3">
+                            <Badge className="bg-white/20 backdrop-blur-md text-white border-none font-bold text-[8px] uppercase tracking-wider px-3 h-6 rounded-full">
+                              {dept.programType || 'UG'} Program
+                            </Badge>
+                            <Badge className="bg-white/20 backdrop-blur-md text-white border-none font-bold text-[8px] uppercase tracking-wider px-3 h-6 rounded-full">
+                              {dept.totalSemesters || 8} Semesters
+                            </Badge>
+                          </div>
+                          <CardTitle className="text-2xl font-headline font-bold text-white leading-tight">
+                            {dept.name}
+                          </CardTitle>
                         </div>
                       </div>
-                    </div>
 
-                    <CardHeader className="pt-14 pb-4 px-10">
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        <Badge variant="secondary" className="bg-primary/5 text-primary border-none font-bold text-[9px] uppercase tracking-wider px-4 h-7 rounded-full flex items-center">
-                          {dept.programType || 'UG'} Program
-                        </Badge>
-                        <Badge variant="outline" className="text-muted-foreground border-border font-bold text-[9px] uppercase tracking-wider px-4 h-7 rounded-full flex items-center">
-                          {dept.totalSemesters || 8} Semesters
-                        </Badge>
-                      </div>
-                      <CardTitle className="text-2xl font-headline font-bold text-foreground group-hover:text-primary transition-colors leading-tight mb-2">
-                        {dept.name}
-                      </CardTitle>
-                      <div className="pt-4 space-y-4">
-                         <div className="flex items-center gap-4 text-sm text-muted-foreground bg-muted/20 p-5 rounded-[1.5rem] border border-transparent hover:border-primary/10 transition-all group/hod">
+                      <CardContent className="pt-8 px-8 pb-10 flex flex-col h-full">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground bg-muted/40 p-5 rounded-[1.5rem] border border-transparent hover:border-primary/10 transition-all group/hod mb-6">
                            <div className="h-10 w-10 rounded-2xl bg-white flex items-center justify-center shadow-sm group-hover/hod:scale-110 transition-transform">
                              <Layers className="h-5 w-5 text-primary" />
                            </div>
-                           <div>
-                             <p className="text-[10px] font-bold uppercase tracking-[0.1em] opacity-40 mb-0.5">Head of Department</p>
-                             <p className="font-bold text-foreground text-base">{dept.headOfDept || 'Unassigned'}</p>
+                           <div className="flex-1">
+                             <p className="text-[9px] font-bold uppercase tracking-[0.1em] opacity-50 mb-0.5">Head of Department</p>
+                             <p className="font-bold text-foreground text-sm truncate">{dept.headOfDept || 'Unassigned'}</p>
                            </div>
-                         </div>
-                      </div>
-                    </CardHeader>
+                        </div>
 
-                    <CardContent className="px-10 pb-10 mt-auto">
-                      <Button asChild variant="ghost" className="w-full rounded-[1.25rem] h-16 font-bold group-hover:bg-primary group-hover:text-white transition-all duration-300 text-xs uppercase tracking-[0.2em] gap-3 bg-muted/30 hover:shadow-xl hover:shadow-primary/20">
-                        <Link href={`/admin/department-portal?id=${dept.id}`}>
-                          Access Division Hub <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
-                        </Link>
-                      </Button>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
+                        <Button asChild variant="ghost" className="w-full rounded-[1.25rem] h-14 font-bold group-hover:bg-primary group-hover:text-white transition-all duration-300 text-[10px] uppercase tracking-[0.2em] gap-3 bg-muted/50 hover:shadow-xl hover:shadow-primary/20 mt-auto">
+                          <Link href={`/admin/department-portal?id=${dept.id}`}>
+                            Access Division Hub <ArrowRight className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                          </Link>
+                        </Button>
+                      </CardContent>
+                    </Card>
+                  </motion.div>
+                );
+              })}
             </AnimatePresence>
             
             {departments?.length === 0 && !isLoading && (

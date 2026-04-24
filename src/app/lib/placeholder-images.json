@@ -1,0 +1,159 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "home-hero",
+      "description": "A grand university campus with modern architecture under a clear blue sky.",
+      "imageUrl": "https://images.unsplash.com/photo-1689686610856-3bcf921eb1f0?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "university campus",
+      "category": "Campus"
+    },
+    {
+      "id": "gallery-campus-1",
+      "description": "A beautiful view of the main campus building on a sunny day.",
+      "imageUrl": "https://images.unsplash.com/photo-1713721332588-122f666e2525?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "campus building",
+      "category": "Campus"
+    },
+    {
+      "id": "gallery-campus-2",
+      "description": "Students walking through a tree-lined path on campus.",
+      "imageUrl": "https://images.unsplash.com/photo-1620840902480-8cedab87eb7b?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "students walking",
+      "category": "Campus"
+    },
+    {
+      "id": "gallery-campus-3",
+      "description": "The central plaza of the university with a fountain.",
+      "imageUrl": "https://images.unsplash.com/photo-1741637647509-b11596a3928d?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "university plaza",
+      "category": "Campus"
+    },
+    {
+      "id": "dept-tech",
+      "description": "High-tech computer engineering facility with modern hardware.",
+      "imageUrl": "https://picsum.photos/seed/tech1/600/400",
+      "imageHint": "technology research",
+      "category": "Departments"
+    },
+    {
+      "id": "dept-creative",
+      "description": "Artistic design studio with creative workspaces.",
+      "imageUrl": "https://picsum.photos/seed/art1/600/400",
+      "imageHint": "design studio",
+      "category": "Departments"
+    },
+    {
+      "id": "dept-science",
+      "description": "Modern biological research laboratory.",
+      "imageUrl": "https://picsum.photos/seed/sci1/600/400",
+      "imageHint": "science lab",
+      "category": "Departments"
+    },
+    {
+      "id": "dept-business",
+      "description": "Professional business conference environment.",
+      "imageUrl": "https://picsum.photos/seed/bus1/600/400",
+      "imageHint": "business meeting",
+      "category": "Departments"
+    },
+    {
+      "id": "dept-humanities",
+      "description": "Classical academic lecture and study space.",
+      "imageUrl": "https://picsum.photos/seed/hum1/600/400",
+      "imageHint": "lecture hall",
+      "category": "Departments"
+    },
+    {
+      "id": "gallery-lab-1",
+      "description": "A modern chemistry lab with advanced equipment.",
+      "imageUrl": "https://images.unsplash.com/photo-1554475900-0a0350e3fc7b?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "chemistry lab",
+      "category": "Labs"
+    },
+    {
+      "id": "gallery-lab-2",
+      "description": "Students working in a computer science lab with multiple monitors.",
+      "imageUrl": "https://images.unsplash.com/photo-1525547719571-a2d4ac8945e2?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "computer lab",
+      "category": "Labs"
+    },
+    {
+      "id": "gallery-lab-3",
+      "description": "A robotics lab with various robotic arms and projects.",
+      "imageUrl": "https://images.unsplash.com/photo-1532186773960-85649e5cb70b?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "robotics lab",
+      "category": "Labs"
+    },
+    {
+      "id": "gallery-library-1",
+      "description": "The main reading hall of the library with high ceilings and natural light.",
+      "imageUrl": "https://images.unsplash.com/photo-1568667256549-094345857637?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "library interior",
+      "category": "Library"
+    },
+    {
+      "id": "gallery-library-2",
+      "description": "Rows of bookshelves in the university library.",
+      "imageUrl": "https://images.unsplash.com/photo-1700145872464-4beb41df93a3?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "library shelves",
+      "category": "Library"
+    },
+    {
+      "id": "gallery-library-3",
+      "description": "A quiet study area in the library overlooking the campus.",
+      "imageUrl": "https://images.unsplash.com/photo-1568392226616-67710680efd8?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "study area",
+      "category": "Library"
+    },
+    {
+      "id": "gallery-sports-1",
+      "description": "The university's outdoor football and track stadium.",
+      "imageUrl": "https://images.unsplash.com/photo-1546608235-3310a2494cdf?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "football stadium",
+      "category": "Sports"
+    },
+    {
+      "id": "gallery-sports-2",
+      "description": "The indoor basketball court during a practice session.",
+      "imageUrl": "https://images.unsplash.com/photo-1546519638-68e109498ffc?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "basketball court",
+      "category": "Sports"
+    },
+    {
+      "id": "gallery-sports-3",
+      "description": "An Olympic-sized swimming pool in the sports complex.",
+      "imageUrl": "https://images.unsplash.com/photo-1558617320-e695f0d420de?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "swimming pool",
+      "category": "Sports"
+    },
+    {
+      "id": "about-us-image",
+      "description": "A group of diverse students collaborating on a project in a bright, modern classroom.",
+      "imageUrl": "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80&w=1080",
+      "imageHint": "university students",
+      "category": "Campus"
+    },
+    {
+      "id": "testimonial-1",
+      "description": "A smiling female student with glasses in a library.",
+      "imageUrl": "https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&q=80&w=100",
+      "imageHint": "student portrait",
+      "category": "Testimonial"
+    },
+    {
+      "id": "testimonial-2",
+      "description": "A smiling male student outdoors on campus.",
+      "imageUrl": "https://images.unsplash.com/photo-1618641986557-1ecd230959aa?auto=format&fit=crop&q=80&w=100",
+      "imageHint": "student portrait",
+      "category": "Testimonial"
+    },
+    {
+      "id": "testimonial-3",
+      "description": "A smiling female student in a classroom.",
+      "imageUrl": "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?auto=format&fit=crop&q=80&w=100",
+      "imageHint": "student portrait",
+      "category": "Testimonial"
+    }
+  ]
+}
