@@ -100,7 +100,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }, [isMobile, EDGE_MARGIN]);
 
   useEffect(() => {
-    if (!isOpen || isRotating || isDragging) return;
+    if (!isOpen || isRotating || isDragging || filteredLinks.length === 0) return;
     
     const interval = setInterval(() => {
       if (theme.navStyle === 'wheel') {
@@ -194,18 +194,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setRotation(startRotation + angleDiff);
       } else {
         const count = filteredLinks.length;
-        const dx = clientX - startDragPos.x;
-        const dy = clientY - startDragPos.y;
-        
-        const isAtBottom = position.y > window.innerHeight - 100;
-        const isAtTop = position.y < 100;
-        
-        if (isAtBottom || isAtTop) {
-          const units = dx / (window.innerWidth / count);
-          setLoopProgress(((startLoopProgress - units) % count + count) % count);
-        } else {
-          const units = dy / (window.innerHeight / count);
-          setLoopProgress(((startLoopProgress - units) % count + count) % count);
+        if (count > 0) {
+          const dx = clientX - startDragPos.x;
+          const dy = clientY - startDragPos.y;
+          
+          const isAtBottom = position.y > window.innerHeight - 100;
+          const isAtTop = position.y < 100;
+          
+          if (isAtBottom || isAtTop) {
+            const units = dx / (window.innerWidth / count);
+            setLoopProgress(((startLoopProgress - units) % count + count) % count);
+          } else {
+            const units = dy / (window.innerHeight / count);
+            setLoopProgress(((startLoopProgress - units) % count + count) % count);
+          }
         }
       }
     }
@@ -254,6 +256,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const getLinearTransform = (index: number) => {
     if (typeof window === 'undefined') return '';
     const count = filteredLinks.length;
+    if (count === 0) return '';
     const effectiveIndex = ((index - loopProgress) % count + count) % count;
     const isAtBottom = position.y > window.innerHeight - 100;
     const isAtTop = position.y < 100;

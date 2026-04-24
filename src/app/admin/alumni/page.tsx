@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState } from 'react';
-import { useCollection, useMemoFirebase, useFirestore, useUser, useDoc } from '@/firebase';
-import { collection, doc, query, where } from 'firebase/firestore';
+import { useCollection, useMemoFirebase, useFirestore, useUser } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -31,7 +30,7 @@ export default function AlumniRegistryPage() {
 
   const filteredAlumni = alumni?.filter(a => 
     `${a.firstName} ${a.lastName}`.toLowerCase().includes(search.toLowerCase()) ||
-    a.batchYear?.toLowerCase().includes(search.toLowerCase())
+    String(a.batchYear || '').toLowerCase().includes(search.toLowerCase())
   ) || [];
 
   return (
@@ -59,7 +58,7 @@ export default function AlumniRegistryPage() {
         <Card className="border-none shadow-sm bg-emerald-50/50 rounded-2xl">
           <CardHeader className="pb-4">
             <div className="flex items-center justify-between">
-              <CardDescription className="text-emerald-700 font-bold uppercase text-[10px] tracking-widest">Placement Rate</CardDivider>
+              <CardDescription className="text-emerald-700 font-bold uppercase text-[10px] tracking-widest">Placement Rate</CardDescription>
               <Award className="h-4 w-4 text-emerald-600" />
             </div>
             <CardTitle className="text-2xl">94.2%</CardTitle>
