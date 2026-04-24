@@ -85,13 +85,15 @@ export default function DepartmentManagement() {
   const handleImport = (data: any[]) => {
     data.forEach(item => {
       if (!item.name) return;
-      const id = item.name.toLowerCase().replace(/\s+/g, '-').slice(0, 15) + '-' + Math.random().toString(36).substr(2, 4);
+      // Use clean IDs for consistency
+      const id = item.name.toLowerCase().replace(/\s+/g, '-').slice(0, 20);
       const deptRef = doc(firestore, 'colleges', collegeId, 'departments', id);
+      
       setDocumentNonBlocking(deptRef, {
         ...item,
         id,
         totalSemesters: parseInt(item.totalSemesters || '8'),
-        createdAt: new Date().toISOString()
+        updatedAt: new Date().toISOString()
       }, { merge: true });
     });
   };
@@ -192,7 +194,7 @@ export default function DepartmentManagement() {
                             <Building2 className="h-6 w-6 text-primary" />
                           </div>
                           <div className="flex gap-2">
-                            <Badge className="bg-primary/5 text-primary border-none font-bold text-[9px] uppercase tracking-tighter px-3 h-6 flex items-center">
+                            <Badge className="bg-primary/5 text-primary border-none font-bold text-[9px] uppercase tracking-tighter px-3 h-6 flex items-center border">
                               {dept.programType || 'UG'} • {dept.totalSemesters || 8} Sems
                             </Badge>
                             {isAdmin && (
@@ -202,7 +204,7 @@ export default function DepartmentManagement() {
                                     <Trash2 className="h-3.5 w-3.5" />
                                   </Button>
                                 </AlertDialogTrigger>
-                                <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl">
+                                <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl bg-card">
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Decommission Division?</AlertDialogTitle>
                                     <AlertDialogDescription>

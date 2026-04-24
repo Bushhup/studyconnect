@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -8,6 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from '@/components/ui/button';
 import { 
@@ -17,11 +18,25 @@ import {
   Info, 
   CheckCircle2, 
   Loader2,
-  Table as TableIcon
+  Table as TableIcon,
+  Trash2,
+  AlertCircle,
+  ChevronRight,
+  ArrowLeft
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 export interface CsvColumn {
   key: string;
@@ -39,10 +54,15 @@ interface CsvImportDialogProps {
   trigger?: React.ReactNode;
 }
 
+type ImportStep = 'upload' | 'review' | 'processing' | 'success';
+
 export function CsvImportDialog({ title, description, columns, onImport, trigger }: CsvImportDialogProps) {
   const { toast } = useToast();
-  const [isUploading, setIsUploading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  const [step, setStep] = useState<ImportStep>('upload');
+  const [parsedData, setParsedData] = useState<any[]>([]);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const downloadTemplate = () => {
     const headers = columns.map(c => c.key).join(',');
@@ -75,8 +95,6 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
       return;
     }
 
-    setIsUploading(true);
-    
     try {
       const text = await file.text();
       const lines = text.split(/\r?\n/);
@@ -100,40 +118,75 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
           return obj;
         });
 
-      // Simulation delay for processing feel
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      if (onImport) {
-        onImport(rows);
-      }
-
-      setIsUploading(false);
-      setIsSuccess(true);
-      
-      toast({
-        title: 'Bulk Import Complete',
-        description: `Successfully processed ${rows.length} institutional records.`
-      });
+      setParsedData(rows);
+      setStep('review');
     } catch (error: any) {
-      setIsUploading(false);
       toast({
         variant: 'destructive',
-        title: 'Processing Error',
+        title: 'Parsing Error',
         description: error.message
       });
     }
   };
 
+  const handleUpdateCell = (index: number, key: string, value: string) => {
+    const newData = [...parsedData];
+    newData[index] = { ...newData[index], [key]: value };
+    setParsedData(newData);
+  };
+
+  const handleRemoveRow = (index: number) => {
+    setParsedData(parsedData.filter((_, i) => i !== index));
+  };
+
+  const confirmImport = async () => {
+    if (parsedData.length === 0) return;
+    
+    setIsProcessing(true);
+    setStep('processing');
+    
+    try {
+      if (onImport) {
+        onImport(parsedData);
+      }
+      // Simulation delay for write buffer
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setStep('success');
+      toast({
+        title: 'Bulk Import Complete',
+        description: `Successfully processed ${parsedData.length} records.`
+      });
+    } catch (error: any) {
+      setStep('review');
+      toast({
+        variant: 'destructive',
+        title: 'Sync Error',
+        description: error.message
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const reset = () => {
+    setStep('upload');
+    setParsedData([]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
   return (
-    <Dialog onOpenChange={(open) => !open && setIsSuccess(false)}>
+    <Dialog onOpenChange={(open) => !open && reset()}>
       <DialogTrigger asChild>
         {trigger || (
-          <Button variant="outline" className="gap-2 rounded-full">
+          <Button variant="outline" className="gap-2 rounded-full h-11 px-6 bg-card border-primary/10 text-primary font-bold">
             <FileSpreadsheet className="h-4 w-4" /> Bulk Import
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-3xl rounded-[2rem] bg-card border-none">
+      <DialogContent className={cn(
+        "rounded-[2.5rem] border-none shadow-2xl bg-card transition-all duration-300",
+        step === 'review' ? "max-w-5xl h-[85vh]" : "max-w-2xl"
+      )}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-headline flex items-center gap-3">
             <div className="p-2 bg-primary/10 rounded-xl">
@@ -142,85 +195,160 @@ export function CsvImportDialog({ title, description, columns, onImport, trigger
             {title}
           </DialogTitle>
           <DialogDescription className="font-body text-base">
-            {description}
+            {step === 'review' ? `Verify and edit the ${parsedData.length} detected records before adding to the system.` : description}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6 pt-4">
-          <div className="bg-muted/30 rounded-2xl p-6 border border-border">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
-              <Info className="h-3.5 w-3.5" /> CSV Data Requirements
-            </h4>
-            <div className="grid gap-4">
-              {columns.map((col) => (
-                <div key={col.key} className="flex items-start justify-between group">
-                  <div className="space-y-0.5">
-                    <div className="text-sm font-bold flex items-center gap-2">
-                      {col.label}
-                      {col.required && <Badge variant="secondary" className="text-[8px] bg-red-500/10 text-red-500 border-none uppercase h-4 px-1">Required</Badge>}
+        {step === 'upload' && (
+          <div className="space-y-6 pt-4">
+            <div className="bg-muted/30 rounded-2xl p-6 border border-border">
+              <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 flex items-center gap-2">
+                <Info className="h-3.5 w-3.5" /> CSV Data Requirements
+              </h4>
+              <div className="grid gap-4">
+                {columns.map((col) => (
+                  <div key={col.key} className="flex items-start justify-between group">
+                    <div className="space-y-0.5">
+                      <div className="text-sm font-bold flex items-center gap-2">
+                        {col.label}
+                        {col.required && <Badge variant="secondary" className="text-[8px] bg-red-500/10 text-red-500 border-none uppercase h-4 px-1">Required</Badge>}
+                      </div>
+                      <p className="text-xs text-muted-foreground">{col.description}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground">{col.description}</p>
+                    <code className="text-[10px] bg-muted px-2 py-1 rounded font-mono text-primary opacity-60 group-hover:opacity-100 transition-opacity">
+                      e.g. {col.example}
+                    </code>
                   </div>
-                  <code className="text-[10px] bg-muted px-2 py-1 rounded font-mono text-primary opacity-60 group-hover:opacity-100 transition-opacity">
-                    e.g. {col.example}
-                  </code>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">Step 1: Get Template</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <Button 
                 onClick={downloadTemplate}
                 variant="outline" 
-                className="w-full h-24 flex-col gap-2 rounded-2xl border-dashed hover:bg-primary/5 hover:border-primary/50 transition-all"
+                className="w-full h-32 flex-col gap-2 rounded-3xl border-dashed hover:bg-primary/5 hover:border-primary/50 transition-all bg-transparent"
               >
-                <Download className="h-6 w-6 text-primary" />
-                <span className="text-xs font-bold">Download Formatting Guide</span>
+                <Download className="h-8 w-8 text-primary/40 group-hover:text-primary" />
+                <div className="text-center">
+                  <p className="text-xs font-bold">1. Download Template</p>
+                  <p className="text-[10px] text-muted-foreground mt-1">Get the formatting guide</p>
+                </div>
               </Button>
-            </div>
 
-            <div className="space-y-3">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground px-1">Step 2: Upload Data</p>
-              <div className="relative">
+              <div className="relative group">
                 <input
                   type="file"
                   accept=".csv"
+                  ref={fileInputRef}
                   onChange={handleFileUpload}
                   className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  disabled={isUploading || isSuccess}
                 />
                 <Button 
                   variant="secondary" 
-                  disabled={isUploading || isSuccess}
-                  className={cn(
-                    "w-full h-24 flex-col gap-2 rounded-2xl border-none shadow-none transition-all",
-                    isSuccess ? "bg-emerald-500/10 text-emerald-500" : "bg-primary/5 text-primary hover:bg-primary/10"
-                  )}
+                  className="w-full h-32 flex-col gap-2 rounded-3xl border-none shadow-none bg-primary/5 group-hover:bg-primary/10 transition-all"
                 >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="h-6 w-6 animate-spin" />
-                      <span className="text-xs font-bold">Parsing Records...</span>
-                    </>
-                  ) : isSuccess ? (
-                    <>
-                      <CheckCircle2 className="h-6 w-6" />
-                      <span className="text-xs font-bold">Import Successful</span>
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="h-6 w-6" />
-                      <span className="text-xs font-bold">Select .csv File</span>
-                    </>
-                  )}
+                  <Upload className="h-8 w-8 text-primary" />
+                  <div className="text-center">
+                    <p className="text-xs font-bold">2. Upload Filled CSV</p>
+                    <p className="text-[10px] text-primary/60 mt-1">Select file to proceed</p>
+                  </div>
                 </Button>
               </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {step === 'review' && (
+          <div className="flex-1 flex flex-col min-h-0 space-y-4 pt-4">
+            <div className="border rounded-2xl overflow-hidden flex-1 flex flex-col bg-muted/20">
+              <ScrollArea className="flex-1">
+                <Table>
+                  <TableHeader className="bg-card sticky top-0 z-10">
+                    <TableRow className="border-b">
+                      {columns.map(col => (
+                        <TableHead key={col.key} className="text-[10px] font-bold uppercase tracking-widest py-4">
+                          {col.label}
+                        </TableHead>
+                      ))}
+                      <TableHead className="w-12"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {parsedData.map((row, rowIndex) => (
+                      <TableRow key={`row-${rowIndex}`} className="hover:bg-primary/5 border-b last:border-0 group">
+                        {columns.map(col => (
+                          <TableCell key={`${rowIndex}-${col.key}`} className="p-2">
+                            <Input 
+                              value={row[col.key] || ''} 
+                              onChange={(e) => handleUpdateCell(rowIndex, col.key, e.target.value)}
+                              className="h-9 border-none bg-transparent hover:bg-white focus:bg-white focus:shadow-sm text-xs font-medium transition-all"
+                            />
+                          </TableCell>
+                        ))}
+                        <TableCell className="p-2 text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleRemoveRow(rowIndex)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </ScrollArea>
+            </div>
+            
+            <div className="flex justify-between items-center py-2 px-4 bg-muted/30 rounded-2xl">
+              <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground uppercase tracking-tight">
+                <Info className="h-3.5 w-3.5" />
+                <span>Double-click any cell to edit details</span>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="ghost" className="rounded-xl h-11 px-6 font-bold" onClick={reset}>
+                  <ArrowLeft className="h-4 w-4 mr-2" /> Start Over
+                </Button>
+                <Button className="rounded-xl h-11 px-8 font-bold gap-2 shadow-lg shadow-primary/20" onClick={confirmImport}>
+                  Confirm & Sync Records <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {step === 'processing' && (
+          <div className="py-20 flex flex-col items-center justify-center space-y-6">
+            <div className="relative">
+              <Loader2 className="h-16 w-16 animate-spin text-primary opacity-20" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <TableIcon className="h-6 w-6 text-primary animate-pulse" />
+              </div>
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="text-xl font-bold">Synchronizing Records...</h3>
+              <p className="text-sm text-muted-foreground">Writing {parsedData.length} records to institutional database.</p>
+            </div>
+          </div>
+        )}
+
+        {step === 'success' && (
+          <div className="py-20 flex flex-col items-center justify-center space-y-6 animate-in zoom-in-95 duration-500">
+            <div className="h-20 w-20 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500 scale-110">
+              <CheckCircle2 className="h-10 w-10" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="text-2xl font-bold">Import Successful</h3>
+              <p className="text-sm text-muted-foreground">{parsedData.length} new nodes have been added to the hierarchy.</p>
+            </div>
+            <Button className="rounded-xl h-12 px-10 font-bold" onClick={() => reset()}>
+              Close Dialog
+            </Button>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
