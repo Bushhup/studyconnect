@@ -11,25 +11,23 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function getUserRole() {
-      // Safely check role if user is signed in and has an email token
-      let email = request.auth.token.email.lower();
-      return (isSignedIn() && "email" in request.auth.token) 
-        ? get(/databases/$(database)/documents/colleges/study-connect-college/users/$(email)).data.role 
-        : null;
+    function getUserData() {
+      let email = request.auth.token.email;
+      let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(email);
+      return exists(path) ? get(path).data : null;
     }
 
     function isAdmin() {
-      // Allow if specific master emails or if role is admin in DB
+      let email = request.auth.token.email;
       return isSignedIn() && (
-        request.auth.token.email.lower() == 'admin@college.edu' ||
-        request.auth.token.email.lower() == 'shabu@gmail.com' ||
-        getUserRole() == 'admin'
+        email == 'admin@college.edu' ||
+        email == 'shabu@gmail.com' ||
+        (getUserData() != null && getUserData().role == 'admin')
       );
     }
     
     function isHOD() {
-      return isSignedIn() && getUserRole() == 'hod';
+      return isSignedIn() && getUserData() != null && getUserData().role == 'hod';
     }
 
     function isSystemUninitialized() {
@@ -46,7 +44,7 @@ service cloud.firestore {
 
       match /users/{userId} {
         allow get: if true; 
-        allow list: if isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']);
+        allow list: if isAdmin() || (isSignedIn() && getUserData() != null && getUserData().role in ['faculty', 'hod']);
         // Allow creation of records during bootstrap or by an existing admin
         allow create, update, delete: if isSystemUninitialized() || isAdmin();
       }
@@ -59,7 +57,7 @@ service cloud.firestore {
       
       match /classes/{id} { 
         allow read: if true; 
-        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getUserData() != null && getUserData().role in ['faculty', 'hod']); 
       }
       
       match /courses/{id} { 
@@ -69,17 +67,17 @@ service cloud.firestore {
       
       match /academicRecords/{id} {
         allow read: if isSignedIn();
-        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getUserRole() in ['faculty', 'hod']);
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getUserData() != null && getUserData().role in ['faculty', 'hod']);
       }
 
       match /studentProfiles/{userId} { 
         allow read: if isSignedIn(); 
-        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email == userId); 
       }
       
       match /facultyProfiles/{userId} { 
         allow read: if isSignedIn(); 
-        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email == userId); 
       }
 
       match /achievements/{id} { 

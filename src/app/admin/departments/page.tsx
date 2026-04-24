@@ -101,7 +101,7 @@ export default function DepartmentManagement() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onloadend = () => {
+    reader.onload = () => {
       const base64String = reader.result as string;
       if (isEdit) {
         setEditData(prev => ({ ...prev, imageUrl: base64String }));
@@ -248,7 +248,7 @@ export default function DepartmentManagement() {
                       </div>
                       {imageUrl && (
                         <div className="mt-2 relative h-20 w-full rounded-xl overflow-hidden border border-border">
-                          <Image src={imageUrl} alt="Preview" fill className="object-cover" />
+                          <Image src={imageUrl} alt="Preview" fill className="object-cover" unoptimized />
                         </div>
                       )}
                     </div>
@@ -356,6 +356,7 @@ export default function DepartmentManagement() {
                           alt={dept.name}
                           fill
                           className="object-cover transition-transform duration-700 group-hover:scale-110"
+                          unoptimized
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                         <div className="absolute bottom-6 left-8 right-8">
@@ -462,9 +463,9 @@ export default function DepartmentManagement() {
                     <Button type="button" variant="outline" size="icon" className="h-12 w-12 rounded-xl bg-muted border-none"><Upload className="h-4 w-4" /></Button>
                   </div>
                 </div>
-                {(editData.imageUrl) && (
+                {editData.imageUrl && (
                   <div className="mt-2 relative h-24 w-full rounded-xl overflow-hidden border border-border bg-muted">
-                    <Image src={editData.imageUrl} alt="Preview" fill className="object-cover" />
+                    <Image src={editData.imageUrl} alt="Preview" fill className="object-cover" unoptimized />
                   </div>
                 )}
               </div>
@@ -485,7 +486,7 @@ export default function DepartmentManagement() {
                   <Input 
                     type="number" 
                     value={editData.totalSemesters || '8'} 
-                    onChange={(e) => setEditData({...editData, totalSemesters: e.target.value})} 
+                    onChange={(e) => setEditData({ ...editData, totalSemesters: e.target.value })} 
                     className="bg-muted border-none h-14 rounded-2xl px-6 font-bold"
                   />
                 </div>
