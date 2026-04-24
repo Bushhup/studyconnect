@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Plus, Loader2, ArrowRight, Trash2, Edit3, Save, Layers, Link as LinkIcon, Upload } from 'lucide-react';
+import { Building2, Plus, Loader2, ArrowRight, Trash2, Edit3, Save, Layers, Link as LinkIcon, Upload, GraduationCap, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 import { cn } from '@/lib/utils';
@@ -99,6 +99,12 @@ export default function DepartmentManagement() {
   const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate size for prototype (Firestore has 1MB doc limit)
+    if (file.size > 800000) {
+      toast({ variant: 'destructive', title: 'File too large', description: 'Please upload an image smaller than 800KB for institutional indexing.' });
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = () => {
@@ -311,11 +317,11 @@ export default function DepartmentManagement() {
                     <Card className="group hover:shadow-2xl transition-all duration-500 border-none shadow-sm bg-card rounded-[2.5rem] overflow-hidden flex flex-col h-full relative">
                       <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
                         {hasWriteAccess && (
-                          <>
+                          <div className="bg-white/90 backdrop-blur-md rounded-2xl p-1 shadow-xl flex gap-1 border border-white">
                             <Button 
-                              variant="secondary" 
+                              variant="ghost" 
                               size="icon" 
-                              className="h-10 w-10 rounded-2xl bg-white/90 backdrop-blur-md shadow-lg text-primary hover:bg-primary hover:text-white transition-all"
+                              className="h-9 w-9 rounded-xl text-primary hover:bg-primary/10 transition-all"
                               onClick={(e) => { e.preventDefault(); handleOpenEdit(dept); }}
                             >
                               <Edit3 className="h-4 w-4" />
@@ -323,9 +329,9 @@ export default function DepartmentManagement() {
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button 
-                                  variant="secondary" 
+                                  variant="ghost" 
                                   size="icon" 
-                                  className="h-10 w-10 rounded-2xl bg-white/90 backdrop-blur-md shadow-lg text-destructive hover:bg-destructive hover:text-white transition-all"
+                                  className="h-9 w-9 rounded-xl text-destructive hover:bg-destructive/10 transition-all"
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -346,7 +352,7 @@ export default function DepartmentManagement() {
                                 </AlertDialogFooter>
                               </AlertDialogContent>
                             </AlertDialog>
-                          </>
+                          </div>
                         )}
                       </div>
 
@@ -358,14 +364,14 @@ export default function DepartmentManagement() {
                           className="object-cover transition-transform duration-700 group-hover:scale-110"
                           unoptimized
                         />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
                         <div className="absolute bottom-6 left-8 right-8">
                            <div className="flex flex-wrap gap-2 mb-3">
-                            <Badge className="bg-white/20 backdrop-blur-md text-white border-none font-bold text-[8px] uppercase tracking-wider px-3 h-6 rounded-full">
-                              {dept.programType || 'UG'} Program
+                            <Badge className="bg-white/20 backdrop-blur-md text-white border-none font-bold text-[8px] uppercase tracking-wider px-3 h-6 rounded-full flex items-center gap-1">
+                              <GraduationCap className="h-2.5 w-2.5" /> {dept.programType || 'UG'} Program
                             </Badge>
-                            <Badge className="bg-white/20 backdrop-blur-md text-white border-none font-bold text-[8px] uppercase tracking-wider px-3 h-6 rounded-full">
-                              {dept.totalSemesters || 8} Semesters
+                            <Badge className="bg-white/20 backdrop-blur-md text-white border-none font-bold text-[8px] uppercase tracking-wider px-3 h-6 rounded-full flex items-center gap-1">
+                              <Clock className="h-2.5 w-2.5" /> {dept.totalSemesters || 8} Semesters
                             </Badge>
                           </div>
                           <CardTitle className="text-2xl font-headline font-bold text-white leading-tight">
@@ -379,7 +385,7 @@ export default function DepartmentManagement() {
                            <div className="h-10 w-10 rounded-2xl bg-white flex items-center justify-center shadow-sm group-hover/hod:scale-110 transition-transform">
                              <Layers className="h-5 w-5 text-primary" />
                            </div>
-                           <div className="flex-1">
+                           <div className="flex-1 min-w-0">
                              <p className="text-[9px] font-bold uppercase tracking-[0.1em] opacity-50 mb-0.5">Head of Department</p>
                              <p className="font-bold text-foreground text-sm truncate">{dept.headOfDept || 'Unassigned'}</p>
                            </div>
@@ -463,9 +469,9 @@ export default function DepartmentManagement() {
                     <Button type="button" variant="outline" size="icon" className="h-12 w-12 rounded-xl bg-muted border-none"><Upload className="h-4 w-4" /></Button>
                   </div>
                 </div>
-                {editData.imageUrl && (
+                {(editData.imageUrl || editingDept?.imageUrl) && (
                   <div className="mt-2 relative h-24 w-full rounded-xl overflow-hidden border border-border bg-muted">
-                    <Image src={editData.imageUrl} alt="Preview" fill className="object-cover" unoptimized />
+                    <Image src={editData.imageUrl || editingDept?.imageUrl} alt="Preview" fill className="object-cover" unoptimized />
                   </div>
                 )}
               </div>

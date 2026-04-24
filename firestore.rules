@@ -12,13 +12,13 @@ service cloud.firestore {
     }
 
     function getUserData() {
-      let email = request.auth.token.email;
+      let email = request.auth.token.email.lower();
       let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(email);
       return exists(path) ? get(path).data : null;
     }
 
     function isAdmin() {
-      let email = request.auth.token.email;
+      let email = request.auth.token.email.lower();
       return isSignedIn() && (
         email == 'admin@college.edu' ||
         email == 'shabu@gmail.com' ||
@@ -72,12 +72,12 @@ service cloud.firestore {
 
       match /studentProfiles/{userId} { 
         allow read: if isSignedIn(); 
-        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email == userId); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
       }
       
       match /facultyProfiles/{userId} { 
         allow read: if isSignedIn(); 
-        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email == userId); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
       }
 
       match /achievements/{id} { 
