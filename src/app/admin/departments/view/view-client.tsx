@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useSearchParams } from 'next/navigation';
@@ -39,6 +40,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { StudentBioHover } from '@/components/StudentBioHover';
+import { FacultyBioHover } from '@/components/FacultyBioHover';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const collegeId = 'study-connect-college';
@@ -302,18 +304,20 @@ export default function DepartmentViewClient() {
                   <CardContent className="p-0">
                     <div className="divide-y divide-muted/50">
                       {faculty.map((f, idx) => (
-                        <div key={f.id || `f-${idx}`} className="p-6 flex items-center justify-between group hover:bg-muted/30 transition-all">
-                          <div className="flex items-center gap-4">
-                            <Avatar className="h-12 w-12 border-2 border-background shadow-sm"><AvatarFallback className="bg-primary/5 text-primary font-bold">{f.firstName?.[0]}{f.lastName?.[0]}</AvatarFallback></Avatar>
-                            <div>
-                              <p className="font-bold text-foreground">Dr. {f.firstName} {f.lastName}</p>
-                              <p className="text-[10px] font-bold text-muted-foreground uppercase">{f.designation || 'Academic Staff'}</p>
+                        <FacultyBioHover key={f.id || `f-${idx}`} faculty={f}>
+                          <div className="p-6 flex items-center justify-between group hover:bg-muted/30 transition-all cursor-help">
+                            <div className="flex items-center gap-4">
+                              <Avatar className="h-12 w-12 border-2 border-background shadow-sm"><AvatarFallback className="bg-primary/5 text-primary font-bold">{f.firstName?.[0]}{f.lastName?.[0]}</AvatarFallback></Avatar>
+                              <div>
+                                <p className="font-bold text-foreground">Dr. {f.firstName} {f.lastName}</p>
+                                <p className="text-[10px] font-bold text-muted-foreground uppercase">{f.designation || 'Academic Staff'}</p>
+                              </div>
                             </div>
+                            <Button variant="ghost" size="sm" className="rounded-xl font-bold uppercase text-[9px] hover:bg-primary hover:text-white" asChild>
+                              <Link href={`/admin/faculty?search=${f.email}`}>Professional Bio</Link>
+                            </Button>
                           </div>
-                          <Button variant="ghost" size="sm" className="rounded-xl font-bold uppercase text-[9px] hover:bg-primary hover:text-white" asChild>
-                            <Link href={`/admin/faculty?search=${f.email}`}>Professional Bio</Link>
-                          </Button>
-                        </div>
+                        </FacultyBioHover>
                       ))}
                       {faculty.length === 0 && (
                         <div className="p-20 text-center text-muted-foreground italic">No faculty members mapped to this division.</div>
