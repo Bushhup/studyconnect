@@ -1,9 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useFirebase } from '@/firebase';
@@ -21,9 +20,18 @@ export function MobileUserNav() {
 
   if (!user) {
     return (
-      <Button asChild className="w-full rounded-xl h-12">
-        <Link href="/login">Portal Login</Link>
-      </Button>
+      <div className="space-y-4">
+        <div className="p-6 bg-primary/5 rounded-[1.5rem] border border-primary/10">
+          <p className="text-xs font-bold uppercase tracking-widest text-primary mb-3">Gateway Access</p>
+          <p className="text-sm text-muted-foreground mb-6 leading-relaxed">Login to your specialized portal to manage academic records and schedules.</p>
+          <Button asChild className="w-full rounded-xl h-14 text-lg font-bold shadow-lg shadow-primary/20">
+            <Link href="/login">Portal Login</Link>
+          </Button>
+        </div>
+        <p className="text-[10px] text-center font-bold text-muted-foreground uppercase tracking-tighter flex items-center justify-center gap-1.5 opacity-40">
+          <ShieldCheck className="h-3 w-3" /> Secure Institutional Access
+        </p>
+      </div>
     );
   }
 

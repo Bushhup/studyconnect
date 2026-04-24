@@ -14,7 +14,7 @@ export function Footer() {
   return (
     <footer className="border-t bg-secondary/30">
       <div className="container py-12 px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-8">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-5">
           <Logo className="h-8 w-8 text-primary" />
           <span className="font-bold font-headline text-lg tracking-tight">StudyConnect</span>
         </div>

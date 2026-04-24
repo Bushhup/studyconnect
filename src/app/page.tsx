@@ -141,7 +141,7 @@ export default function Home() {
           )}
           <div className="absolute inset-0 bg-slate-900/65 z-10" />
           
-          <div className="relative container mx-auto text-center text-primary-foreground px-4 z-20 pb-20 md:pb-32">
+          <div className="relative container mx-auto text-center text-primary-foreground px-4 z-20 pb-24 md:pb-32">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -167,7 +167,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="stats" className="py-16 md:py-24 bg-white relative z-30 -mt-16 md:-mt-24 rounded-t-[3rem] shadow-2xl">
+        <section id="stats" className="py-16 md:py-24 bg-white relative z-40 -mt-12 md:-mt-24 rounded-t-[3rem] shadow-2xl">
           <div className="container mx-auto px-4">
             <motion.div 
               variants={staggerContainer}
