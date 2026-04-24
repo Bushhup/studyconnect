@@ -121,7 +121,7 @@ export default function Home() {
   return (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] overflow-hidden">
       <main className="flex-1">
-        <section className="relative w-full h-[75vh] md:h-[90vh] flex items-center justify-center overflow-hidden">
+        <section className="relative w-full min-h-[85vh] md:h-[95vh] flex items-center justify-center overflow-hidden">
           {heroImage && (
             <motion.div 
               initial={{ scale: 1.1 }}
@@ -139,27 +139,27 @@ export default function Home() {
               />
             </motion.div>
           )}
-          <div className="absolute inset-0 bg-slate-900/65 z-10" />
+          <div className="absolute inset-0 bg-slate-900/70 z-10" />
           
-          <div className="relative container mx-auto text-center text-primary-foreground px-4 z-20 pb-24 md:pb-32">
+          <div className="relative container mx-auto text-center text-primary-foreground px-4 z-20 pt-20 pb-32 md:pb-48">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
             >
-              <h1 className="text-5xl md:text-8xl font-headline font-bold tracking-tight mb-6">
-                {profile?.name || 'StudyConnect'}
+              <h1 className="text-5xl md:text-8xl font-headline font-bold tracking-tight mb-6 drop-shadow-sm">
+                {profile?.name || 'StudyConnect Enterprise'}
               </h1>
-              <p className="mt-4 max-w-3xl mx-auto text-xl md:text-2xl font-body opacity-90 leading-relaxed">
+              <p className="mt-4 max-w-3xl mx-auto text-xl md:text-2xl font-body opacity-90 leading-relaxed drop-shadow-sm">
                 {profile?.tagline || 'Connecting Minds, Building Futures. Discover a place where innovation and tradition meet to create the leaders of tomorrow.'}
               </p>
-              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-6">
-                <Button asChild size="lg" className="font-headline h-14 px-10 text-lg rounded-full shadow-2xl shadow-primary/20">
+              <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+                <Button asChild size="lg" className="w-full sm:w-auto font-headline h-14 px-10 text-lg rounded-full shadow-2xl shadow-primary/20">
                   <Link href="/gallery">
                     Explore Campus <ArrowRight className="ml-2 h-5 w-5" />
                   </Link>
                 </Button>
-                <Button asChild variant="outline" size="lg" className="font-headline h-14 px-10 text-lg rounded-full bg-white/10 hover:bg-white/20 border-white/30 text-white backdrop-blur-sm">
+                <Button asChild variant="outline" size="lg" className="w-full sm:w-auto font-headline h-14 px-10 text-lg rounded-full bg-white/10 hover:bg-white/20 border-white/30 text-white backdrop-blur-sm">
                   <Link href="/login">Portal Login</Link>
                 </Button>
               </div>
@@ -167,7 +167,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section id="stats" className="py-16 md:py-24 bg-white relative z-40 -mt-12 md:-mt-24 rounded-t-[3rem] shadow-2xl">
+        <section id="stats" className="py-16 md:py-24 bg-white relative z-40 -mt-20 md:-mt-32 rounded-t-[3rem] shadow-2xl">
           <div className="container mx-auto px-4">
             <motion.div 
               variants={staggerContainer}
