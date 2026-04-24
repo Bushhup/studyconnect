@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "Department": {
@@ -10,6 +9,7 @@
         "name": { "type": "string" },
         "headOfDept": { "type": "string" },
         "description": { "type": "string" },
+        "imageUrl": { "type": "string", "description": "Custom header image URL or data string." },
         "programType": { "type": "string", "enum": ["UG", "PG"] },
         "totalSemesters": { "type": "number", "description": "Number of semesters in the program." }
       }

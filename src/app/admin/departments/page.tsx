@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -9,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Plus, Loader2, ArrowRight, Trash2, Edit3, Save, Layers } from 'lucide-react';
+import { Building2, Plus, Loader2, ArrowRight, Trash2, Edit3, Save, Layers, Link as LinkIcon, Upload } from 'lucide-react';
 import Link from 'next/link';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 import { cn } from '@/lib/utils';
@@ -66,6 +67,7 @@ export default function DepartmentManagement() {
   const [hod, setHod] = useState('');
   const [programType, setProgramType] = useState<'UG' | 'PG'>('UG');
   const [totalSemesters, setTotalSemesters] = useState('8');
+  const [imageUrl, setImageUrl] = useState('');
 
   // Editing State
   const [editingDept, setEditingDept] = useState<any>(null);
@@ -73,7 +75,8 @@ export default function DepartmentManagement() {
     name: '',
     headOfDept: '',
     programType: 'UG' as 'UG' | 'PG',
-    totalSemesters: '8'
+    totalSemesters: '8',
+    imageUrl: ''
   });
 
   const userProfileRef = useMemoFirebase(() => {
@@ -82,7 +85,7 @@ export default function DepartmentManagement() {
   }, [firestore, user?.email]);
   
   const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
-  const isAdmin = profile?.role === 'admin';
+  const hasWriteAccess = profile?.role === 'admin' || profile?.role === 'hod';
 
   const deptQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'departments'), [firestore]);
   const { data: departments, isLoading } = useCollection(deptQuery);
@@ -94,9 +97,25 @@ export default function DepartmentManagement() {
     imageHint: 'university architecture'
   };
 
+  const handleImageFileChange = async (e: React.ChangeEvent<HTMLInputElement>, isEdit = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result as string;
+      if (isEdit) {
+        setEditData(prev => ({ ...prev, imageUrl: base64String }));
+      } else {
+        setImageUrl(base64String);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleCreate = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!name || !isAdmin) return;
+    if (!name || !hasWriteAccess) return;
 
     const id = name.toLowerCase().replace(/\s+/g, '-').slice(0, 15) + '-' + Math.random().toString(36).substr(2, 4);
     const deptRef = doc(firestore, 'colleges', collegeId, 'departments', id);
@@ -106,12 +125,13 @@ export default function DepartmentManagement() {
       name,
       headOfDept: hod,
       programType,
+      imageUrl,
       totalSemesters: parseInt(totalSemesters),
       createdAt: new Date().toISOString()
     }, { merge: true });
 
     toast({ title: 'Division Provisioned', description: `${name} has been added to the institutional architecture.` });
-    setName(''); setHod(''); setProgramType('UG'); setTotalSemesters('8');
+    setName(''); setHod(''); setProgramType('UG'); setTotalSemesters('8'); setImageUrl('');
     setIsCreateOpen(false);
   };
 
@@ -121,20 +141,22 @@ export default function DepartmentManagement() {
       name: dept.name || '',
       headOfDept: dept.headOfDept || '',
       programType: (dept.programType as 'UG' | 'PG') || 'UG',
-      totalSemesters: dept.totalSemesters?.toString() || '8'
+      totalSemesters: dept.totalSemesters?.toString() || '8',
+      imageUrl: dept.imageUrl || ''
     });
     setIsEditOpen(true);
   };
 
   const handleSaveEdit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editingDept || !isAdmin) return;
+    if (!editingDept || !hasWriteAccess) return;
 
     const deptRef = doc(firestore, 'colleges', collegeId, 'departments', editingDept.id);
     updateDocumentNonBlocking(deptRef, {
       name: editData.name,
       headOfDept: editData.headOfDept,
       programType: editData.programType,
+      imageUrl: editData.imageUrl,
       totalSemesters: parseInt(editData.totalSemesters),
       updatedAt: new Date().toISOString()
     });
@@ -161,7 +183,7 @@ export default function DepartmentManagement() {
   };
 
   const handleDelete = (deptId: string, deptName: string) => {
-    if (!isAdmin) return;
+    if (!hasWriteAccess) return;
     const deptRef = doc(firestore, 'colleges', collegeId, 'departments', deptId);
     deleteDocumentNonBlocking(deptRef);
     toast({ title: 'Division Decommissioned', description: `${deptName} has been removed from the hierarchy.` });
@@ -180,7 +202,7 @@ export default function DepartmentManagement() {
           <p className="text-muted-foreground text-lg">Manage the primary structural pillars of your institution.</p>
         </motion.div>
         
-        {isAdmin && (
+        {hasWriteAccess && (
           <div className="flex items-center gap-3">
             <CsvImportDialog 
               title="Bulk Dept Import"
@@ -211,6 +233,25 @@ export default function DepartmentManagement() {
                     <div className="space-y-2">
                       <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Head of Department (Dean)</Label>
                       <Input value={hod} onChange={(e) => setHod(e.target.value)} placeholder="Dr. Jane Doe" className="bg-muted border-none h-14 rounded-2xl px-6" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Header Image (Link or Upload)</Label>
+                      <div className="flex gap-2">
+                        <div className="relative flex-1">
+                          <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input value={imageUrl} onChange={(e) => setImageUrl(e.target.value)} placeholder="Paste image link..." className="bg-muted border-none h-12 rounded-xl px-11" />
+                        </div>
+                        <div className="relative">
+                          <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleImageFileChange(e)} />
+                          <Button type="button" variant="outline" size="icon" className="h-12 w-12 rounded-xl bg-muted border-none"><Upload className="h-4 w-4" /></Button>
+                        </div>
+                      </div>
+                      {imageUrl && (
+                        <div className="mt-2 relative h-20 w-full rounded-xl overflow-hidden border border-border">
+                          <Image src={imageUrl} alt="Preview" fill className="object-cover" />
+                        </div>
+                      )}
                     </div>
                     
                     <div className="grid grid-cols-2 gap-4">
@@ -254,9 +295,10 @@ export default function DepartmentManagement() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             <AnimatePresence mode="popLayout">
               {departments?.map((dept, idx) => {
-                const displayImage = deptImages.length > 0 
-                  ? deptImages[idx % deptImages.length] 
-                  : fallbackImage;
+                const defaultImage = deptImages.length > 0 
+                  ? deptImages[idx % deptImages.length].imageUrl 
+                  : fallbackImage.imageUrl;
+                const finalImageUrl = dept.imageUrl || defaultImage;
                 
                 return (
                   <motion.div 
@@ -269,7 +311,7 @@ export default function DepartmentManagement() {
                   >
                     <Card className="group hover:shadow-2xl transition-all duration-500 border-none shadow-sm bg-card rounded-[2.5rem] overflow-hidden flex flex-col h-full relative">
                       <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0">
-                        {isAdmin && (
+                        {hasWriteAccess && (
                           <>
                             <Button 
                               variant="secondary" 
@@ -311,11 +353,10 @@ export default function DepartmentManagement() {
 
                       <div className="h-56 relative overflow-hidden">
                         <Image
-                          src={displayImage.imageUrl}
-                          alt={displayImage.description}
+                          src={finalImageUrl}
+                          alt={dept.name}
                           fill
                           className="object-cover transition-transform duration-700 group-hover:scale-110"
-                          data-ai-hint={displayImage.imageHint}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
                         <div className="absolute bottom-6 left-8 right-8">
@@ -404,6 +445,31 @@ export default function DepartmentManagement() {
                   className="bg-muted border-none h-14 rounded-2xl px-6"
                 />
               </div>
+
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest ml-1 opacity-50">Header Image (Link or Upload)</Label>
+                <div className="flex gap-2">
+                  <div className="relative flex-1">
+                    <LinkIcon className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      value={editData.imageUrl || ''} 
+                      onChange={(e) => setEditData({...editData, imageUrl: e.target.value})} 
+                      placeholder="Paste image link..." 
+                      className="bg-muted border-none h-12 rounded-xl px-11 text-xs" 
+                    />
+                  </div>
+                  <div className="relative">
+                    <input type="file" accept="image/*" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={(e) => handleImageFileChange(e, true)} />
+                    <Button type="button" variant="outline" size="icon" className="h-12 w-12 rounded-xl bg-muted border-none"><Upload className="h-4 w-4" /></Button>
+                  </div>
+                </div>
+                {(editData.imageUrl) && (
+                  <div className="mt-2 relative h-24 w-full rounded-xl overflow-hidden border border-border bg-muted">
+                    <Image src={editData.imageUrl} alt="Preview" fill className="object-cover" />
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label className="text-[10px] font-bold uppercase ml-1 opacity-50">Program Type</Label>
@@ -420,7 +486,7 @@ export default function DepartmentManagement() {
                   <Input 
                     type="number" 
                     value={editData.totalSemesters} 
-                    onChange={(e) => setEditData({...editData, totalSemesters: e.target.value})} 
+                    onChange={(e) => setEditData({...totalSemesters: e.target.value})} 
                     className="bg-muted border-none h-14 rounded-2xl px-6 font-bold"
                   />
                 </div>
