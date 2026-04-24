@@ -1,15 +1,16 @@
+
 'use client';
 
 import { useState } from 'react';
 import Image from 'next/image';
 import { useCollection, useMemoFirebase, useFirestore, useUser, useDoc, setDocumentNonBlocking, deleteDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Building2, Plus, Loader2, ArrowRight, Trash2, Edit3, Save, Layers, Link as LinkIcon, Upload, GraduationCap, Clock } from 'lucide-react';
+import { Building2, Plus, Loader2, ArrowRight, Trash2, Edit3, Save, Layers, Link as LinkIcon, Upload, GraduationCap, Clock, UserCheck } from 'lucide-react';
 import Link from 'next/link';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 import { cn } from '@/lib/utils';
@@ -63,7 +64,7 @@ export default function DepartmentManagement() {
 
   // Creation Form State
   const [name, setName] = useState('');
-  const [hod, setHod] = useState('');
+  const [hodName, setHodName] = useState('');
   const [programType, setProgramType] = useState<'UG' | 'PG'>('UG');
   const [totalSemesters, setTotalSemesters] = useState('8');
   const [imageUrl, setImageUrl] = useState('');
@@ -78,12 +79,23 @@ export default function DepartmentManagement() {
     imageUrl: ''
   });
 
+  // User Profile for Access Control
   const userProfileRef = useMemoFirebase(() => {
     if (!firestore || !user?.email) return null;
     return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
   }, [firestore, user?.email]);
   
   const { data: profile, isLoading: profileLoading } = useDoc(userProfileRef);
+  
+  // Fetch All Potential HODs (Users with role hod or faculty)
+  const usersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return collection(firestore, 'colleges', collegeId, 'users');
+  }, [firestore]);
+  const { data: allUsers } = useCollection(usersQuery);
+
+  const potentialLeaders = allUsers?.filter(u => u.role === 'hod' || u.role === 'faculty') || [];
+
   const hasWriteAccess = profile?.role === 'admin' || profile?.role === 'hod' || user?.email?.toLowerCase() === 'admin@college.edu' || user?.email?.toLowerCase() === 'shabu@gmail.com';
 
   const deptQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'departments'), [firestore]);
@@ -100,8 +112,6 @@ export default function DepartmentManagement() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate size (Firestore document limit is 1MB. Base64 adds ~33% overhead)
-    // 800KB raw file is approx 1.06MB base64. 600KB is safer.
     if (file.size > 700000) {
       toast({ 
         variant: 'destructive', 
@@ -133,7 +143,7 @@ export default function DepartmentManagement() {
     setDocumentNonBlocking(deptRef, {
       id,
       name,
-      headOfDept: hod,
+      headOfDept: hodName,
       programType,
       imageUrl,
       totalSemesters: parseInt(totalSemesters) || 8,
@@ -141,7 +151,7 @@ export default function DepartmentManagement() {
     }, { merge: true });
 
     toast({ title: 'Division Provisioned', description: `${name} has been added to the institutional architecture.` });
-    setName(''); setHod(''); setProgramType('UG'); setTotalSemesters('8'); setImageUrl('');
+    setName(''); setHodName(''); setProgramType('UG'); setTotalSemesters('8'); setImageUrl('');
     setIsCreateOpen(false);
   };
 
@@ -240,9 +250,24 @@ export default function DepartmentManagement() {
                       <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Division Name</Label>
                       <Input value={name || ''} onChange={(e) => setName(e.target.value)} required className="bg-muted border-none h-14 rounded-2xl text-lg px-6" placeholder="e.g. Bio-Engineering" />
                     </div>
+                    
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Head of Department (Dean)</Label>
-                      <Input value={hod || ''} onChange={(e) => setHod(e.target.value)} placeholder="Dr. Jane Doe" className="bg-muted border-none h-14 rounded-2xl px-6" />
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Assign Head of Department (Dean)</Label>
+                      <Select onValueChange={setHodName} value={hodName}>
+                        <SelectTrigger className="bg-muted border-none h-14 rounded-2xl px-6">
+                          <SelectValue placeholder="Select existing leader..." />
+                        </SelectTrigger>
+                        <SelectContent className="bg-card max-h-60 overflow-y-auto">
+                          {potentialLeaders.map((u) => (
+                            <SelectItem key={u.id} value={`${u.firstName} ${u.lastName}`}>
+                              <div className="flex flex-col">
+                                <span className="font-bold">{u.firstName} {u.lastName}</span>
+                                <span className="text-[10px] uppercase text-muted-foreground">{u.role} • {u.email}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
 
                     <div className="space-y-2">
@@ -320,7 +345,6 @@ export default function DepartmentManagement() {
                     transition={{ delay: idx * 0.05, type: 'spring', stiffness: 100 }}
                   >
                     <Card className="group hover:shadow-2xl transition-all duration-500 border-none shadow-sm bg-card rounded-[2.5rem] overflow-hidden flex flex-col h-full relative">
-                      {/* Action Bar - Always visible for authorized users in admin view */}
                       {hasWriteAccess && (
                         <div className="absolute top-4 right-4 z-20 flex gap-2">
                           <div className="bg-white/90 backdrop-blur-md rounded-2xl p-1 shadow-xl flex gap-1 border border-white">
@@ -389,7 +413,7 @@ export default function DepartmentManagement() {
                       <CardContent className="pt-8 px-8 pb-10 flex flex-col h-full">
                         <div className="flex items-center gap-4 text-sm text-muted-foreground bg-muted/40 p-5 rounded-[1.5rem] border border-transparent hover:border-primary/10 transition-all group/hod mb-6">
                            <div className="h-10 w-10 rounded-2xl bg-white flex items-center justify-center shadow-sm group-hover/hod:scale-110 transition-transform">
-                             <Layers className="h-5 w-5 text-primary" />
+                             <UserCheck className="h-5 w-5 text-primary" />
                            </div>
                            <div className="flex-1 min-w-0">
                              <p className="text-[9px] font-bold uppercase tracking-[0.1em] opacity-50 mb-0.5">Head of Department</p>
@@ -449,13 +473,24 @@ export default function DepartmentManagement() {
                   className="bg-muted border-none h-14 rounded-2xl px-6 text-lg"
                 />
               </div>
+              
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest ml-1 opacity-50">Head of Department (Lead)</Label>
-                <Input 
-                  value={editData.headOfDept || ''} 
-                  onChange={(e) => setEditData({...editData, headOfDept: e.target.value})} 
-                  className="bg-muted border-none h-14 rounded-2xl px-6"
-                />
+                <Select onValueChange={(v) => setEditData({...editData, headOfDept: v})} value={editData.headOfDept}>
+                  <SelectTrigger className="bg-muted border-none h-14 rounded-2xl px-6">
+                    <SelectValue placeholder="Assign Leader..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-card max-h-60 overflow-y-auto">
+                    {potentialLeaders.map((u) => (
+                      <SelectItem key={u.id} value={`${u.firstName} ${u.lastName}`}>
+                        <div className="flex flex-col">
+                          <span className="font-bold">{u.firstName} {u.lastName}</span>
+                          <span className="text-[10px] uppercase text-muted-foreground">{u.role}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
