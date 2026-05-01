@@ -20,7 +20,8 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Search, Plus, UserCog, Edit3, 
   Loader2, Phone, Trash2, Key, Download, CheckCircle2,
-  Users, Filter, ShieldCheck, FileSpreadsheet
+  Users, Filter, ShieldCheck, FileSpreadsheet,
+  Building2, Activity, ArrowUpDown, X
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -57,14 +58,21 @@ export default function UserManagementPage() {
   const firestore = useFirestore();
   const { user } = useUser();
   const { toast } = useToast();
+  
+  // Basic Search/Role
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
 
+  // Advanced Filters
+  const [deptFilter, setDeptFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('newest');
+
+  // Dialog States
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  
   const [exportRoles, setExportRoles] = useState<string[]>(['student', 'faculty', 'hod']);
 
   const [formData, setFormData] = useState({
@@ -94,19 +102,31 @@ export default function UserManagementPage() {
     const fullName = `${u.firstName || ''} ${u.lastName || ''}`.toLowerCase();
     const matchesSearch = fullName.includes(searchQuery.toLowerCase()) || u.email?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = activeTab === 'all' || u.role === activeTab;
-    return matchesSearch && matchesRole;
+    const matchesDept = deptFilter === 'all' || u.departmentId === deptFilter;
+    const matchesStatus = statusFilter === 'all' || u.status === statusFilter;
+    return matchesSearch && matchesRole && matchesDept && matchesStatus;
   }) || [];
+
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    if (sortBy === 'name') {
+      return (a.firstName || '').localeCompare(b.firstName || '');
+    }
+    if (sortBy === 'email') {
+      return (a.email || '').localeCompare(b.email || '');
+    }
+    if (sortBy === 'newest') {
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+    }
+    return 0;
+  });
 
   const handleExportData = () => {
     if (!users) return;
-    
     const recordsToExport = users.filter(u => exportRoles.includes(u.role));
-    
     if (recordsToExport.length === 0) {
       toast({ variant: 'destructive', title: 'Export Failed', description: 'No records found for selected roles.' });
       return;
     }
-
     const headers = ['First Name', 'Last Name', 'Email', 'Mobile', 'Role', 'Department', 'Status'];
     const csvContent = [
       headers.join(','),
@@ -120,7 +140,6 @@ export default function UserManagementPage() {
         `"${u.status || 'active'}"`
       ].join(','))
     ].join('\n');
-
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -129,7 +148,6 @@ export default function UserManagementPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
     toast({ title: 'Export Generated', description: `Successfully compiled ${recordsToExport.length} identity records.` });
     setIsExportOpen(false);
   };
@@ -152,10 +170,8 @@ export default function UserManagementPage() {
   const handleCreateUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.email) return;
-
     const emailKey = formData.email.toLowerCase().trim();
     const userRef = doc(firestore, 'colleges', collegeId, 'users', emailKey);
-    
     setDocumentNonBlocking(userRef, {
       ...formData,
       id: emailKey,
@@ -163,7 +179,6 @@ export default function UserManagementPage() {
       username: emailKey.split('@')[0],
       createdAt: new Date().toISOString()
     }, { merge: true });
-
     toast({ title: 'Identity Provisioned', description: `User ${formData.firstName} has been added to the directory.` });
     setIsAddOpen(false);
     setFormData({ username: '', firstName: '', lastName: '', email: '', mobileNumber: '', password: '', role: 'student', departmentId: '', batchYear: '', status: 'active' });
@@ -195,19 +210,24 @@ export default function UserManagementPage() {
   const handleUpdateUser = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedUser) return;
-
     const userRef = doc(firestore, 'colleges', collegeId, 'users', selectedUser.id);
     updateDocumentNonBlocking(userRef, { ...formData, updatedAt: new Date().toISOString() });
-
     toast({ title: 'Record Updated', description: 'User information has been synchronized.' });
     setIsEditOpen(false);
   };
 
   const toggleExportRole = (role: string) => {
-    setExportRoles(prev => 
-      prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]
-    );
+    setExportRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
   };
+
+  const clearFilters = () => {
+    setDeptFilter('all');
+    setStatusFilter('all');
+    setSearchQuery('');
+    setActiveTab('all');
+  };
+
+  const isFiltered = deptFilter !== 'all' || statusFilter !== 'all' || searchQuery !== '' || activeTab !== 'all';
 
   return (
     <div className="space-y-8 pb-12">
@@ -218,12 +238,7 @@ export default function UserManagementPage() {
         </motion.div>
         
         <div className="flex gap-2">
-          <CsvImportDialog 
-            title="Bulk Provisioning"
-            description="Process multiple user records via CSV mapping."
-            columns={USER_CSV_COLUMNS}
-            onImport={handleImport}
-          />
+          <CsvImportDialog title="Bulk Provisioning" description="Process multiple user records via CSV mapping." columns={USER_CSV_COLUMNS} onImport={handleImport} />
           
           <Dialog open={isExportOpen} onOpenChange={setIsExportOpen}>
             <DialogTrigger asChild>
@@ -233,9 +248,7 @@ export default function UserManagementPage() {
             </DialogTrigger>
             <DialogContent className="rounded-[2.5rem] border-none shadow-2xl bg-card max-w-md">
               <DialogHeader>
-                <DialogTitle className="text-2xl font-headline flex items-center gap-3">
-                  <FileSpreadsheet className="h-6 w-6 text-primary" /> Export Records
-                </DialogTitle>
+                <DialogTitle className="text-2xl font-headline flex items-center gap-3"><FileSpreadsheet className="h-6 w-6 text-primary" /> Export Records</DialogTitle>
                 <DialogDescription className="text-base">Select the roles you wish to include in the data export.</DialogDescription>
               </DialogHeader>
               <div className="py-6 space-y-4">
@@ -256,15 +269,8 @@ export default function UserManagementPage() {
                   </div>
                 ))}
               </div>
-              <div className="bg-primary/5 p-4 rounded-2xl mb-4 text-center">
-                <p className="text-xs font-bold text-primary uppercase tracking-widest">
-                  Ready to process {users?.filter(u => exportRoles.includes(u.role)).length || 0} nodes
-                </p>
-              </div>
               <DialogFooter className="sm:justify-center">
-                <Button onClick={handleExportData} className="w-full h-14 rounded-2xl font-bold text-lg shadow-lg shadow-primary/20">
-                  Generate Tabular Report
-                </Button>
+                <Button onClick={handleExportData} className="w-full h-14 rounded-2xl font-bold text-lg shadow-lg shadow-primary/20">Generate Tabular Report</Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -291,7 +297,6 @@ export default function UserManagementPage() {
                     <Input value={formData.lastName || ''} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Johnson" />
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Institutional Email</Label>
@@ -302,7 +307,6 @@ export default function UserManagementPage() {
                     <Input value={formData.mobileNumber || ''} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="98765 43210" />
                   </div>
                 </div>
-
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Access Key (Password)</Label>
@@ -321,7 +325,6 @@ export default function UserManagementPage() {
                     </Select>
                   </div>
                 </div>
-
                 <div className="space-y-2">
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Department Mapping</Label>
                   <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId || "unassigned"}>
@@ -332,27 +335,75 @@ export default function UserManagementPage() {
                     </SelectContent>
                   </Select>
                 </div>
-
-                <Button type="submit" className="w-full h-14 font-bold shadow-lg shadow-primary/20 rounded-2xl text-lg uppercase tracking-tight">
-                  Finalize Provisioning
-                </Button>
+                <Button type="submit" className="w-full h-14 font-bold shadow-lg shadow-primary/20 rounded-2xl text-lg uppercase tracking-tight">Finalize Provisioning</Button>
               </form>
             </DialogContent>
           </Dialog>
         </div>
       </div>
 
-      <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
-        <div className="flex flex-col sm:flex-row gap-4 items-center justify-between mb-6">
-          <TabsList className="bg-card border h-11 p-1 rounded-xl">
-            <TabsTrigger value="all" className="px-6 rounded-lg">All Records</TabsTrigger>
-            <TabsTrigger value="student" className="px-6 rounded-lg">Students</TabsTrigger>
-            <TabsTrigger value="faculty" className="px-6 rounded-lg">Faculty</TabsTrigger>
-            <TabsTrigger value="hod" className="px-6 rounded-lg">Heads</TabsTrigger>
-          </TabsList>
-          <div className="relative w-full sm:w-80">
+      <Tabs defaultValue="all" onValueChange={setActiveTab} value={activeTab} className="w-full">
+        <TabsList className="bg-card border h-11 p-1 rounded-xl mb-6">
+          <TabsTrigger value="all" className="px-6 rounded-lg">All Records</TabsTrigger>
+          <TabsTrigger value="student" className="px-6 rounded-lg">Students</TabsTrigger>
+          <TabsTrigger value="faculty" className="px-6 rounded-lg">Faculty</TabsTrigger>
+          <TabsTrigger value="hod" className="px-6 rounded-lg">Heads</TabsTrigger>
+          <TabsTrigger value="admin" className="px-6 rounded-lg">Admins</TabsTrigger>
+        </TabsList>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search global directory..." className="pl-10 h-11 rounded-xl border-none shadow-sm" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <Input placeholder="Search name or email..." className="pl-10 h-11 rounded-xl border-none shadow-sm bg-card" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+          </div>
+
+          <Select value={deptFilter} onValueChange={setDeptFilter}>
+            <SelectTrigger className="h-11 rounded-xl bg-card border-none shadow-sm font-medium">
+              <div className="flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-primary" />
+                <SelectValue placeholder="All Departments" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Departments</SelectItem>
+              {departments?.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-11 rounded-xl bg-card border-none shadow-sm font-medium">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-primary" />
+                <SelectValue placeholder="All Status" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="alumni">Alumni</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="flex gap-2">
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="h-11 rounded-xl bg-card border-none shadow-sm font-medium flex-1">
+                <div className="flex items-center gap-2">
+                  <ArrowUpDown className="h-4 w-4 text-primary" />
+                  <SelectValue placeholder="Sort By" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="name">Name (A-Z)</SelectItem>
+                <SelectItem value="email">Email Address</SelectItem>
+              </SelectContent>
+            </Select>
+            {isFiltered && (
+              <Button variant="ghost" size="icon" onClick={clearFilters} className="h-11 w-11 rounded-xl text-muted-foreground hover:text-primary">
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
 
@@ -372,7 +423,7 @@ export default function UserManagementPage() {
                 </TableHeader>
                 <TableBody>
                   <AnimatePresence>
-                    {filteredUsers.map((u, idx) => (
+                    {sortedUsers.map((u, idx) => (
                       <TableRow key={u.id || idx} className="group hover:bg-muted/30 border-border">
                         <TableCell className="pl-6 py-4">
                           <div className="flex items-center gap-3">
@@ -418,7 +469,7 @@ export default function UserManagementPage() {
                       </TableRow>
                     ))}
                   </AnimatePresence>
-                  {filteredUsers.length === 0 && (
+                  {sortedUsers.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={4} className="p-20 text-center text-muted-foreground italic">No matching identity records found.</TableCell>
                     </TableRow>
@@ -430,7 +481,6 @@ export default function UserManagementPage() {
         </Card>
       </Tabs>
 
-      {/* Edit Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="rounded-[2.5rem] max-w-2xl border-none">
           <DialogHeader><DialogTitle>Modify Identity Record</DialogTitle></DialogHeader>
@@ -445,7 +495,6 @@ export default function UserManagementPage() {
                 <Input value={formData.lastName || ''} onChange={(e) => setFormData({...formData, lastName: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
             </div>
-            
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Email Address</Label>
@@ -456,7 +505,6 @@ export default function UserManagementPage() {
                 <Input value={formData.mobileNumber || ''} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" />
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Access Key (Password)</Label>
@@ -475,7 +523,6 @@ export default function UserManagementPage() {
                 </Select>
               </div>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase">Department</Label>
@@ -499,10 +546,7 @@ export default function UserManagementPage() {
                 </Select>
               </div>
             </div>
-
-            <Button type="submit" className="w-full h-14 font-bold uppercase tracking-tight shadow-lg shadow-primary/20 rounded-2xl">
-              Synchronize Record
-            </Button>
+            <Button type="submit" className="w-full h-14 font-bold uppercase tracking-tight shadow-lg shadow-primary/20 rounded-2xl">Synchronize Record</Button>
           </form>
         </DialogContent>
       </Dialog>
