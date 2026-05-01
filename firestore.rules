@@ -29,13 +29,21 @@ service cloud.firestore {
         'admin@college.edu',
         'shabu@gmail.com',
         'shahabuddinosaid@gmail.com',
-        'shabuddinaw@gmail.com'
+        'shabuddinaw@gmail.com',
+        'usaid@gmail.com'
       ];
-      return isSignedIn() && (isHardcodedAdmin || (getUserData() != null && getUserData().role == 'admin'));
+      let user = getUserData();
+      return isSignedIn() && (isHardcodedAdmin || (user != null && user.role == 'admin'));
     }
     
     function isHOD() {
-      return isSignedIn() && getUserData() != null && getUserData().role == 'hod';
+      let user = getUserData();
+      return isSignedIn() && user != null && user.role == 'hod';
+    }
+
+    function getMyDeptId() {
+      let user = getUserData();
+      return user != null ? user.departmentId : null;
     }
 
     function isSystemUninitialized() {
@@ -52,27 +60,38 @@ service cloud.firestore {
       match /users/{userId} {
         allow get: if isSignedIn(); 
         allow list: if isAdmin() || (isSignedIn() && getUserData() != null && getUserData().role in ['faculty', 'hod']);
-        allow create, update, delete: if isSystemUninitialized() || isAdmin() || (isHOD() && getUserData().departmentId == resource.data.departmentId);
+        
+        // HODs can update users if the user IS in their department OR is BEING MOVED to their department
+        allow create, update: if isSystemUninitialized() || isAdmin() || (
+          isHOD() && (
+            getMyDeptId() == resource.data.departmentId || 
+            getMyDeptId() == request.resource.data.departmentId
+          )
+        );
+        
+        allow delete: if isSystemUninitialized() || isAdmin() || (
+          isHOD() && getMyDeptId() == resource.data.departmentId
+        );
       }
 
       match /departments/{id} { 
         allow read: if true; 
-        allow write, update: if isSystemUninitialized() || isAdmin() || (isHOD() && getUserData().departmentId == id); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isHOD() && getMyDeptId() == id); 
       }
       
       match /classes/{id} { 
         allow read: if true; 
-        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getUserData() != null && getUserData().role in ['faculty', 'hod']); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isHOD() && getMyDeptId() == resource.data.departmentId); 
       }
       
       match /courses/{id} { 
         allow read: if true; 
-        allow write, update: if isSystemUninitialized() || isAdmin(); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isHOD() && getMyDeptId() == resource.data.departmentId); 
       }
       
       match /academicRecords/{id} {
         allow read: if isSignedIn();
-        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getUserData() != null && getUserData().role in ['faculty', 'hod']);
+        allow write, update: if isSystemUninitialized() || isAdmin() || isHOD();
       }
 
       match /studentProfiles/{userId} { 
@@ -87,12 +106,12 @@ service cloud.firestore {
 
       match /achievements/{id} { 
         allow read: if true; 
-        allow write, update: if isSystemUninitialized() || isAdmin(); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isHOD() && getMyDeptId() == resource.data.departmentId); 
       }
       
       match /events/{id} { 
         allow read: if true; 
-        allow write, update: if isSystemUninitialized() || isAdmin(); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isHOD() && getMyDeptId() == resource.data.departmentId); 
       }
     }
   }
