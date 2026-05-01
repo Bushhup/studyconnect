@@ -24,13 +24,14 @@ service cloud.firestore {
 
     function isAdmin() {
       let email = getAuthEmail();
-      return isSignedIn() && (
-        email == 'admin@college.edu' ||
-        email == 'shabu@gmail.com' ||
-        email == 'shahabuddinosaid@gmail.com' ||
-        email == 'shabuddinaw@gmail.com' ||
-        (getUserData() != null && getUserData().role == 'admin')
-      );
+      // Allow hardcoded admins even if their Firestore doc doesn't exist yet (for bootstrap)
+      let isHardcodedAdmin = email in [
+        'admin@college.edu',
+        'shabu@gmail.com',
+        'shahabuddinosaid@gmail.com',
+        'shabuddinaw@gmail.com'
+      ];
+      return isSignedIn() && (isHardcodedAdmin || (getUserData() != null && getUserData().role == 'admin'));
     }
     
     function isHOD() {
@@ -38,16 +39,18 @@ service cloud.firestore {
     }
 
     function isSystemUninitialized() {
-      // Allows initial setup if the college document doesn't exist
+      // Allows initial setup if the college root document doesn't exist
       return !exists(/databases/$(database)/documents/colleges/study-connect-college);
     }
 
     match /colleges/{collegeId} {
+      // Allow public read for institutional identity
       allow get: if true;
+      // Allow initial creation if uninitialized, otherwise require admin
       allow write, update: if isSystemUninitialized() || isAdmin();
 
       match /users/{userId} {
-        allow get: if true; 
+        allow get: if isSignedIn(); 
         allow list: if isAdmin() || (isSignedIn() && getUserData() != null && getUserData().role in ['faculty', 'hod']);
         allow create, update, delete: if isSystemUninitialized() || isAdmin() || (isHOD() && getUserData().departmentId == resource.data.departmentId);
       }
