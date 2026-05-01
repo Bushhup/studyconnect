@@ -27,12 +27,15 @@ import {
   Eye,
   EyeOff,
   Database,
-  AlertCircle
+  AlertCircle,
+  Sparkles
 } from 'lucide-react';
 import { useFirebase } from '@/firebase';
 import { 
   signInWithEmailAndPassword,
-  signOut
+  signOut,
+  createUserWithEmailAndPassword,
+  signInAnonymously
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Logo } from '@/components/logo';
@@ -55,23 +58,49 @@ export default function LoginPage() {
   const [isBootstrapping, setIsBootstraping] = useState(false);
 
   const handleBootstrap = async () => {
-    if (!firestore) return;
+    if (!firestore || !auth) return;
     setIsBootstraping(true);
     try {
+      // 1. Seed Firestore Identity Directory
       await seedDatabase(firestore);
+      
+      // 2. Provision Master Admin in Firebase Authentication
+      try {
+        await createUserWithEmailAndPassword(auth, 'admin@college.edu', 'minister123');
+      } catch (authError: any) {
+        // Ignore if account already exists in Auth
+        if (authError.code !== 'auth/email-already-in-use') {
+          console.error("Auth Provisioning Error:", authError);
+        }
+      }
+
       toast({
         title: 'Institutional Sync Complete',
-        description: 'Directory records and admin roles have been successfully provisioned in Firestore.',
+        description: 'Directory records and admin roles have been successfully provisioned.',
       });
     } catch (e: any) {
       console.error('Bootstrap error:', e);
       toast({
         variant: 'destructive',
         title: 'Bootstrap Interrupted',
-        description: e.message || 'The database could not be initialized. Check console for details.',
+        description: e.message || 'The database could not be initialized.',
       });
     } finally {
       setIsBootstraping(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setIsLoading(true);
+    try {
+      await signInAnonymously(auth);
+      // Map to first admin record in storage for demo purposes
+      localStorage.setItem('guest_role', 'admin');
+      router.push('/admin/dashboard');
+      toast({ title: 'Guest Session Active', description: 'Exploring platform as a guest administrator.' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Demo Failed', description: error.message });
+      setIsLoading(false);
     }
   };
 
@@ -99,7 +128,11 @@ export default function LoginPage() {
       }
 
       // Check if selected portal role matches user record role
-      if (userData.role !== selectedRole && !(userData.role === 'admin' && selectedRole === 'admin') && !(userData.role === 'hod' && selectedRole === 'admin')) {
+      // Admin portal allows HODs and Admins
+      const isAdminPortal = selectedRole === 'admin';
+      const isAuthorized = userData.role === selectedRole || (isAdminPortal && (userData.role === 'admin' || userData.role === 'hod'));
+
+      if (!isAuthorized) {
         await signOut(auth);
         throw new Error(`You do not have permission to access the ${selectedRole} portal.`);
       }
@@ -122,7 +155,7 @@ export default function LoginPage() {
       let message = error.message || 'Incorrect credentials or account not provisioned.';
       
       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-        message = 'Authentication failed. Please verify your email/password.';
+        message = 'Authentication failed. Ensure you have run "System Bootstrap" and used valid credentials.';
       }
 
       toast({
@@ -167,26 +200,39 @@ export default function LoginPage() {
             </div>
             
             <div className="mt-12 text-center flex flex-col items-center gap-6">
+              <div className="flex gap-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleBootstrap} 
+                  disabled={isBootstrapping || isLoading}
+                  className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-2 bg-card rounded-full px-8 h-12 shadow-sm border-dashed"
+                >
+                  {isBootstrapping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+                  System Bootstrap
+                </Button>
+
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={handleDemoLogin}
+                  disabled={isBootstrapping || isLoading}
+                  className="text-[10px] uppercase font-bold tracking-widest text-primary gap-2 rounded-full px-8 h-12 hover:bg-primary/5"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  Launch Demo Session
+                </Button>
+              </div>
+
               <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 max-w-lg flex items-start gap-3 text-left">
                 <AlertCircle className="h-5 w-5 text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-xs font-bold text-amber-900 uppercase tracking-tight">System Initialization</p>
+                  <p className="text-xs font-bold text-amber-900 uppercase tracking-tight">Access Information</p>
                   <p className="text-xs text-amber-800/80 leading-relaxed mt-1">
-                    If this is a fresh setup, click Bootstrap once to initialize the directory for <strong>admin@college.edu</strong> and other test accounts.
+                    Run <strong>Bootstrap</strong> to initialize the <strong>admin@college.edu</strong> (pass: minister123) account. Use <strong>Demo Mode</strong> for instant guest access.
                   </p>
                 </div>
               </div>
-
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleBootstrap} 
-                disabled={isBootstrapping}
-                className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-2 bg-card rounded-full px-8 h-12 shadow-sm border-dashed"
-              >
-                {isBootstrapping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
-                System Bootstrap (Initialize Institution)
-              </Button>
             </div>
           </motion.div>
         ) : (

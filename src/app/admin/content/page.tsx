@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -318,22 +317,22 @@ export default function ContentManagementPage() {
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Achievement Title</Label>
+                    <Label className="text-[10px] font-bold uppercase">Achievement Title</Label>
                     <Input value={achievementTitle} onChange={(e) => setAchievementTitle(e.target.value)} placeholder="e.g., Winners: National Robotics Challenge" required className="bg-muted border-none h-11" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Category</Label>
+                    <Label className="text-[10px] font-bold uppercase">Category</Label>
                     <Input value={achievementCategory} onChange={(e) => setAchievementCategory(e.target.value)} placeholder="Academic / Research" className="bg-muted border-none h-11" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>Academic Year</Label>
+                    <Label className="text-[10px] font-bold uppercase">Academic Year</Label>
                     <Input type="number" value={achievementYear} onChange={(e) => setAchievementYear(e.target.value)} required className="bg-muted border-none h-11" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Lead Faculty</Label>
+                    <Label className="text-[10px] font-bold uppercase">Lead Faculty</Label>
                     <Select onValueChange={setAchievementFaculty} value={achievementFaculty}>
                       <SelectTrigger className="bg-muted border-none h-11"><SelectValue placeholder="Select Lead" /></SelectTrigger>
                       <SelectContent>
@@ -345,7 +344,7 @@ export default function ContentManagementPage() {
                   </div>
                   {isAdmin && (
                     <div className="space-y-2">
-                      <Label>Division</Label>
+                      <Label className="text-[10px] font-bold uppercase">Division</Label>
                       <Select onValueChange={setAchievementDept} value={achievementDept}>
                         <SelectTrigger className="bg-muted border-none h-11"><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -358,7 +357,7 @@ export default function ContentManagementPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Achievement Details</Label>
+                  <Label className="text-[10px] font-bold uppercase">Achievement Details</Label>
                   <Textarea value={achievementDesc} onChange={(e) => setAchievementDesc(e.target.value)} placeholder="Provide context about why this is a milestone..." className="min-h-[100px] bg-muted border-none rounded-xl" required />
                 </div>
                 <Button type="submit" className="w-full h-12 font-bold shadow-lg shadow-primary/20">
