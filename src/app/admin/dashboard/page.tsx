@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, doc, query, where } from 'firebase/firestore';
 import { seedDatabase } from '@/lib/seed-data';
@@ -88,6 +88,9 @@ export default function AdminDashboard() {
   const { data: depts, isLoading: deptsLoading } = useCollection(deptsQuery);
   const { data: classes } = useCollection(classesQuery);
 
+  const myDept = isHOD ? depts?.find(d => d.id === profile?.departmentId) : null;
+  const hubTitle = isHOD ? (myDept?.name || profile?.departmentId || 'Departmental') + ' Hub' : 'Institutional Command Center';
+
   const studentCount = users?.filter(u => u.role === 'student').length || 0;
   const facultyCount = users?.filter(u => u.role === 'faculty').length || 0;
   const deptCount = depts?.length || 0;
@@ -133,7 +136,7 @@ export default function AdminDashboard() {
   }
 
   const stats = [
-    { label: isHOD ? 'My Division' : 'Divisions', value: deptCount.toString(), icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50', link: '/admin/departments' },
+    { label: isHOD ? 'My Division' : 'Divisions', value: deptCount.toString(), icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50', link: isHOD ? `/admin/department-portal?id=${profile?.departmentId}` : '/admin/departments' },
     { label: 'Active Classes', value: classCount.toString(), icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-50', link: '/admin/classes' },
     { label: 'Total Faculty', value: facultyCount.toString(), icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50', link: '/admin/faculty' },
     { label: 'Total Students', value: studentCount.toString(), icon: GraduationCap, color: 'text-amber-600', bg: 'bg-amber-50', link: '/admin/students' },
@@ -144,13 +147,20 @@ export default function AdminDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">
-            {isHOD ? `${profile?.departmentId} Hub` : 'Institutional Command Center'}
+            {hubTitle}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Real-time oversight for departments, performance tracking, and user directories.
+            Real-time oversight for personnel, performance tracking, and infrastructure.
           </p>
         </motion.div>
         <div className="flex gap-2">
+          {isHOD && (
+            <Button variant="outline" className="rounded-full gap-2 bg-card" asChild>
+              <Link href={`/admin/department-portal?id=${profile?.departmentId}`}>
+                Division Portal <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          )}
           {isAdmin && (
             <Button variant="outline" className="gap-2 bg-card rounded-full" onClick={handleSeedData} disabled={isSeeding}>
               {isSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
@@ -193,8 +203,8 @@ export default function AdminDashboard() {
         <Card className="lg:col-span-2 border-none shadow-sm bg-card rounded-[2.5rem] overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-headline font-bold">Institutional Trends</CardTitle>
-              <CardDescription>Comparative data: Academic growth vs Attendance.</CardDescription>
+              <CardTitle className="text-lg font-headline font-bold">Academic Growth Patterns</CardTitle>
+              <CardDescription>Comparative data: Historical performance vs Attendance.</CardDescription>
             </div>
             <div className="flex gap-2">
                 <Badge variant="outline" className="bg-primary/5 text-primary border-none font-bold uppercase text-[9px]">Presence</Badge>
@@ -205,7 +215,7 @@ export default function AdminDashboard() {
             <ChartContainer config={{ attendance: { label: 'Attendance', color: 'hsl(var(--primary))' }, performance: { label: 'GPA', color: 'hsl(var(--chart-2))' } }}>
               <AreaChart data={performanceData}>
                 <defs>
-                  <linearGradient id="colorAttendance" x1="0" y1="0" x2="0" y2="1">
+                  <linearGradient id="colorAttendance" x1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.15}/>
                     <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                   </linearGradient>
@@ -226,7 +236,7 @@ export default function AdminDashboard() {
             <CardTitle className="text-lg font-headline font-bold flex items-center gap-2">
               <PieChartIcon className="h-5 w-5 text-primary" /> Enrollment Split
             </CardTitle>
-            <CardDescription>Student distribution by division.</CardDescription>
+            <CardDescription>{isHOD ? 'Sub-division distribution.' : 'Student distribution by division.'}</CardDescription>
           </CardHeader>
           <CardContent className="h-[300px]">
             {enrollmentData.length > 0 ? (
@@ -306,10 +316,10 @@ export default function AdminDashboard() {
               <div className="p-3 bg-white/10 rounded-2xl">
                 <Activity className="h-6 w-6" />
               </div>
-              <p className="font-bold text-lg font-headline">System Status</p>
+              <p className="font-bold text-lg font-headline">System Integrity</p>
             </div>
             <p className="text-xs text-white/60 leading-relaxed">
-              Institutional databases and identity sync are operational. Next audit window in 4 days.
+              Institutional databases and identity synchronization are fully operational. Last health check: Successful.
             </p>
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-white/5 rounded-2xl border border-white/10">
@@ -322,7 +332,7 @@ export default function AdminDashboard() {
               </div>
             </div>
           </div>
-          <Button onClick={() => toast({ title: 'Manual Audit Triggered', description: 'Scanning user directories for orphans...' })} variant="outline" className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white font-bold rounded-xl h-12">
+          <Button onClick={() => toast({ title: 'Manual Audit Triggered', description: 'Scanning user directories for orphan nodes...' })} variant="outline" className="w-full bg-white/5 border-white/10 hover:bg-white/10 text-white font-bold rounded-xl h-12">
             Run Data Audit
           </Button>
         </Card>

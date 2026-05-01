@@ -72,6 +72,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { data: profile } = useDoc(profileRef);
 
   const isHOD = profile?.role === 'hod';
+  const myDeptId = profile?.departmentId;
+
+  // Dept Metadata for HOD branding
+  const deptRef = useMemoFirebase(() => 
+    isHOD && myDeptId ? doc(firestore, 'colleges', collegeId, 'departments', myDeptId) : null
+  , [firestore, isHOD, myDeptId]);
+  const { data: deptData } = useDoc(deptRef);
 
   const filteredLinks = useMemo(() => {
     return adminLinks.filter(link => {
@@ -335,7 +342,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           <div className="flex items-center gap-4">
             <div className="flex flex-col items-end mr-2">
               <span className="text-xs font-bold text-foreground capitalize">{isHOD ? 'Department Head' : 'Administrator'}</span>
-              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">{isHOD ? profile?.departmentId : 'Master Portal'}</span>
+              <span className="text-[9px] text-muted-foreground uppercase font-bold tracking-widest">{isHOD ? (deptData?.name || 'Departmental Hub') : 'Master Portal'}</span>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

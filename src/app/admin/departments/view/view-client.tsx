@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useSearchParams } from 'next/navigation';
@@ -18,7 +17,7 @@ import {
   Building2, Users, GraduationCap, BookOpen, 
   Calendar, ArrowLeft, Loader2, Plus, 
   ChevronRight, TrendingUp, Search,
-  RefreshCcw, UserPlus, BookPlus, LayoutGrid, Info, Download
+  RefreshCcw, UserPlus, BookPlus, LayoutGrid, Info, Download, AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -60,6 +59,17 @@ export default function DepartmentViewClient() {
   const [assignRole, setAssignRole] = useState<'student' | 'faculty'>('student');
   const [userSearchQuery, setUserSearchQuery] = useState('');
 
+  // User Profile for Authorization
+  const profileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
+  }, [firestore, user?.email]);
+  const { data: profile, isLoading: profileLoading } = useDoc(profileRef);
+
+  const isAdmin = profile?.role === 'admin';
+  const isHOD = profile?.role === 'hod';
+  const myDeptId = profile?.departmentId;
+
   // Data lookups
   const deptRef = useMemoFirebase(() => id ? doc(firestore, 'colleges', collegeId, 'departments', id) : null, [firestore, id]);
   const { data: dept, isLoading: deptLoading } = useDoc(deptRef);
@@ -76,11 +86,29 @@ export default function DepartmentViewClient() {
 
   if (!id) return <div className="p-20 text-center font-bold uppercase tracking-widest text-muted-foreground italic">Invalid Division Identity</div>;
 
-  if (deptLoading || usersLoading || classesLoading || coursesLoading) {
+  if (profileLoading || deptLoading || usersLoading || classesLoading || coursesLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-40 gap-4">
         <Loader2 className="animate-spin h-10 w-10 text-primary" />
         <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Syncing Division Node...</p>
+      </div>
+    );
+  }
+
+  // Scoping Security Check
+  if (isHOD && id !== myDeptId) {
+    return (
+      <div className="flex flex-col items-center justify-center p-40 gap-6 text-center">
+        <AlertCircle className="h-16 w-16 text-red-500" />
+        <div>
+          <h2 className="text-2xl font-bold">Scoped Access Restricted</h2>
+          <p className="text-muted-foreground max-w-md mx-auto mt-2">
+            You are authorized to manage <strong>{profile?.departmentId}</strong>. Access to other academic divisions is limited to institutional administrators.
+          </p>
+        </div>
+        <Button asChild className="rounded-full">
+          <Link href="/admin/dashboard">Return to Dashboard</Link>
+        </Button>
       </div>
     );
   }
@@ -148,9 +176,11 @@ export default function DepartmentViewClient() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Button asChild variant="ghost" size="icon" className="rounded-full bg-card shadow-sm hover:bg-primary/5 transition-colors">
-            <Link href="/admin/departments"><ArrowLeft className="h-4 w-4" /></Link>
-          </Button>
+          {!isHOD && (
+            <Button asChild variant="ghost" size="icon" className="rounded-full bg-card shadow-sm hover:bg-primary/5 transition-colors">
+              <Link href="/admin/departments"><ArrowLeft className="h-4 w-4" /></Link>
+            </Button>
+          )}
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">{dept?.name}</h1>
