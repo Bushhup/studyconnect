@@ -74,7 +74,7 @@ export default function FacultyDashboard() {
     );
   }
 
-  const facultyName = profile ? `Dr. ${profile.firstName} ${profile.lastName}` : 'Dr. Sarah Smith';
+  const facultyName = profile ? `Dr. ${profile.firstName} ${profile.lastName}` : 'Dr. Faculty Member';
   const facultyInitials = facultyName.split(' ').map(n => n[0]).join('');
 
   return (
@@ -83,7 +83,7 @@ export default function FacultyDashboard() {
         <div>
           <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Welcome, {facultyName}</h1>
           <p className="text-muted-foreground mt-1">
-            {profile?.departmentId || 'Department of Engineering & Technology'} • Academic Year 2024-25
+            {profile?.departmentId ? `Department: ${profile.departmentId.toUpperCase().replace('DEPT-', '')}` : 'General Faculty Hub'} • Academic Year 2024-25
           </p>
         </div>
         <div className="flex gap-2">

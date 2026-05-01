@@ -1,4 +1,4 @@
-import { doc, writeBatch, Firestore, collection } from 'firebase/firestore';
+import { doc, writeBatch, Firestore } from 'firebase/firestore';
 
 /**
  * High-Fidelity Academic Seeding Engine

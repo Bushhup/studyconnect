@@ -70,13 +70,19 @@ export default function AdminDashboard() {
 
   const deptsQuery = useMemoFirebase(() => {
     if (!db || !hasAccess) return null;
+    if (isHOD && profile?.departmentId) {
+       return query(collection(db, 'colleges', collegeId, 'departments'), where('id', '==', profile.departmentId));
+    }
     return collection(db, 'colleges', collegeId, 'departments');
-  }, [db, hasAccess]);
+  }, [db, hasAccess, isHOD, profile?.departmentId]);
 
   const classesQuery = useMemoFirebase(() => {
     if (!db || !hasAccess) return null;
+    if (isHOD && profile?.departmentId) {
+       return query(collection(db, 'colleges', collegeId, 'classes'), where('departmentId', '==', profile.departmentId));
+    }
     return collection(db, 'colleges', collegeId, 'classes');
-  }, [db, hasAccess]);
+  }, [db, hasAccess, isHOD, profile?.departmentId]);
   
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
   const { data: depts, isLoading: deptsLoading } = useCollection(deptsQuery);

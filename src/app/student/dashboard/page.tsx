@@ -88,7 +88,7 @@ export default function StudentDashboard() {
           <div>
             <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Welcome, {profile?.firstName || 'Alex'}</h1>
             <p className="text-muted-foreground mt-1">
-              {profile?.departmentId || 'B.Tech Computer Science'} • Semester 5 • UG Program
+              {profile?.departmentId ? `${profile.departmentId.toUpperCase().replace('DEPT-', '')}` : 'General Studies'} • Semester {profile?.semester || '5'} • UG Program
             </p>
           </div>
         </div>

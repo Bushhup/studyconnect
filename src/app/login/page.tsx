@@ -98,6 +98,12 @@ export default function LoginPage() {
         throw new Error(`Identity not found in directory for ${email}. Run System Bootstrap.`);
       }
 
+      // Check if selected portal role matches user record role
+      if (userData.role !== selectedRole && !(userData.role === 'admin' && selectedRole === 'admin') && !(userData.role === 'hod' && selectedRole === 'admin')) {
+        await signOut(auth);
+        throw new Error(`You do not have permission to access the ${selectedRole} portal.`);
+      }
+
       toast({ title: 'Access Granted', description: `Welcome back, ${userData.firstName}.` });
       
       // Intelligent Routing
@@ -166,7 +172,7 @@ export default function LoginPage() {
                 <div>
                   <p className="text-xs font-bold text-amber-900 uppercase tracking-tight">System Initialization</p>
                   <p className="text-xs text-amber-800/80 leading-relaxed mt-1">
-                    If this is a fresh setup, click Bootstrap once to initialize the directory for <strong>shabu@gmail.com</strong> and other test accounts.
+                    If this is a fresh setup, click Bootstrap once to initialize the directory for <strong>admin@college.edu</strong> and other test accounts.
                   </p>
                 </div>
               </div>
