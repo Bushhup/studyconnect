@@ -155,7 +155,7 @@ export default function LoginPage() {
       let message = error.message || 'Incorrect credentials or account not provisioned.';
       
       if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-        message = 'Authentication failed. Ensure you have run "System Bootstrap" and used valid credentials.';
+        message = 'Authentication failed. Ensure you have run "System Bootstrap" and used valid credentials (e.g. admin@college.edu / minister123).';
       }
 
       toast({
@@ -239,7 +239,7 @@ export default function LoginPage() {
           <motion.div
             key="login-form"
             initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
+            animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, x: -20 }}
             className="w-full max-w-md"
           >
