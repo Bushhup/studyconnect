@@ -29,8 +29,8 @@ const navLinks = [
 export function Header() {
   const pathname = usePathname();
 
-  // Hide global header on admin, faculty, and student pages
-  if (pathname?.startsWith('/admin') || pathname?.startsWith('/faculty') || pathname?.startsWith('/student')) {
+  // Hide header on splash homepage and portal pages
+  if (pathname === '/' || pathname?.startsWith('/admin') || pathname?.startsWith('/faculty') || pathname?.startsWith('/student')) {
     return null;
   }
 

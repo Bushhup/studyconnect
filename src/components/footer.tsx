@@ -6,15 +6,15 @@ import { Logo } from "./logo";
 export function Footer() {
   const pathname = usePathname();
 
-  // Hide global footer on portal pages to avoid duplication
-  if (pathname?.startsWith('/admin') || pathname?.startsWith('/faculty') || pathname?.startsWith('/student')) {
+  // Hide global footer on splash home page and portal pages to avoid duplication
+  if (pathname === '/' || pathname?.startsWith('/admin') || pathname?.startsWith('/faculty') || pathname?.startsWith('/student')) {
     return null;
   }
 
   return (
     <footer className="border-t bg-secondary/30">
       <div className="container py-12 px-4 md:px-6 flex flex-col md:flex-row items-center justify-between gap-8">
-        <div className="flex items-center gap-5">
+        <div className="flex items-center gap-6">
           <Logo className="h-8 w-8 text-primary" />
           <span className="font-bold font-headline text-lg tracking-tight">StudyConnect</span>
         </div>
