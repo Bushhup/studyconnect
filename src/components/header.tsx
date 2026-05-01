@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -29,17 +30,27 @@ const navLinks = [
 export function Header() {
   const pathname = usePathname();
 
-  // Hide header on splash homepage and portal pages
-  if (pathname === '/' || pathname?.startsWith('/admin') || pathname?.startsWith('/faculty') || pathname?.startsWith('/student')) {
+  // Hide header on portal pages where sidebars/hubs take priority
+  if (pathname?.startsWith('/admin') || pathname?.startsWith('/faculty') || pathname?.startsWith('/student')) {
     return null;
   }
 
+  const isHomePage = pathname === '/';
+
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className={cn(
+      "fixed top-0 z-50 w-full transition-all duration-500",
+      isHomePage 
+        ? "bg-black/20 backdrop-blur-md border-white/10" 
+        : "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+    )}>
       <div className="container h-16 flex items-center px-4 md:px-6">
-        <Link href="/" className="flex items-center gap-5 mr-auto hover:opacity-90 transition-opacity">
+        <Link href="/" className="flex items-center gap-4 mr-auto hover:opacity-90 transition-opacity">
           <Logo className="h-9 w-9 text-primary" />
-          <span className="font-bold font-headline text-xl tracking-tight">StudyConnect</span>
+          <span className={cn(
+            "font-bold font-headline text-xl tracking-tight",
+            isHomePage ? "text-white" : "text-foreground"
+          )}>StudyConnect</span>
         </Link>
 
         <nav className="hidden md:flex items-center gap-8 text-sm font-semibold">
@@ -49,7 +60,9 @@ export function Header() {
               href={link.href}
               className={cn(
                 'transition-colors hover:text-primary',
-                pathname === link.href ? 'text-primary' : 'text-muted-foreground'
+                pathname === link.href 
+                  ? 'text-primary' 
+                  : (isHomePage ? 'text-white/70 hover:text-white' : 'text-muted-foreground')
               )}
             >
               {link.label}
@@ -63,7 +76,10 @@ export function Header() {
           </div>
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="outline" size="icon" className="md:hidden rounded-xl border-primary/20">
+              <Button variant="outline" size="icon" className={cn(
+                "md:hidden rounded-xl",
+                isHomePage ? "border-white/20 bg-white/5 text-white" : "border-primary/20"
+              )}>
                 <Menu className="h-5 w-5" />
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
