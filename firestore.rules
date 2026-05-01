@@ -12,12 +12,12 @@ service cloud.firestore {
     }
 
     function getAuthEmail() {
-      return (isSignedIn() && request.auth.token.email != null) ? request.auth.token.email.lower() : null;
+      return (isSignedIn() && request.auth.token.email != null) ? request.auth.token.email.lower() : "no-auth";
     }
 
     function getUserData() {
       let email = getAuthEmail();
-      if (email == null) return null;
+      if (email == "no-auth") return null;
       let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(email);
       return exists(path) ? get(path).data : null;
     }
