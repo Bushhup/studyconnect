@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -42,11 +41,12 @@ export default function CourseManagementPage() {
   const isHOD = profile?.role === 'hod';
   const myDeptId = profile?.departmentId;
 
-  // Fetch Data (Scoped if HOD)
+  // Fetch Data - Scoped strictly for HODs
   const deptsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     const base = collection(firestore, 'colleges', collegeId, 'departments');
-    if (isHOD && myDeptId) {
+    if (isHOD) {
+      if (!myDeptId) return null;
       return query(base, where('id', '==', myDeptId));
     }
     return base;
@@ -55,7 +55,8 @@ export default function CourseManagementPage() {
   const coursesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     const base = collection(firestore, 'colleges', collegeId, 'courses');
-    if (isHOD && myDeptId) {
+    if (isHOD) {
+      if (!myDeptId) return null;
       return query(base, where('departmentId', '==', myDeptId));
     }
     return base;
@@ -64,7 +65,8 @@ export default function CourseManagementPage() {
   const classesQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     const base = collection(firestore, 'colleges', collegeId, 'classes');
-    if (isHOD && myDeptId) {
+    if (isHOD) {
+      if (!myDeptId) return null;
       return query(base, where('departmentId', '==', myDeptId));
     }
     return base;
@@ -73,7 +75,8 @@ export default function CourseManagementPage() {
   const facultyQuery = useMemoFirebase(() => {
     if (!firestore) return null;
     const base = collection(firestore, 'colleges', collegeId, 'users');
-    if (isHOD && myDeptId) {
+    if (isHOD) {
+      if (!myDeptId) return null;
       return query(base, where('departmentId', '==', myDeptId), where('role', '==', 'faculty'));
     }
     return query(base, where('role', '==', 'faculty'));

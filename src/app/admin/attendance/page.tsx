@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -50,14 +49,6 @@ const ATTENDANCE_CSV_COLUMNS: CsvColumn[] = [
   { key: 'date', label: 'Date', description: 'YYYY-MM-DD format.', example: '2024-10-24', required: false },
 ];
 
-const weeklyData = [
-  { label: 'Mon', engineering: 92, arts: 85, management: 88 },
-  { label: 'Tue', engineering: 95, arts: 87, management: 90 },
-  { label: 'Wed', engineering: 94, arts: 84, management: 89 },
-  { label: 'Thu', engineering: 91, arts: 82, management: 86 },
-  { label: 'Fri', engineering: 89, arts: 80, management: 85 },
-];
-
 export default function AttendancePage() {
   const { toast } = useToast();
   const firestore = useFirestore();
@@ -80,8 +71,10 @@ export default function AttendancePage() {
   }, [firestore]);
 
   const usersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
     const base = collection(firestore, 'colleges', collegeId, 'users');
-    if (isHOD && myDeptId) {
+    if (isHOD) {
+      if (!myDeptId) return null; // Strict guard
       return query(base, where('departmentId', '==', myDeptId));
     }
     return base;
@@ -133,7 +126,7 @@ export default function AttendancePage() {
             {isHOD ? 'Departmental Attendance' : 'Attendance Hub'}
           </h1>
           <p className="text-muted-foreground mt-1">
-            {isHOD ? `Monitoring presence and thresholds for ${myDeptId?.replace('dept-', '').toUpperCase()}.` : 'Cross-departmental presence monitoring and threshold alerts.'}
+            {isHOD ? `Monitoring presence for ${myDeptId?.replace('dept-', '').toUpperCase()}.` : 'Cross-departmental presence monitoring and threshold alerts.'}
           </p>
         </motion.div>
         <div className="flex gap-2">

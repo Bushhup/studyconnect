@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -8,8 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
-  Plus, Users, Clock, MapPin, Loader2, 
-  BookOpen, UserCheck, FileSpreadsheet
+  Plus, BookOpen, Search, Filter, 
+  Loader2, UserCheck, TrendingUp, Clock, 
+  Building2, GraduationCap, MapPin, Users
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -64,31 +64,34 @@ export default function ClassManagementPage() {
   const isHOD = profile?.role === 'hod';
   const myDeptId = profile?.departmentId;
 
-  // Fetch Classes (Scoped if HOD)
+  // Fetch Classes - Scoped strictly for HODs
   const classesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     const base = collection(firestore, 'colleges', collegeId, 'classes');
-    if (isHOD && myDeptId) {
+    if (isHOD) {
+      if (!myDeptId) return null;
       return query(base, where('departmentId', '==', myDeptId));
     }
     return base;
   }, [firestore, user, isHOD, myDeptId]);
 
-  // Fetch Departments (Scoped if HOD)
+  // Fetch Departments - Scoped strictly for HODs
   const deptsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     const base = collection(firestore, 'colleges', collegeId, 'departments');
-    if (isHOD && myDeptId) {
+    if (isHOD) {
+      if (!myDeptId) return null;
       return query(base, where('id', '==', myDeptId));
     }
     return base;
   }, [firestore, user, isHOD, myDeptId]);
 
-  // Fetch Users (Faculty) (Scoped if HOD)
+  // Fetch Users (Faculty) - Scoped strictly for HODs
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     const base = collection(firestore, 'colleges', collegeId, 'users');
-    if (isHOD && myDeptId) {
+    if (isHOD) {
+      if (!myDeptId) return null;
       return query(base, where('departmentId', '==', myDeptId), where('role', '==', 'faculty'));
     }
     return query(base, where('role', '==', 'faculty'));
@@ -133,10 +136,10 @@ export default function ClassManagementPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">
-            {isHOD ? 'Departmental Sections' : 'Sections & Classes'}
+            {isHOD ? `${departments?.[0]?.name || 'Departmental'} Sections` : 'Sections & Classes'}
           </h1>
           <p className="text-muted-foreground mt-1">
-            {isHOD ? `Managing class rosters and allocations for ${myDeptId?.replace('dept-', '').toUpperCase()}.` : 'Manage class schedules, instructor assignments, and room allocations.'}
+            {isHOD ? `Managing class rosters and allocations for your academic division.` : 'Manage class schedules, instructor assignments, and room allocations.'}
           </p>
         </div>
 
@@ -307,4 +310,3 @@ export default function ClassManagementPage() {
     </div>
   );
 }
-

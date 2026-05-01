@@ -58,38 +58,42 @@ export default function AdminDashboard() {
   const isAdmin = profile?.role === 'admin';
   const isHOD = profile?.role === 'hod';
   const hasAccess = isAdmin || isHOD;
+  const myDeptId = profile?.departmentId;
 
-  // Real data queries
+  // Real data queries - Strictly scoped for HODs
   const usersQuery = useMemoFirebase(() => {
     if (!db || !hasAccess) return null;
-    if (isHOD && profile?.departmentId) {
-      return query(collection(db, 'colleges', collegeId, 'users'), where('departmentId', '==', profile.departmentId));
+    if (isHOD) {
+      if (!myDeptId) return null; // Prevent global leak while profile is loading
+      return query(collection(db, 'colleges', collegeId, 'users'), where('departmentId', '==', myDeptId));
     }
     return collection(db, 'colleges', collegeId, 'users');
-  }, [db, hasAccess, isHOD, profile?.departmentId]);
+  }, [db, hasAccess, isHOD, myDeptId]);
 
   const deptsQuery = useMemoFirebase(() => {
     if (!db || !hasAccess) return null;
-    if (isHOD && profile?.departmentId) {
-       return query(collection(db, 'colleges', collegeId, 'departments'), where('id', '==', profile.departmentId));
+    if (isHOD) {
+       if (!myDeptId) return null;
+       return query(collection(db, 'colleges', collegeId, 'departments'), where('id', '==', myDeptId));
     }
     return collection(db, 'colleges', collegeId, 'departments');
-  }, [db, hasAccess, isHOD, profile?.departmentId]);
+  }, [db, hasAccess, isHOD, myDeptId]);
 
   const classesQuery = useMemoFirebase(() => {
     if (!db || !hasAccess) return null;
-    if (isHOD && profile?.departmentId) {
-       return query(collection(db, 'colleges', collegeId, 'classes'), where('departmentId', '==', profile.departmentId));
+    if (isHOD) {
+       if (!myDeptId) return null;
+       return query(collection(db, 'colleges', collegeId, 'classes'), where('departmentId', '==', myDeptId));
     }
     return collection(db, 'colleges', collegeId, 'classes');
-  }, [db, hasAccess, isHOD, profile?.departmentId]);
+  }, [db, hasAccess, isHOD, myDeptId]);
   
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
   const { data: depts, isLoading: deptsLoading } = useCollection(deptsQuery);
   const { data: classes } = useCollection(classesQuery);
 
-  const myDept = isHOD ? depts?.find(d => d.id === profile?.departmentId) : null;
-  const hubTitle = isHOD ? (myDept?.name || profile?.departmentId || 'Departmental') + ' Hub' : 'Institutional Command Center';
+  const myDept = isHOD ? depts?.find(d => d.id === myDeptId) : null;
+  const hubTitle = isHOD ? (myDept?.name || 'Departmental') + ' Hub' : 'Institutional Command Center';
 
   const studentCount = users?.filter(u => u.role === 'student').length || 0;
   const facultyCount = users?.filter(u => u.role === 'faculty').length || 0;
@@ -136,7 +140,7 @@ export default function AdminDashboard() {
   }
 
   const stats = [
-    { label: isHOD ? 'My Division' : 'Divisions', value: deptCount.toString(), icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50', link: isHOD ? `/admin/department-portal?id=${profile?.departmentId}` : '/admin/departments' },
+    { label: isHOD ? 'My Division' : 'Divisions', value: deptCount.toString(), icon: Building2, color: 'text-blue-600', bg: 'bg-blue-50', link: isHOD ? `/admin/department-portal?id=${myDeptId}` : '/admin/departments' },
     { label: 'Active Classes', value: classCount.toString(), icon: BookOpen, color: 'text-purple-600', bg: 'bg-purple-50', link: '/admin/classes' },
     { label: 'Total Faculty', value: facultyCount.toString(), icon: Users, color: 'text-emerald-600', bg: 'bg-emerald-50', link: '/admin/faculty' },
     { label: 'Total Students', value: studentCount.toString(), icon: GraduationCap, color: 'text-amber-600', bg: 'bg-amber-50', link: '/admin/students' },
@@ -156,7 +160,7 @@ export default function AdminDashboard() {
         <div className="flex gap-2">
           {isHOD && (
             <Button variant="outline" className="rounded-full gap-2 bg-card" asChild>
-              <Link href={`/admin/department-portal?id=${profile?.departmentId}`}>
+              <Link href={`/admin/department-portal?id=${myDeptId}`}>
                 Division Portal <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>

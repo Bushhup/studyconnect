@@ -97,11 +97,15 @@ export default function UserManagementPage() {
   const isHOD = profile?.role === 'hod';
   const myDeptId = profile?.departmentId;
 
-  // Data Queries
+  // Data Queries - Strictly Scoped for HODs
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     const base = collection(firestore, 'colleges', collegeId, 'users');
-    if (isHOD && myDeptId) {
+    
+    // If HOD, strictly limit to their department. 
+    // If profile is loading, return null to prevent global data leak.
+    if (isHOD) {
+      if (!myDeptId) return null;
       return query(base, where('departmentId', '==', myDeptId));
     }
     return base;
@@ -250,7 +254,7 @@ export default function UserManagementPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">
-            {isHOD ? `${myDeptId?.toUpperCase().replace('DEPT-', '')} Directory` : 'Identity Hub'}
+            {isHOD ? `${departments?.find(d => d.id === myDeptId)?.name || 'Departmental'} Directory` : 'Identity Hub'}
           </h1>
           <p className="text-muted-foreground mt-1">Manage personnel by provisioning their institutional profiles and credentials.</p>
         </motion.div>

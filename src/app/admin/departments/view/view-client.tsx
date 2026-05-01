@@ -1,7 +1,7 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useSearchParams, useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
 import { 
   useDoc, 
   useCollection, 
@@ -47,6 +47,7 @@ const STUDENT_COLUMNS = ['firstName', 'lastName', 'email', 'mobileNumber', 'batc
 
 export default function DepartmentViewClient() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const id = searchParams.get('id');
   const firestore = useFirestore();
   const { user } = useUser();
@@ -69,6 +70,14 @@ export default function DepartmentViewClient() {
   const isAdmin = profile?.role === 'admin';
   const isHOD = profile?.role === 'hod';
   const myDeptId = profile?.departmentId;
+
+  // Security Check: Redirect HOD if they try to access a department they don't own
+  useEffect(() => {
+    if (!profileLoading && isHOD && id && id !== myDeptId) {
+      router.replace('/admin/dashboard');
+      toast({ variant: 'destructive', title: 'Access Restricted', description: 'HODs are restricted to their assigned department portals.' });
+    }
+  }, [profileLoading, isHOD, id, myDeptId, router]);
 
   // Data lookups
   const deptRef = useMemoFirebase(() => id ? doc(firestore, 'colleges', collegeId, 'departments', id) : null, [firestore, id]);
@@ -95,22 +104,9 @@ export default function DepartmentViewClient() {
     );
   }
 
-  // Scoping Security Check
+  // Double-Check Scoping Security 
   if (isHOD && id !== myDeptId) {
-    return (
-      <div className="flex flex-col items-center justify-center p-40 gap-6 text-center">
-        <AlertCircle className="h-16 w-16 text-red-500" />
-        <div>
-          <h2 className="text-2xl font-bold">Scoped Access Restricted</h2>
-          <p className="text-muted-foreground max-w-md mx-auto mt-2">
-            You are authorized to manage <strong>{profile?.departmentId}</strong>. Access to other academic divisions is limited to institutional administrators.
-          </p>
-        </div>
-        <Button asChild className="rounded-full">
-          <Link href="/admin/dashboard">Return to Dashboard</Link>
-        </Button>
-      </div>
-    );
+    return null; // The useEffect handle redirection, this prevents flash of data
   }
 
   const students = deptUsers?.filter(u => u.role === 'student' && u.status !== 'alumni') || [];
