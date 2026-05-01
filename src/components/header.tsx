@@ -44,7 +44,7 @@ export function Header() {
         ? "bg-black/20 backdrop-blur-md border-white/10" 
         : "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
     )}>
-      <div className="container h-16 flex items-center px-4 md:px-6">
+      <div className="container h-16 flex items-center px-4 md:px-4 lg:px-6">
         <Link href="/" className="flex items-center gap-4 mr-auto hover:opacity-90 transition-opacity">
           <Logo className="h-9 w-9 text-primary" />
           <span className={cn(
@@ -70,7 +70,7 @@ export function Header() {
           ))}
         </nav>
         
-        <div className="flex items-center gap-3 ml-4 md:ml-8">
+        <div className="flex items-center gap-3 ml-4 md:ml-16">
           <div className="flex items-center gap-3">
             <UserNav />
           </div>
@@ -121,3 +121,4 @@ export function Header() {
     </header>
   );
 }
+

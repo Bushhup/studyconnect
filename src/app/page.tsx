@@ -22,6 +22,7 @@ import { useFirestore, useDoc, useMemoFirebase, useCollection } from '@/firebase
 import { doc, collection } from 'firebase/firestore';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 const collegeId = 'study-connect-college';
 
@@ -75,7 +76,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="max-w-4xl mx-auto pt-20"
+            className="max-w-4xl mx-auto pt-10 pb-40 md:pb-32"
           >
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-headline font-bold tracking-tight mb-6 drop-shadow-2xl">
               {profile?.name || 'StudyConnect Enterprise Institute'}
@@ -101,7 +102,7 @@ export default function Home() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 2, duration: 1 }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
         >
           <p className="text-[10px] font-bold uppercase tracking-[0.3em] text-white/40">Scroll to Explore</p>
           <div className="w-px h-12 bg-gradient-to-b from-white/40 to-transparent" />
@@ -320,6 +321,3 @@ export default function Home() {
   );
 }
 
-function cn(...inputs: any[]) {
-  return inputs.filter(Boolean).join(' ');
-}
