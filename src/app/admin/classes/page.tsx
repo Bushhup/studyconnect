@@ -2,8 +2,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, useUser } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useMemoFirebase, useFirestore, addDocumentNonBlocking, useUser, useDoc } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -54,33 +54,54 @@ export default function ClassManagementPage() {
   const [selectedDept, setSelectedDept] = useState('');
   const [selectedFaculty, setSelectedFaculty] = useState('');
 
-  // Fetch Classes
+  // Fetch Current Profile for Scoping
+  const profileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
+  }, [firestore, user?.email]);
+  const { data: profile } = useDoc(profileRef);
+
+  const isHOD = profile?.role === 'hod';
+  const myDeptId = profile?.departmentId;
+
+  // Fetch Classes (Scoped if HOD)
   const classesQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return collection(firestore, 'colleges', collegeId, 'classes');
-  }, [firestore, user]);
+    const base = collection(firestore, 'colleges', collegeId, 'classes');
+    if (isHOD && myDeptId) {
+      return query(base, where('departmentId', '==', myDeptId));
+    }
+    return base;
+  }, [firestore, user, isHOD, myDeptId]);
 
-  // Fetch Departments for mapping
+  // Fetch Departments (Scoped if HOD)
   const deptsQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return collection(firestore, 'colleges', collegeId, 'departments');
-  }, [firestore, user]);
+    const base = collection(firestore, 'colleges', collegeId, 'departments');
+    if (isHOD && myDeptId) {
+      return query(base, where('id', '==', myDeptId));
+    }
+    return base;
+  }, [firestore, user, isHOD, myDeptId]);
 
-  // Fetch Users (Faculty) for mapping
+  // Fetch Users (Faculty) (Scoped if HOD)
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return collection(firestore, 'colleges', collegeId, 'users');
-  }, [firestore, user]);
+    const base = collection(firestore, 'colleges', collegeId, 'users');
+    if (isHOD && myDeptId) {
+      return query(base, where('departmentId', '==', myDeptId), where('role', '==', 'faculty'));
+    }
+    return query(base, where('role', '==', 'faculty'));
+  }, [firestore, user, isHOD, myDeptId]);
 
   const { data: classes, isLoading: classesLoading } = useCollection(classesQuery);
   const { data: departments } = useCollection(deptsQuery);
-  const { data: users } = useCollection(usersQuery);
-
-  const facultyMembers = users?.filter(u => u.role === 'faculty') || [];
+  const { data: facultyMembers } = useCollection(usersQuery);
 
   const handleCreateClass = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newClassName || !selectedDept) return;
+    const deptToAssign = isHOD ? myDeptId : selectedDept;
+    if (!newClassName || !deptToAssign) return;
 
     setIsSubmitting(true);
     const classesRef = collection(firestore, 'colleges', collegeId, 'classes');
@@ -88,7 +109,7 @@ export default function ClassManagementPage() {
     addDocumentNonBlocking(classesRef, {
       id: crypto.randomUUID(),
       name: newClassName,
-      departmentId: selectedDept,
+      departmentId: deptToAssign,
       facultyId: selectedFaculty,
       createdAt: new Date().toISOString(),
     });
@@ -111,19 +132,23 @@ export default function ClassManagementPage() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Sections & Classes</h1>
-          <p className="text-muted-foreground mt-1">Manage class schedules, instructor assignments, and room allocations.</p>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">
+            {isHOD ? 'Departmental Sections' : 'Sections & Classes'}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {isHOD ? `Managing class rosters and allocations for ${myDeptId?.replace('dept-', '').toUpperCase()}.` : 'Manage class schedules, instructor assignments, and room allocations.'}
+          </p>
         </div>
 
         <div className="flex gap-2">
           <CsvImportDialog 
             title="Bulk Schedule Sections"
-            description="Upload a CSV to provision multiple class sections across various departments."
+            description="Upload a CSV to provision multiple class sections."
             columns={CLASS_CSV_COLUMNS}
           />
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
-              <Button className="gap-2 shadow-lg shadow-primary/20">
+              <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
                 <Plus className="h-4 w-4" /> Create New Class
               </Button>
             </DialogTrigger>
@@ -146,19 +171,21 @@ export default function ClassManagementPage() {
                   />
                 </div>
 
-                <div className="space-y-2">
-                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Department</Label>
-                  <Select onValueChange={setSelectedDept} value={selectedDept}>
-                    <SelectTrigger className="bg-muted border-none shadow-none">
-                      <SelectValue placeholder="Select Academic Department" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-card">
-                      {departments?.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {!isHOD && (
+                  <div className="space-y-2">
+                    <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Department</Label>
+                    <Select onValueChange={setSelectedDept} value={selectedDept}>
+                      <SelectTrigger className="bg-muted border-none shadow-none">
+                        <SelectValue placeholder="Select Academic Department" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-card">
+                        {departments?.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.id}>{dept.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <div className="space-y-2">
                   <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Assigned Instructor (Optional)</Label>
@@ -167,8 +194,8 @@ export default function ClassManagementPage() {
                       <SelectValue placeholder="Assign a Faculty Member" />
                     </SelectTrigger>
                     <SelectContent className="bg-card">
-                      {facultyMembers.map((member) => (
-                        <SelectItem key={member.id} value={member.id}>
+                      {facultyMembers?.map((member) => (
+                        <SelectItem key={member.id} value={member.email}>
                           Dr. {member.firstName} {member.lastName}
                         </SelectItem>
                       ))}
@@ -195,7 +222,7 @@ export default function ClassManagementPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {classes?.map((item) => {
             const dept = departments?.find(d => d.id === item.departmentId);
-            const instructor = users?.find(u => u.id === item.facultyId);
+            const instructor = facultyMembers?.find(u => u.email === item.facultyId);
             
             return (
               <Card key={item.id} className="hover:shadow-md transition-all border-none shadow-sm group overflow-hidden bg-card rounded-2xl">
@@ -218,7 +245,7 @@ export default function ClassManagementPage() {
                       <div className="p-1.5 bg-primary/10 rounded-lg">
                         <Users className="h-3.5 w-3.5 text-primary" />
                       </div>
-                      <span className="font-semibold text-xs text-foreground">45 Students</span>
+                      <span className="font-semibold text-xs text-foreground">{item.studentIds?.length || 0} Students</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <div className="p-1.5 bg-emerald-500/10 rounded-lg">
@@ -240,7 +267,7 @@ export default function ClassManagementPage() {
                     <div className="flex items-center gap-3">
                       <Avatar className="h-10 w-10 border-2 border-background shadow-sm ring-1 ring-border">
                         <AvatarImage src={instructor?.photoURL} />
-                        <AvatarFallback className="bg-primary/5 text-primary font-bold">
+                        <AvatarFallback className="bg-primary/5 text-primary font-bold text-[10px]">
                           {instructor?.firstName?.[0] || 'F'}{instructor?.lastName?.[0] || 'M'}
                         </AvatarFallback>
                       </Avatar>
@@ -249,7 +276,7 @@ export default function ClassManagementPage() {
                           {instructor ? `Dr. ${instructor.firstName} ${instructor.lastName}` : 'TBD'}
                         </span>
                         <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">
-                          Department Lead
+                          Verified Faculty
                         </span>
                       </div>
                     </div>
@@ -264,11 +291,11 @@ export default function ClassManagementPage() {
           })}
           
           {classes?.length === 0 && !isLoading && (
-            <div className="col-span-full py-24 text-center border-2 border-dashed rounded-[2rem] bg-muted/20">
+            <div className="col-span-full py-24 text-center border-2 border-dashed rounded-[3rem] bg-muted/20">
               <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground/20" />
               <p className="font-bold text-foreground">No classes scheduled yet</p>
               <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
-                Begin by creating a new section and assigning it to a faculty member.
+                {isHOD ? 'Your departmental section roster is currently empty.' : 'Begin by creating a new section and assigning it to a faculty member.'}
               </p>
               <Button variant="link" className="mt-4 font-bold text-primary" onClick={() => setIsAddOpen(true)}>
                 Add your first section
@@ -280,3 +307,4 @@ export default function ClassManagementPage() {
     </div>
   );
 }
+

@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState } from 'react';
-import { useCollection, useMemoFirebase, useFirestore, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useMemoFirebase, useFirestore, useUser, useDoc } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -31,11 +32,53 @@ export default function CourseManagementPage() {
   const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch Data
-  const deptsQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'departments'), [firestore]);
-  const coursesQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'courses'), [firestore]);
-  const classesQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'classes'), [firestore]);
-  const facultyQuery = useMemoFirebase(() => query(collection(firestore, 'colleges', collegeId, 'users'), where('role', '==', 'faculty')), [firestore]);
+  // Fetch Current Profile for Scoping
+  const profileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
+  }, [firestore, user?.email]);
+  const { data: profile } = useDoc(profileRef);
+
+  const isHOD = profile?.role === 'hod';
+  const myDeptId = profile?.departmentId;
+
+  // Fetch Data (Scoped if HOD)
+  const deptsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const base = collection(firestore, 'colleges', collegeId, 'departments');
+    if (isHOD && myDeptId) {
+      return query(base, where('id', '==', myDeptId));
+    }
+    return base;
+  }, [firestore, isHOD, myDeptId]);
+
+  const coursesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const base = collection(firestore, 'colleges', collegeId, 'courses');
+    if (isHOD && myDeptId) {
+      return query(base, where('departmentId', '==', myDeptId));
+    }
+    return base;
+  }, [firestore, isHOD, myDeptId]);
+
+  const classesQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const base = collection(firestore, 'colleges', collegeId, 'classes');
+    if (isHOD && myDeptId) {
+      return query(base, where('departmentId', '==', myDeptId));
+    }
+    return base;
+  }, [firestore, isHOD, myDeptId]);
+
+  const facultyQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    const base = collection(firestore, 'colleges', collegeId, 'users');
+    if (isHOD && myDeptId) {
+      return query(base, where('departmentId', '==', myDeptId), where('role', '==', 'faculty'));
+    }
+    return query(base, where('role', '==', 'faculty'));
+  }, [firestore, isHOD, myDeptId]);
+
   const recordsQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'academicRecords'), [firestore]);
 
   const { data: depts, isLoading: deptsLoading } = useCollection(deptsQuery);
@@ -70,13 +113,17 @@ export default function CourseManagementPage() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Curriculum Master Ledger</h1>
-          <p className="text-muted-foreground mt-1">Cross-departmental subject monitoring with delivery analytics.</p>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">
+            {isHOD ? 'Departmental Curriculum' : 'Curriculum Master Ledger'}
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            {isHOD ? `Managing syllabus nodes and handlers for ${myDeptId?.replace('dept-', '').toUpperCase()}.` : 'Cross-departmental subject monitoring with delivery analytics.'}
+          </p>
         </div>
         <div className="flex gap-2">
           <CsvImportDialog 
             title="Bulk Syllabus Import"
-            description="Register entire curricula by uploading a CSV mapping codes, credits, and requirements."
+            description="Register entire curricula by uploading a CSV."
             columns={COURSE_CSV_COLUMNS}
           />
           <Button className="gap-2 shadow-lg shadow-primary/20 rounded-full h-11 px-6">
@@ -95,14 +142,13 @@ export default function CourseManagementPage() {
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        <div className="flex gap-2">
-           <Button variant="outline" size="sm" className="gap-2 rounded-full bg-card h-10 px-4 text-[10px] font-bold uppercase border-primary/10">
-             <Building2 className="h-3.5 w-3.5" /> Department Filter
-           </Button>
-           <Button variant="outline" size="sm" className="gap-2 rounded-full bg-card h-10 px-4 text-[10px] font-bold uppercase border-primary/10">
-             <TrendingUp className="h-3.5 w-3.5" /> Sorting: Performance
-           </Button>
-        </div>
+        {!isHOD && (
+          <div className="flex gap-2">
+             <Button variant="outline" size="sm" className="gap-2 rounded-full bg-card h-10 px-4 text-[10px] font-bold uppercase border-primary/10">
+               <Building2 className="h-3.5 w-3.5" /> Department Filter
+             </Button>
+          </div>
+        )}
       </div>
 
       <div className="space-y-12">
@@ -134,26 +180,18 @@ export default function CourseManagementPage() {
                   </TableHeader>
                   <TableBody>
                     {group.courses.map((course) => {
-                      // Find Handlers from Classes
+                      // Find Handlers
                       const relevantClasses = classes?.filter(cls => 
-                        Object.values(cls.subjectHandlers || {}).some(() => cls.timetable && Object.values(cls.timetable).some(day => Object.values(day).includes(course.id))) ||
                         cls.subjectHandlers?.[course.id]
                       ) || [];
                       
-                      const handlerIds = Array.from(new Set(relevantClasses.map(cls => cls.subjectHandlers?.[course.id]).filter(Boolean)));
-                      const handlers = facultyMembers?.filter(f => handlerIds.includes(f.email)) || [];
+                      const handlerEmails = Array.from(new Set(relevantClasses.map(cls => cls.subjectHandlers?.[course.id]).filter(Boolean)));
+                      const handlers = facultyMembers?.filter(f => handlerEmails.includes(f.email)) || [];
 
-                      // Aggregate Performance
+                      // Aggregate Performance (Client-side scoped)
                       const subjectRecords = records?.filter(r => r.subjectId === course.id) || [];
                       const avgAttendance = subjectRecords.length > 0 
                         ? Math.round(subjectRecords.reduce((acc, r) => acc + (r.attendance || 0), 0) / subjectRecords.length)
-                        : 0;
-
-                      const avgMarks = subjectRecords.length > 0
-                        ? Math.round(subjectRecords.reduce((acc, r) => {
-                            const total = (r.marks?.cat1 || 0) + (r.marks?.cat2 || 0) + (r.marks?.final || 0);
-                            return acc + total;
-                          }, 0) / subjectRecords.length)
                         : 0;
 
                       return (
@@ -190,17 +228,7 @@ export default function CourseManagementPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <div className="flex flex-col items-center gap-1">
-                              {avgMarks > 0 ? (
-                                <Badge className={cn(
-                                  "border-none font-bold text-[9px] px-2",
-                                  avgMarks > 85 ? "bg-emerald-500/10 text-emerald-600" : 
-                                  avgMarks > 70 ? "bg-blue-500/10 text-blue-600" : "bg-amber-500/10 text-amber-600"
-                                )}>
-                                  {avgMarks}% Index
-                                </Badge>
-                              ) : <span className="text-xs text-muted-foreground">No Data</span>}
-                            </div>
+                            <Badge className="bg-primary/5 text-primary border-none font-bold text-[8px] uppercase px-2">Verified Hub</Badge>
                           </TableCell>
                           <TableCell className="text-right pr-6">
                             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full hover:bg-primary/5 text-primary">
@@ -220,8 +248,7 @@ export default function CourseManagementPage() {
         {groupedCourses.length === 0 && !isLoading && (
           <div className="py-32 text-center border-2 border-dashed rounded-[3rem] bg-muted/20">
             <BookOpen className="h-12 w-12 mx-auto mb-4 text-muted-foreground/20" />
-            <p className="font-bold text-foreground">No curriculum data found for the current divisions.</p>
-            <p className="text-xs text-muted-foreground mt-1">Syllabus nodes are managed within individual Department Portals.</p>
+            <p className="font-bold text-foreground">No curriculum data found for this division.</p>
           </div>
         )}
       </div>

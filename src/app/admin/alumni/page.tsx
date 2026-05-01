@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState } from 'react';
-import { useCollection, useMemoFirebase, useFirestore, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useMemoFirebase, useFirestore, useUser, useDoc } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Input } from '@/components/ui/input';
@@ -18,10 +19,25 @@ export default function AlumniRegistryPage() {
   const { user } = useUser();
   const [search, setSearch] = useState('');
 
+  // Fetch Current Profile for Scoping
+  const profileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
+  }, [firestore, user?.email]);
+  const { data: profile } = useDoc(profileRef);
+
+  const isHOD = profile?.role === 'hod';
+  const myDeptId = profile?.departmentId;
+
+  // Alumni Query (Scoped if HOD)
   const alumniQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return query(collection(firestore, 'colleges', collegeId, 'users'), where('role', '==', 'student'), where('status', '==', 'alumni'));
-  }, [firestore, user]);
+    const base = collection(firestore, 'colleges', collegeId, 'users');
+    if (isHOD && myDeptId) {
+      return query(base, where('role', '==', 'student'), where('status', '==', 'alumni'), where('departmentId', '==', myDeptId));
+    }
+    return query(base, where('role', '==', 'student'), where('status', '==', 'alumni'));
+  }, [firestore, user, isHOD, myDeptId]);
 
   const deptsQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'departments'), [firestore]);
 
@@ -38,7 +54,9 @@ export default function AlumniRegistryPage() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Alumni Registry</h1>
-          <p className="text-muted-foreground mt-1">Directory of graduated students and institutional legacy records.</p>
+          <p className="text-muted-foreground mt-1">
+            {isHOD ? `Historical directory for ${myDeptId?.replace('dept-', '').toUpperCase()}.` : 'Directory of graduated students and institutional legacy records.'}
+          </p>
         </div>
         <Button variant="outline" className="rounded-full gap-2 bg-card border-primary/20 text-primary font-bold">
           < GraduationCap className="h-4 w-4" /> Global Alumni Portal
@@ -55,15 +73,6 @@ export default function AlumniRegistryPage() {
             <CardTitle className="text-2xl">{alumni?.length || 0}</CardTitle>
           </CardHeader>
         </Card>
-        <Card className="border-none shadow-sm bg-emerald-50/50 rounded-2xl">
-          <CardHeader className="pb-4">
-            <div className="flex items-center justify-between">
-              <CardDescription className="text-emerald-700 font-bold uppercase text-[10px] tracking-widest">Placement Rate</CardDescription>
-              <Award className="h-4 w-4 text-emerald-600" />
-            </div>
-            <CardTitle className="text-2xl">94.2%</CardTitle>
-          </CardHeader>
-        </Card>
       </div>
 
       <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
@@ -78,9 +87,6 @@ export default function AlumniRegistryPage() {
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
-            <Button variant="ghost" className="gap-2 text-xs font-bold uppercase tracking-tight text-primary">
-              <Filter className="h-3.5 w-3.5" /> Filter Results
-            </Button>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -93,7 +99,7 @@ export default function AlumniRegistryPage() {
                   <TableHead className="pl-6 py-4 font-bold text-foreground">Alumni Identity</TableHead>
                   <TableHead className="font-bold text-foreground">Department</TableHead>
                   <TableHead className="font-bold text-foreground">Batch</TableHead>
-                  <TableHead className="text-right pr-6 font-bold text-foreground">Contact</TableHead>
+                  <TableHead className="text-right pr-6 font-bold text-foreground">Portal</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -119,10 +125,7 @@ export default function AlumniRegistryPage() {
                         <Badge variant="secondary" className="bg-primary/5 text-primary border-none font-bold uppercase text-[9px] px-3">{a.batchYear || 'Legacy'}</Badge>
                       </TableCell>
                       <TableCell className="text-right pr-6">
-                        <div className="flex justify-end gap-2">
-                          <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 text-primary"><Mail className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon" className="rounded-full hover:bg-muted"><ExternalLink className="h-4 w-4 text-muted-foreground" /></Button>
-                        </div>
+                        <Button variant="ghost" size="icon" className="rounded-full hover:bg-primary/5 text-primary"><Mail className="h-4 w-4" /></Button>
                       </TableCell>
                     </TableRow>
                   );
