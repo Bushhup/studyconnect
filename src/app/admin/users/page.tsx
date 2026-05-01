@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -9,9 +8,10 @@ import {
   updateDocumentNonBlocking, 
   setDocumentNonBlocking,
   useUser,
+  useDoc,
   deleteDocumentNonBlocking
 } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, query, where } from 'firebase/firestore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -88,10 +88,24 @@ export default function UserManagementPage() {
     status: 'active'
   });
 
+  // Current User Profile for HOD Scoping
+  const profileRef = useMemoFirebase(() => {
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
+  }, [firestore, user?.email]);
+  const { data: profile } = useDoc(profileRef);
+  const isHOD = profile?.role === 'hod';
+  const myDeptId = profile?.departmentId;
+
+  // Data Queries
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
-    return collection(firestore, 'colleges', collegeId, 'users');
-  }, [firestore, user]);
+    const base = collection(firestore, 'colleges', collegeId, 'users');
+    if (isHOD && myDeptId) {
+      return query(base, where('departmentId', '==', myDeptId));
+    }
+    return base;
+  }, [firestore, user, isHOD, myDeptId]);
 
   const deptsQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'departments'), [firestore]);
 
@@ -162,7 +176,8 @@ export default function UserManagementPage() {
         id: emailKey,
         username: emailKey.split('@')[0],
         status: item.status || 'active',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        departmentId: isHOD ? myDeptId : item.departmentId
       }, { merge: true });
     });
   };
@@ -177,7 +192,8 @@ export default function UserManagementPage() {
       id: emailKey,
       email: emailKey,
       username: emailKey.split('@')[0],
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      departmentId: isHOD ? myDeptId : formData.departmentId
     }, { merge: true });
     toast({ title: 'Identity Provisioned', description: `User ${formData.firstName} has been added to the directory.` });
     setIsAddOpen(false);
@@ -233,8 +249,10 @@ export default function UserManagementPage() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Identity Hub</h1>
-          <p className="text-muted-foreground mt-1">Manage staff and students by provisioning their institutional profiles and credentials.</p>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">
+            {isHOD ? `${myDeptId?.toUpperCase().replace('DEPT-', '')} Directory` : 'Identity Hub'}
+          </h1>
+          <p className="text-muted-foreground mt-1">Manage personnel by provisioning their institutional profiles and credentials.</p>
         </motion.div>
         
         <div className="flex gap-2">
@@ -320,21 +338,23 @@ export default function UserManagementPage() {
                         <SelectItem value="student">Student</SelectItem>
                         <SelectItem value="faculty">Faculty</SelectItem>
                         <SelectItem value="hod">H.O.D</SelectItem>
-                        <SelectItem value="admin">Administrator</SelectItem>
+                        {!isHOD && <SelectItem value="admin">Administrator</SelectItem>}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Department Mapping</Label>
-                  <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId || "unassigned"}>
-                    <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Assign Department" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="unassigned">No Department</SelectItem>
-                      {departments?.map(d => <SelectItem key={`dept-${d.id}`} value={d.id}>{d.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
+                {!isHOD && (
+                  <div className="space-y-2">
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Department Mapping</Label>
+                    <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId || "unassigned"}>
+                      <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Assign Department" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="unassigned">No Department</SelectItem>
+                        {departments?.map(d => <SelectItem key={`dept-${d.id}`} value={d.id}>{d.name}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <Button type="submit" className="w-full h-14 font-bold shadow-lg shadow-primary/20 rounded-2xl text-lg uppercase tracking-tight">Finalize Provisioning</Button>
               </form>
             </DialogContent>
@@ -347,8 +367,8 @@ export default function UserManagementPage() {
           <TabsTrigger value="all" className="px-6 rounded-lg">All Records</TabsTrigger>
           <TabsTrigger value="student" className="px-6 rounded-lg">Students</TabsTrigger>
           <TabsTrigger value="faculty" className="px-6 rounded-lg">Faculty</TabsTrigger>
-          <TabsTrigger value="hod" className="px-6 rounded-lg">Heads</TabsTrigger>
-          <TabsTrigger value="admin" className="px-6 rounded-lg">Admins</TabsTrigger>
+          {!isHOD && <TabsTrigger value="hod" className="px-6 rounded-lg">Heads</TabsTrigger>}
+          {!isHOD && <TabsTrigger value="admin" className="px-6 rounded-lg">Admins</TabsTrigger>}
         </TabsList>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -357,18 +377,20 @@ export default function UserManagementPage() {
             <Input placeholder="Search name or email..." className="pl-10 h-11 rounded-xl border-none shadow-sm bg-card" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
 
-          <Select value={deptFilter} onValueChange={setDeptFilter}>
-            <SelectTrigger className="h-11 rounded-xl bg-card border-none shadow-sm font-medium">
-              <div className="flex items-center gap-2">
-                <Building2 className="h-4 w-4 text-primary" />
-                <SelectValue placeholder="All Departments" />
-              </div>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Departments</SelectItem>
-              {departments?.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          {!isHOD && (
+            <Select value={deptFilter} onValueChange={setDeptFilter}>
+              <SelectTrigger className="h-11 rounded-xl bg-card border-none shadow-sm font-medium">
+                <div className="flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  <SelectValue placeholder="All Departments" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Departments</SelectItem>
+                {departments?.map(d => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          )}
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="h-11 rounded-xl bg-card border-none shadow-sm font-medium">
@@ -518,34 +540,36 @@ export default function UserManagementPage() {
                     <SelectItem value="student">Student</SelectItem>
                     <SelectItem value="faculty">Faculty</SelectItem>
                     <SelectItem value="hod">H.O.D</SelectItem>
-                    <SelectItem value="admin">Administrator</SelectItem>
+                    {!isHOD && <SelectItem value="admin">Administrator</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase">Department</Label>
-                <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId || "unassigned"}>
-                  <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Assign Department" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="unassigned">No Department</SelectItem>
-                    {departments?.map(d => <SelectItem key={`edit-dept-${d.id}`} value={d.id}>{d.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            {!isHOD && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase">Department</Label>
+                  <Select onValueChange={(val) => setFormData({...formData, departmentId: val})} value={formData.departmentId || "unassigned"}>
+                    <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Assign Department" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">No Department</SelectItem>
+                      {departments?.map(d => <SelectItem key={`edit-dept-${d.id}`} value={d.id}>{d.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase">Status</Label>
+                  <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
+                    <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="alumni">Alumni</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase">Status</Label>
-                <Select onValueChange={(val) => setFormData({...formData, status: val})} value={formData.status}>
-                  <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="alumni">Alumni</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            )}
             <Button type="submit" className="w-full h-14 font-bold uppercase tracking-tight shadow-lg shadow-primary/20 rounded-2xl">Synchronize Record</Button>
           </form>
         </DialogContent>

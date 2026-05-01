@@ -54,7 +54,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [isOpen, setIsOpen] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [loopProgress, setLoopProgress] = useState(0);
-  const [position, setPosition] = useState({ x: -1000, y: -1000 }); // Initialize far off-screen
+  const [position, setPosition] = useState({ x: -1000, y: -1000 }); 
   const [mounted, setMounted] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isRotating, setIsRotating] = useState(false);
@@ -76,8 +76,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const filteredLinks = useMemo(() => {
     return adminLinks.filter(link => {
       if (isHOD) {
-        // HODs are restricted from sensitive global operations
-        return !['/admin/logs', '/admin/settings', '/admin/users'].includes(link.href);
+        // HODs are restricted from sensitive global college-level operations
+        return !['/admin/logs', '/admin/settings'].includes(link.href);
       }
       return true;
     });

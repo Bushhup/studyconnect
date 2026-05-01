@@ -111,24 +111,37 @@ export default function LoginPage() {
         ? username.toLowerCase().trim() 
         : `${username.toLowerCase().trim()}@college.edu`;
       
-      await signInWithEmailAndPassword(auth, email, password);
-
+      // Step 1: Institutional Directory Check (Firestore)
       const userRef = doc(firestore, 'colleges', collegeId, 'users', email);
       const userSnap = await getDoc(userRef);
       const userData = userSnap.data();
 
       if (!userData) {
-        await signOut(auth);
         throw new Error(`Identity not found in directory for ${email}. Please run System Bootstrap.`);
       }
 
-      // Authorization Logic: HODs can access the Admin portal
+      // Authorization Logic
       const isAdminPortal = selectedRole === 'admin';
       const isAuthorized = userData.role === selectedRole || (isAdminPortal && (userData.role === 'admin' || userData.role === 'hod'));
 
       if (!isAuthorized) {
-        await signOut(auth);
         throw new Error(`Access Denied: Your account role (${userData.role}) is not authorized for the ${selectedRole} gateway.`);
+      }
+
+      // Step 2: Authentication Attempt with Lazy Provisioning
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+      } catch (authError: any) {
+        // If user exists in Firestore but not Auth, provision them (Lazy Auth)
+        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
+          if (userData.password === password) {
+            await createUserWithEmailAndPassword(auth, email, password);
+          } else {
+            throw new Error("Invalid institutional credentials. Please verify your password.");
+          }
+        } else {
+          throw authError;
+        }
       }
 
       toast({ title: 'Access Granted', description: `Welcome back, ${userData.firstName}.` });
@@ -145,16 +158,10 @@ export default function LoginPage() {
 
     } catch (error: any) {
       console.error('Login error:', error);
-      let message = error.message;
-      
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-        message = 'Authentication failed. Please verify your credentials or run System Bootstrap if this is a fresh setup.';
-      }
-
       toast({
         variant: 'destructive',
         title: 'Security Alert',
-        description: message
+        description: error.message || 'Authentication failed.'
       });
       setIsLoading(false);
     }
