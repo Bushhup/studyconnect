@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from 'next/link';
@@ -70,7 +69,7 @@ export function Header() {
           ))}
         </nav>
         
-        <div className="flex items-center gap-3 ml-4 md:ml-16">
+        <div className="flex items-center gap-3 ml-4 md:ml-24">
           <div className="flex items-center gap-3">
             <UserNav />
           </div>
@@ -121,4 +120,3 @@ export function Header() {
     </header>
   );
 }
-

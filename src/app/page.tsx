@@ -1,4 +1,3 @@
-
 'use client';
 
 import Image from 'next/image';
@@ -76,7 +75,7 @@ export default function Home() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="max-w-4xl mx-auto pt-10 pb-40 md:pb-32"
+            className="max-w-4xl mx-auto pt-20 pb-48 md:pb-40"
           >
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-headline font-bold tracking-tight mb-6 drop-shadow-2xl">
               {profile?.name || 'StudyConnect Enterprise Institute'}
@@ -320,4 +319,3 @@ export default function Home() {
     </div>
   );
 }
-
