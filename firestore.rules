@@ -23,6 +23,7 @@ service cloud.firestore {
         email == 'admin@college.edu' ||
         email == 'shabu@gmail.com' ||
         email == 'shahabuddinosaid@gmail.com' ||
+        email == 'shabuddinaw@gmail.com' ||
         (getUserData() != null && getUserData().role == 'admin')
       );
     }
@@ -32,10 +33,8 @@ service cloud.firestore {
     }
 
     function isSystemUninitialized() {
-      // Allows bootstrap if the master admin records are missing
-      return !exists(/databases/$(database)/documents/colleges/study-connect-college/users/shabu@gmail.com) &&
-             !exists(/databases/$(database)/documents/colleges/study-connect-college/users/shahabuddinosaid@gmail.com) &&
-             !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu);
+      // Allows initial setup if the college document doesn't exist or doesn't have metadata
+      return !exists(/databases/$(database)/documents/colleges/study-connect-college);
     }
 
     match /colleges/{collegeId} {

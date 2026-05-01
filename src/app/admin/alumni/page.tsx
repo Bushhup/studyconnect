@@ -41,7 +41,7 @@ export default function AlumniRegistryPage() {
           <p className="text-muted-foreground mt-1">Directory of graduated students and institutional legacy records.</p>
         </div>
         <Button variant="outline" className="rounded-full gap-2 bg-card border-primary/20 text-primary font-bold">
-          <GraduationCap className="h-4 w-4" /> Global Alumni Portal
+          < GraduationCap className="h-4 w-4" /> Global Alumni Portal
         </Button>
       </div>
 

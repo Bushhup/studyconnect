@@ -35,15 +35,7 @@ export async function seedDatabase(db: Firestore) {
   }, { merge: true });
   await checkBatch();
 
-  // 2. Department Definitions
-  const DEPARTMENTS = [
-    { id: 'dept-cse', name: 'Computer Science and Engineering', type: 'UG', sems: 8, sections: ['A', 'B'] },
-    { id: 'dept-ece', name: 'Electronics and Communication', type: 'UG', sems: 8, sections: ['A', 'B'] },
-    { id: 'dept-mba', name: 'School of Business Management', type: 'PG', sems: 4, sections: ['A'] },
-    { id: 'dept-msc', name: 'Applied Data Science Hub', type: 'PG', sems: 4, sections: ['A'] },
-  ];
-
-  // Global Admins
+  // 2. Global Admins Registry
   const globalAdmins = [
     { email: 'shabu@gmail.com', fName: 'Shabu', lName: 'Osaid', pass: 'shabu123' },
     { email: 'shahabuddinosaid@gmail.com', fName: 'Shahabuddin', lName: 'Osaid', pass: 'shabu123' },
@@ -67,10 +59,17 @@ export async function seedDatabase(db: Firestore) {
     await checkBatch();
   }
 
+  // 3. Department Definitions
+  const DEPARTMENTS = [
+    { id: 'dept-cse', name: 'Computer Science and Engineering', type: 'UG', sems: 8, sections: ['A'] },
+    { id: 'dept-ece', name: 'Electronics and Communication', type: 'UG', sems: 8, sections: ['A'] },
+    { id: 'dept-mba', name: 'School of Business Management', type: 'PG', sems: 4, sections: ['A'] },
+  ];
+
   // Iterate Departments
   for (const dept of DEPARTMENTS) {
     const deptRef = doc(db, 'colleges', collegeId, 'departments', dept.id);
-    const hodName = `Dr. ${dept.name.split(' ')[0]} Head`;
+    const hodName = `Dr. ${dept.id.split('-')[1].toUpperCase()} Head`;
     const hodEmail = `hod.${dept.id.split('-')[1]}@college.edu`;
 
     batch.set(deptRef, {
@@ -99,8 +98,8 @@ export async function seedDatabase(db: Firestore) {
     }, { merge: true });
     await checkBatch();
 
-    // Create Faculty (8 per dept)
-    for (let f = 1; f <= 8; f++) {
+    // Create Faculty (3 per dept for fast seeding)
+    for (let f = 1; f <= 3; f++) {
       const fEmail = `faculty${f}.${dept.id.split('-')[1]}@college.edu`;
       const fUserRef = doc(db, 'colleges', collegeId, 'users', fEmail);
       batch.set(fUserRef, {
@@ -112,20 +111,19 @@ export async function seedDatabase(db: Firestore) {
         departmentId: dept.id,
         password: 'password123',
         status: 'active',
-        designation: f < 3 ? 'Professor' : 'Assistant Professor',
+        designation: f === 1 ? 'Professor' : 'Assistant Professor',
         mobileNumber: `99440 ${Math.floor(10000 + Math.random() * 90000)}`,
         createdAt: new Date().toISOString()
       }, { merge: true });
       await checkBatch();
       
-      // Detailed Faculty Profile
       const fProfRef = doc(db, 'colleges', collegeId, 'facultyProfiles', fEmail);
       batch.set(fProfRef, {
         userId: fEmail,
         fullName: `Dr. Faculty_${f} ${dept.id.split('-')[1].toUpperCase()}`,
         email: fEmail,
         employeeId: `FAC-${dept.id.split('-')[1].toUpperCase()}-${f}`,
-        designation: f < 3 ? 'Professor' : 'Assistant Professor',
+        designation: f === 1 ? 'Professor' : 'Assistant Professor',
         departmentId: dept.id,
         yearsOfExperience: 5 + f,
         employmentType: 'Permanent'
@@ -133,8 +131,8 @@ export async function seedDatabase(db: Firestore) {
       await checkBatch();
     }
 
-    // Create Classes and Students
-    for (let sem = 1; sem <= dept.sems; sem++) {
+    // Create Classes and Students (Limited for stability)
+    for (let sem = 1; sem <= Math.min(2, dept.sems); sem++) { // Only seed first 2 sems for fast bootstrap
       for (const sec of dept.sections) {
         const classId = `class-${dept.id.split('-')[1]}-s${sem}-${sec.toLowerCase()}`;
         const className = `${dept.name} - Sem ${sem} (Sec ${sec})`;
@@ -142,7 +140,7 @@ export async function seedDatabase(db: Firestore) {
         const classRef = doc(db, 'colleges', collegeId, 'classes', classId);
         
         const studentIds: string[] = [];
-        for (let s = 1; s <= 35; s++) {
+        for (let s = 1; s <= 5; s++) { // 5 students per section
           const sEmail = `s${s}.${classId}@college.edu`;
           studentIds.push(sEmail);
 
@@ -151,14 +149,13 @@ export async function seedDatabase(db: Firestore) {
             id: sEmail,
             email: sEmail,
             firstName: `Student_${s}`,
-            lastName: `Batch_${classId.split('-')[2].toUpperCase()}${sec}`,
+            lastName: `Batch_${sem}${sec}`,
             role: 'student',
             departmentId: dept.id,
             classId: classId,
             semester: sem.toString(),
             password: 'password123',
             status: 'active',
-            mobileNumber: `70100 ${Math.floor(10000 + Math.random() * 90000)}`,
             createdAt: new Date().toISOString()
           }, { merge: true });
           await checkBatch();
@@ -166,9 +163,8 @@ export async function seedDatabase(db: Firestore) {
           const sBioRef = doc(db, 'colleges', collegeId, 'studentProfiles', sEmail);
           batch.set(sBioRef, {
             userId: sEmail,
-            fullName: `Student_${s} Batch_${classId.split('-')[2].toUpperCase()}${sec}`,
+            fullName: `Student_${s} Batch_${sem}${sec}`,
             studentEmail: sEmail,
-            studentMobileNo: `70100 ${Math.floor(10000 + Math.random() * 90000)}`,
             gender: s % 2 === 0 ? 'Female' : 'Male',
             dateOfAdmission: new Date().toISOString(),
             nationality: 'Indian'
