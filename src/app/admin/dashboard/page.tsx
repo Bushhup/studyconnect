@@ -47,7 +47,7 @@ export default function AdminDashboard() {
   const { toast } = useToast();
   const [isSeeding, setIsSeeding] = useState(false);
 
-  // Use email as ID for institutional records
+  // User Profile
   const userProfileRef = useMemoFirebase(() => {
     if (!db || !user?.email) return null;
     return doc(db, 'colleges', collegeId, 'users', user.email.toLowerCase());

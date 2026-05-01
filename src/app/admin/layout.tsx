@@ -76,6 +76,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const filteredLinks = useMemo(() => {
     return adminLinks.filter(link => {
       if (isHOD) {
+        // HODs are restricted from sensitive global operations
         return !['/admin/logs', '/admin/settings', '/admin/users'].includes(link.href);
       }
       return true;
@@ -178,7 +179,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const onMove = useCallback((e: MouseEvent | TouchEvent) => {
     const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
-    const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
+    const clientY = 'touches' in e ? (e as TouchEvent).shadowRoot ? 0 : (e as MouseEvent).clientY : (e as MouseEvent).clientY;
 
     if (isDragging) {
       const padding = 40;
