@@ -46,6 +46,7 @@ export async function seedDatabase(db: Firestore) {
   // Global Admins
   const globalAdmins = [
     { email: 'shabu@gmail.com', fName: 'Shabu', lName: 'Osaid', pass: 'shabu123' },
+    { email: 'shahabuddinosaid@gmail.com', fName: 'Shahabuddin', lName: 'Osaid', pass: 'shabu123' },
     { email: 'shabuddinaw@gmail.com', fName: 'Shabuddin', lName: 'A', pass: 'shabu05413' },
     { email: 'admin@college.edu', fName: 'Master', lName: 'Admin', pass: 'minister123' }
   ];
@@ -140,7 +141,6 @@ export async function seedDatabase(db: Firestore) {
         
         const classRef = doc(db, 'colleges', collegeId, 'classes', classId);
         
-        // Generate 35 unique students per section
         const studentIds: string[] = [];
         for (let s = 1; s <= 35; s++) {
           const sEmail = `s${s}.${classId}@college.edu`;
@@ -163,7 +163,6 @@ export async function seedDatabase(db: Firestore) {
           }, { merge: true });
           await checkBatch();
 
-          // Detailed Student Profile
           const sBioRef = doc(db, 'colleges', collegeId, 'studentProfiles', sEmail);
           batch.set(sBioRef, {
             userId: sEmail,
@@ -191,6 +190,5 @@ export async function seedDatabase(db: Firestore) {
     }
   }
 
-  // Final Commit
   await batch.commit();
 }

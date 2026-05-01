@@ -4,7 +4,7 @@ service cloud.firestore {
 
     /**
      * STUDYCONNECT SECURITY RULES
-     * Implements "Bootstrap Loophole" and robust role-based access.
+     * Implements role-based access for College and Department Admins.
      */
 
     function isSignedIn() {
@@ -22,6 +22,7 @@ service cloud.firestore {
       return isSignedIn() && (
         email == 'admin@college.edu' ||
         email == 'shabu@gmail.com' ||
+        email == 'shahabuddinosaid@gmail.com' ||
         (getUserData() != null && getUserData().role == 'admin')
       );
     }
@@ -31,28 +32,25 @@ service cloud.firestore {
     }
 
     function isSystemUninitialized() {
-      // Allows bootstrap if the master admin record is missing
+      // Allows bootstrap if the master admin records are missing
       return !exists(/databases/$(database)/documents/colleges/study-connect-college/users/shabu@gmail.com) &&
+             !exists(/databases/$(database)/documents/colleges/study-connect-college/users/shahabuddinosaid@gmail.com) &&
              !exists(/databases/$(database)/documents/colleges/study-connect-college/users/admin@college.edu);
     }
 
     match /colleges/{collegeId} {
-      // Allow read for everyone to see the college name/tagline on home page
       allow get: if true;
-      // Allow write during bootstrap or if user is admin
       allow write, update: if isSystemUninitialized() || isAdmin();
 
       match /users/{userId} {
         allow get: if true; 
         allow list: if isAdmin() || (isSignedIn() && getUserData() != null && getUserData().role in ['faculty', 'hod']);
-        // Allow creation of records during bootstrap or by an existing admin
-        allow create, update, delete: if isSystemUninitialized() || isAdmin();
+        allow create, update, delete: if isSystemUninitialized() || isAdmin() || (isHOD() && getUserData().departmentId == resource.data.departmentId);
       }
 
       match /departments/{id} { 
         allow read: if true; 
-        // Allow admin or HOD to manage department metadata
-        allow write, update: if isSystemUninitialized() || isAdmin() || isHOD(); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isHOD() && getUserData().departmentId == id); 
       }
       
       match /classes/{id} { 
