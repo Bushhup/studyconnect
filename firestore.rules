@@ -11,14 +11,19 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function getAuthEmail() {
+      return (isSignedIn() && request.auth.token.email != null) ? request.auth.token.email.lower() : null;
+    }
+
     function getUserData() {
-      let email = request.auth.token.email.lower();
+      let email = getAuthEmail();
+      if (email == null) return null;
       let path = /databases/$(database)/documents/colleges/study-connect-college/users/$(email);
       return exists(path) ? get(path).data : null;
     }
 
     function isAdmin() {
-      let email = request.auth.token.email.lower();
+      let email = getAuthEmail();
       return isSignedIn() && (
         email == 'admin@college.edu' ||
         email == 'shabu@gmail.com' ||
@@ -33,7 +38,7 @@ service cloud.firestore {
     }
 
     function isSystemUninitialized() {
-      // Allows initial setup if the college document doesn't exist or doesn't have metadata
+      // Allows initial setup if the college document doesn't exist
       return !exists(/databases/$(database)/documents/colleges/study-connect-college);
     }
 
@@ -69,12 +74,12 @@ service cloud.firestore {
 
       match /studentProfiles/{userId} { 
         allow read: if isSignedIn(); 
-        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getAuthEmail() == userId.lower()); 
       }
       
       match /facultyProfiles/{userId} { 
         allow read: if isSignedIn(); 
-        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && request.auth.token.email.lower() == userId.lower()); 
+        allow write, update: if isSystemUninitialized() || isAdmin() || (isSignedIn() && getAuthEmail() == userId.lower()); 
       }
 
       match /achievements/{id} { 
