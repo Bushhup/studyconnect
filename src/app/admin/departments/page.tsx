@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -64,7 +63,7 @@ export default function DepartmentManagement() {
 
   // Creation Form State
   const [name, setName] = useState('');
-  const [hodName, setHodName] = useState('');
+  const [hodEmail, setHodEmail] = useState('');
   const [programType, setProgramType] = useState<'UG' | 'PG'>('UG');
   const [totalSemesters, setTotalSemesters] = useState('8');
   const [imageUrl, setImageUrl] = useState('');
@@ -74,6 +73,7 @@ export default function DepartmentManagement() {
   const [editData, setEditData] = useState({
     name: '',
     headOfDept: '',
+    hodEmail: '',
     programType: 'UG' as 'UG' | 'PG',
     totalSemesters: '8',
     imageUrl: ''
@@ -140,18 +140,33 @@ export default function DepartmentManagement() {
     const id = name.toLowerCase().replace(/\s+/g, '-').slice(0, 20) + '-' + Math.random().toString(36).substr(2, 4);
     const deptRef = doc(firestore, 'colleges', collegeId, 'departments', id);
     
+    // Find HOD Name from Email
+    const hod = potentialLeaders.find(u => u.email === hodEmail);
+    const hodDisplayName = hod ? `${hod.firstName} ${hod.lastName}` : 'Unassigned';
+
     setDocumentNonBlocking(deptRef, {
       id,
       name,
-      headOfDept: hodName,
+      headOfDept: hodDisplayName,
+      hodEmail,
       programType,
       imageUrl,
       totalSemesters: parseInt(totalSemesters) || 8,
       createdAt: new Date().toISOString()
     }, { merge: true });
 
+    // Sync HOD user role if selected
+    if (hodEmail) {
+      const userRef = doc(firestore, 'colleges', collegeId, 'users', hodEmail.toLowerCase());
+      updateDocumentNonBlocking(userRef, { 
+        role: 'hod', 
+        departmentId: id,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
     toast({ title: 'Division Provisioned', description: `${name} has been added to the institutional architecture.` });
-    setName(''); setHodName(''); setProgramType('UG'); setTotalSemesters('8'); setImageUrl('');
+    setName(''); setHodEmail(''); setProgramType('UG'); setTotalSemesters('8'); setImageUrl('');
     setIsCreateOpen(false);
   };
 
@@ -160,6 +175,7 @@ export default function DepartmentManagement() {
     setEditData({
       name: dept.name || '',
       headOfDept: dept.headOfDept || '',
+      hodEmail: dept.hodEmail || '',
       programType: (dept.programType as 'UG' | 'PG') || 'UG',
       totalSemesters: dept.totalSemesters?.toString() || '8',
       imageUrl: dept.imageUrl || ''
@@ -172,14 +188,30 @@ export default function DepartmentManagement() {
     if (!editingDept || !hasWriteAccess) return;
 
     const deptRef = doc(firestore, 'colleges', collegeId, 'departments', editingDept.id);
+    
+    // Find HOD Name from Email
+    const hod = potentialLeaders.find(u => u.email === editData.hodEmail);
+    const hodDisplayName = hod ? `${hod.firstName} ${hod.lastName}` : editData.headOfDept;
+
     updateDocumentNonBlocking(deptRef, {
       name: editData.name,
-      headOfDept: editData.headOfDept,
+      headOfDept: hodDisplayName,
+      hodEmail: editData.hodEmail,
       programType: editData.programType,
       imageUrl: editData.imageUrl,
       totalSemesters: parseInt(editData.totalSemesters) || 8,
       updatedAt: new Date().toISOString()
     });
+
+    // Sync HOD user role if selected
+    if (editData.hodEmail) {
+      const userRef = doc(firestore, 'colleges', collegeId, 'users', editData.hodEmail.toLowerCase());
+      updateDocumentNonBlocking(userRef, { 
+        role: 'hod', 
+        departmentId: editingDept.id,
+        updatedAt: new Date().toISOString()
+      });
+    }
 
     toast({ title: 'Division Updated', description: `${editData.name} details have been synchronized.` });
     setIsEditOpen(false);
@@ -253,13 +285,13 @@ export default function DepartmentManagement() {
                     
                     <div className="space-y-2">
                       <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Assign Head of Department (Dean)</Label>
-                      <Select onValueChange={setHodName} value={hodName}>
+                      <Select onValueChange={setHodEmail} value={hodEmail}>
                         <SelectTrigger className="bg-muted border-none h-14 rounded-2xl px-6">
                           <SelectValue placeholder="Select existing leader..." />
                         </SelectTrigger>
                         <SelectContent className="bg-card max-h-60 overflow-y-auto">
                           {potentialLeaders.map((u) => (
-                            <SelectItem key={u.id} value={`${u.firstName} ${u.lastName}`}>
+                            <SelectItem key={u.id} value={u.email}>
                               <div className="flex flex-col">
                                 <span className="font-bold">{u.firstName} {u.lastName}</span>
                                 <span className="text-[10px] uppercase text-muted-foreground">{u.role} • {u.email}</span>
@@ -476,13 +508,13 @@ export default function DepartmentManagement() {
               
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-widest ml-1 opacity-50">Head of Department (Lead)</Label>
-                <Select onValueChange={(v) => setEditData({...editData, headOfDept: v})} value={editData.headOfDept}>
+                <Select onValueChange={(v) => setEditData({...editData, hodEmail: v})} value={editData.hodEmail}>
                   <SelectTrigger className="bg-muted border-none h-14 rounded-2xl px-6">
                     <SelectValue placeholder="Assign Leader..." />
                   </SelectTrigger>
                   <SelectContent className="bg-card max-h-60 overflow-y-auto">
                     {potentialLeaders.map((u) => (
-                      <SelectItem key={u.id} value={`${u.firstName} ${u.lastName}`}>
+                      <SelectItem key={u.id} value={u.email}>
                         <div className="flex flex-col">
                           <span className="font-bold">{u.firstName} {u.lastName}</span>
                           <span className="text-[10px] uppercase text-muted-foreground">{u.role}</span>
