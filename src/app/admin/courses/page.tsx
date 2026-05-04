@@ -7,7 +7,9 @@ import {
   useFirestore, 
   useUser, 
   useDoc, 
-  setDocumentNonBlocking 
+  setDocumentNonBlocking,
+  deleteDocumentNonBlocking,
+  updateDocumentNonBlocking
 } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -19,7 +21,7 @@ import {
   Loader2, UserCheck, TrendingUp, Clock, 
   Building2, GraduationCap, ArrowUpRight, 
   Database, Info, Layers, BookPlus, LayoutGrid,
-  Trash2, Edit3, MoreHorizontal
+  Trash2, Edit3, Save, X
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
@@ -35,6 +37,17 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -53,7 +66,11 @@ export default function CourseManagementPage() {
   const firestore = useFirestore();
   const { user } = useUser();
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Dialog States
   const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const [editingCourse, setEditingCourse] = useState<any>(null);
 
   // Creation Form State
   const [newName, setNewName] = useState('');
@@ -178,6 +195,34 @@ export default function CourseManagementPage() {
     toast({ title: 'Subject Provisioned', description: `${newCode} has been added to the master ledger.` });
     setIsAddOpen(false);
     setNewName(''); setNewCode(''); setNewCredits('4');
+  };
+
+  // Action Handlers
+  const handleOpenEdit = (course: any) => {
+    setEditingCourse(course);
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingCourse) return;
+
+    const courseRef = doc(firestore, 'colleges', collegeId, 'courses', editingCourse.id);
+    updateDocumentNonBlocking(courseRef, {
+      name: editingCourse.name,
+      code: editingCourse.code.toUpperCase(),
+      credits: parseInt(editingCourse.credits.toString()),
+      updatedAt: new Date().toISOString()
+    });
+
+    toast({ title: 'Syllabus Updated', description: 'Changes have been synchronized.' });
+    setIsEditOpen(false);
+  };
+
+  const handleDeleteCourse = (courseId: string, courseCode: string) => {
+    const courseRef = doc(firestore, 'colleges', collegeId, 'courses', courseId);
+    deleteDocumentNonBlocking(courseRef);
+    toast({ title: 'Subject Removed', description: `${courseCode} has been deleted from the curriculum.` });
   };
 
   if (isLoading) {
@@ -414,12 +459,30 @@ export default function CourseManagementPage() {
                           </TableCell>
                           <TableCell className="text-right pr-8">
                              <div className="flex justify-end gap-2">
-                               <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-primary/5 text-primary transition-all">
+                               <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-primary/5 text-primary transition-all" onClick={() => handleOpenEdit(course)}>
                                  <Edit3 className="h-4 w-4" />
                                </Button>
-                               <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-primary/10 text-primary transition-all">
-                                 <ArrowUpRight className="h-4 w-4" />
-                               </Button>
+                               <AlertDialog>
+                                 <AlertDialogTrigger asChild>
+                                   <Button variant="ghost" size="icon" className="h-9 w-9 rounded-xl hover:bg-red-50 text-red-500 transition-all">
+                                     <Trash2 className="h-4 w-4" />
+                                   </Button>
+                                 </AlertDialogTrigger>
+                                 <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl">
+                                   <AlertDialogHeader>
+                                     <AlertDialogTitle className="text-2xl font-headline">Decommission Subject?</AlertDialogTitle>
+                                     <AlertDialogDescription className="text-base">
+                                       Are you sure you want to remove <strong>{course.code}</strong> from the syllabus? This action will detach any existing handlers.
+                                     </AlertDialogDescription>
+                                   </AlertDialogHeader>
+                                   <AlertDialogFooter className="pt-4">
+                                     <AlertDialogCancel className="rounded-2xl border-none bg-muted h-12 px-6 font-bold uppercase text-[10px]">Cancel</AlertDialogCancel>
+                                     <AlertDialogAction onClick={() => handleDeleteCourse(course.id, course.code)} className="bg-destructive hover:bg-destructive/90 rounded-2xl h-12 px-6 font-bold uppercase text-[10px]">
+                                       Confirm Removal
+                                     </AlertDialogAction>
+                                   </AlertDialogFooter>
+                                 </AlertDialogContent>
+                               </AlertDialog>
                              </div>
                           </TableCell>
                         </TableRow>
@@ -444,7 +507,7 @@ export default function CourseManagementPage() {
             </div>
             <div className="space-y-3">
               <p className="text-2xl font-headline font-bold text-foreground">Curriculum Ledger Empty</p>
-              <p className="text-muted-foreground max-w-sm mx-auto leading-relaxed">Your academic syllabus hasn't been defined yet. Start by defining your first subject or use the bulk importer.</p>
+              <p className="text-muted-foreground max-sm mx-auto leading-relaxed">Your academic syllabus hasn't been defined yet. Start by defining your first subject or use the bulk importer.</p>
             </div>
             <Button onClick={() => setIsAddOpen(true)} className="rounded-full px-12 h-14 font-bold uppercase text-[10px] tracking-[0.2em] gap-3 shadow-2xl shadow-primary/20">
               <Plus className="h-5 w-5" /> Initialize Curriculum
@@ -452,6 +515,46 @@ export default function CourseManagementPage() {
           </motion.div>
         )}
       </div>
+
+      {/* Edit Subject Dialog */}
+      <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+        <DialogContent className="rounded-[2.5rem] border-none shadow-2xl bg-card max-w-md p-0 overflow-hidden">
+          <div className="h-2 w-full bg-primary" />
+          <div className="p-8">
+            <DialogHeader className="mb-6">
+              <DialogTitle className="text-2xl font-headline flex items-center gap-2">
+                <Edit3 className="h-6 w-6 text-primary" /> Modify Subject
+              </DialogTitle>
+              <DialogDescription className="text-base">Update the syllabus node credentials.</DialogDescription>
+            </DialogHeader>
+            {editingCourse && (
+              <form onSubmit={handleSaveEdit} className="space-y-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Course Code</Label>
+                  <Input value={editingCourse.code || ''} onChange={(e) => setEditingCourse({...editingCourse, code: e.target.value})} required className="bg-muted border-none h-14 rounded-2xl text-lg px-6 font-mono uppercase" />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Subject Title</Label>
+                  <Input value={editingCourse.name || ''} onChange={(e) => setEditingCourse({...editingCourse, name: e.target.value})} required className="bg-muted border-none h-14 rounded-2xl text-lg px-6" />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase text-muted-foreground ml-1">Academic Credits</Label>
+                  <Input type="number" value={editingCourse.credits || '4'} onChange={(e) => setEditingCourse({...editingCourse, credits: e.target.value})} className="bg-muted border-none h-14 rounded-2xl px-6 font-bold" />
+                </div>
+
+                <div className="flex gap-3 pt-4">
+                  <Button type="button" variant="ghost" onClick={() => setIsEditOpen(false)} className="h-14 flex-1 rounded-2xl font-bold">Cancel</Button>
+                  <Button type="submit" className="h-14 flex-[2] font-bold uppercase tracking-widest shadow-xl shadow-primary/20 rounded-2xl">
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
