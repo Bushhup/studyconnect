@@ -21,7 +21,7 @@ import {
   Loader2, UserCheck, TrendingUp, Clock, 
   Building2, GraduationCap, ArrowUpRight, 
   Database, Info, Layers, BookPlus, LayoutGrid,
-  Trash2, Edit3, Save, X
+  Trash2, Edit3, Save, X, AlertCircle
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
@@ -141,8 +141,8 @@ export default function CourseManagementPage() {
 
   // Aggregate Data
   const filteredCourses = courses?.filter(c => 
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    c.code.toLowerCase().includes(searchQuery.toLowerCase())
+    (c.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || 
+    (c.code || '').toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
   // Build Grouped List
