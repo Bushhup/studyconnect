@@ -21,7 +21,8 @@ import {
   Search, Plus, UserCog, Edit3, 
   Loader2, Phone, Trash2, Key, Download, CheckCircle2,
   Users, Filter, ShieldCheck, FileSpreadsheet,
-  Building2, Activity, ArrowUpDown, X
+  Building2, Activity, ArrowUpDown, X, CheckSquare, 
+  UserMinus, RefreshCw, ArrowRightLeft, MoreVertical
 } from 'lucide-react';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
@@ -41,6 +42,17 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { CsvImportDialog, type CsvColumn } from '@/components/CsvImportDialog';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 const collegeId = 'study-connect-college';
 
@@ -59,6 +71,9 @@ export default function UserManagementPage() {
   const { user } = useUser();
   const { toast } = useToast();
   
+  // Selection State
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  
   // Basic Search/Role
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('all');
@@ -72,6 +87,7 @@ export default function UserManagementPage() {
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isExportOpen, setIsExportOpen] = useState(false);
+  const [isBulkUpdateOpen, setIsBulkUpdateOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [exportRoles, setExportRoles] = useState<string[]>(['student', 'faculty', 'hod']);
 
@@ -88,6 +104,12 @@ export default function UserManagementPage() {
     status: 'active'
   });
 
+  const [bulkUpdateData, setBulkUpdateData] = useState<{
+    role?: string;
+    departmentId?: string;
+    status?: string;
+  }>({});
+
   // Current User Profile for HOD Scoping
   const profileRef = useMemoFirebase(() => {
     if (!firestore || !user?.email) return null;
@@ -101,9 +123,6 @@ export default function UserManagementPage() {
   const usersQuery = useMemoFirebase(() => {
     if (!firestore || !user) return null;
     const base = collection(firestore, 'colleges', collegeId, 'users');
-    
-    // If HOD, strictly limit to their department. 
-    // If profile is loading, return null to prevent global data leak.
     if (isHOD) {
       if (!myDeptId) return null;
       return query(base, where('departmentId', '==', myDeptId));
@@ -126,17 +145,52 @@ export default function UserManagementPage() {
   }) || [];
 
   const sortedUsers = [...filteredUsers].sort((a, b) => {
-    if (sortBy === 'name') {
-      return (a.firstName || '').localeCompare(b.firstName || '');
-    }
-    if (sortBy === 'email') {
-      return (a.email || '').localeCompare(b.email || '');
-    }
-    if (sortBy === 'newest') {
-      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
-    }
+    if (sortBy === 'name') return (a.firstName || '').localeCompare(b.firstName || '');
+    if (sortBy === 'email') return (a.email || '').localeCompare(b.email || '');
+    if (sortBy === 'newest') return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     return 0;
   });
+
+  // Selection Handlers
+  const toggleSelectRow = (id: string) => {
+    const newSelected = new Set(selectedIds);
+    if (newSelected.has(id)) newSelected.delete(id);
+    else newSelected.add(id);
+    setSelectedIds(newSelected);
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === filteredUsers.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(filteredUsers.map(u => u.id)));
+    }
+  };
+
+  // Bulk Handlers
+  const handleBulkDelete = () => {
+    selectedIds.forEach(id => {
+      const userRef = doc(firestore, 'colleges', collegeId, 'users', id);
+      deleteDocumentNonBlocking(userRef);
+    });
+    toast({ title: 'Batch Deletion Triggered', description: `Removing ${selectedIds.size} identities from the directory.` });
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkUpdate = (e: React.FormEvent) => {
+    e.preventDefault();
+    selectedIds.forEach(id => {
+      const userRef = doc(firestore, 'colleges', collegeId, 'users', id);
+      const updates: any = { ...bulkUpdateData, updatedAt: new Date().toISOString() };
+      // Filter out undefined keys
+      Object.keys(updates).forEach(key => updates[key] === undefined && delete updates[key]);
+      updateDocumentNonBlocking(userRef, updates);
+    });
+    toast({ title: 'Batch Update Complete', description: `Modified ${selectedIds.size} records successfully.` });
+    setIsBulkUpdateOpen(false);
+    setSelectedIds(new Set());
+    setBulkUpdateData({});
+  };
 
   const handleExportData = () => {
     if (!users) return;
@@ -204,12 +258,6 @@ export default function UserManagementPage() {
     setFormData({ username: '', firstName: '', lastName: '', email: '', mobileNumber: '', password: '', role: 'student', departmentId: '', batchYear: '', status: 'active' });
   };
 
-  const handleDeleteUser = (userId: string) => {
-    const userRef = doc(firestore, 'colleges', collegeId, 'users', userId);
-    deleteDocumentNonBlocking(userRef);
-    toast({ title: 'Identity Terminated', description: 'User has been removed from the institutional directory.' });
-  };
-
   const handleEditClick = (u: any) => {
     setSelectedUser(u);
     setFormData({
@@ -236,21 +284,76 @@ export default function UserManagementPage() {
     setIsEditOpen(false);
   };
 
-  const toggleExportRole = (role: string) => {
-    setExportRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
-  };
-
   const clearFilters = () => {
     setDeptFilter('all');
     setStatusFilter('all');
     setSearchQuery('');
     setActiveTab('all');
+    setSelectedIds(new Set());
   };
 
   const isFiltered = deptFilter !== 'all' || statusFilter !== 'all' || searchQuery !== '' || activeTab !== 'all';
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-8 pb-32 relative">
+      {/* Bulk Action Toolbar */}
+      <AnimatePresence>
+        {selectedIds.size > 0 && (
+          <motion.div 
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 w-full max-w-3xl px-4"
+          >
+            <Card className="bg-slate-900 border-none shadow-2xl rounded-[2rem] p-4 text-white overflow-hidden">
+               <div className="flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 pl-4 border-l-4 border-primary">
+                    <div className="text-center">
+                      <p className="text-2xl font-bold font-headline">{selectedIds.size}</p>
+                      <p className="text-[9px] font-bold uppercase tracking-widest text-primary">Selected</p>
+                    </div>
+                    <div className="h-10 w-px bg-white/10 mx-2" />
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())} className="text-white hover:bg-white/10 font-bold uppercase text-[10px]">
+                      Deselect All
+                    </Button>
+                  </div>
+                  
+                  <div className="flex gap-2 pr-2">
+                    <Button 
+                      onClick={() => setIsBulkUpdateOpen(true)}
+                      className="bg-primary hover:bg-primary/90 text-white font-bold uppercase text-[10px] h-10 px-6 rounded-xl gap-2"
+                    >
+                      <ArrowRightLeft className="h-3.5 w-3.5" /> Batch Edit / Transfer
+                    </Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="font-bold uppercase text-[10px] h-10 px-6 rounded-xl gap-2 shadow-lg shadow-red-500/20">
+                          <UserMinus className="h-3.5 w-3.5" /> Terminate Selected
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl bg-card">
+                        <AlertDialogHeader>
+                          <AlertDialogTitle className="text-2xl font-headline">Bulk Identity Removal?</AlertDialogTitle>
+                          <AlertDialogDescription className="text-base">
+                            You are about to delete <strong>{selectedIds.size}</strong> institutional records. This action cannot be undone. Are you sure you want to proceed?
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter className="pt-4">
+                          <AlertDialogCancel className="rounded-2xl border-none bg-muted h-12 px-6 font-bold uppercase text-[10px]">Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleBulkDelete} className="bg-destructive hover:bg-destructive/90 rounded-2xl h-12 px-6 font-bold uppercase text-[10px]">
+                            Confirm Deletion
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+               </div>
+            </Card>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">
@@ -280,14 +383,16 @@ export default function UserManagementPage() {
                   { id: 'faculty', label: 'Teaching Faculty', icon: Users },
                   { id: 'student', label: 'Enrolled Students', icon: Plus },
                 ].map((role) => (
-                  <div key={role.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => toggleExportRole(role.id)}>
+                  <div key={role.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer" onClick={() => {
+                    setExportRoles(prev => prev.includes(role.id) ? prev.filter(r => r !== role.id) : [...prev, role.id]);
+                  }}>
                     <div className="flex items-center gap-3">
                       <div className={cn("p-2 rounded-xl", exportRoles.includes(role.id) ? "bg-primary text-white" : "bg-card text-muted-foreground")}>
                         <role.icon className="h-4 w-4" />
                       </div>
                       <span className="font-bold text-sm">{role.label}</span>
                     </div>
-                    <Checkbox checked={exportRoles.includes(role.id)} onCheckedChange={() => toggleExportRole(role.id)} />
+                    <Checkbox checked={exportRoles.includes(role.id)} />
                   </div>
                 ))}
               </div>
@@ -441,17 +546,36 @@ export default function UserManagementPage() {
               <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow className="hover:bg-transparent border-none">
-                    <TableHead className="pl-6 py-4 font-bold text-foreground">Institutional Identity</TableHead>
+                    <TableHead className="w-12 pl-6">
+                      <Checkbox 
+                        checked={filteredUsers.length > 0 && selectedIds.size === filteredUsers.length}
+                        onCheckedChange={toggleSelectAll}
+                      />
+                    </TableHead>
+                    <TableHead className="pl-4 py-4 font-bold text-foreground">Institutional Identity</TableHead>
                     <TableHead className="font-bold text-foreground">Contact & Access</TableHead>
                     <TableHead className="font-bold text-foreground">Dept & Role</TableHead>
                     <TableHead className="text-right pr-6 font-bold text-foreground">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <AnimatePresence>
-                    {sortedUsers.map((u, idx) => (
-                      <TableRow key={u.id || idx} className="group hover:bg-muted/30 border-border">
-                        <TableCell className="pl-6 py-4">
+                  <AnimatePresence mode="popLayout">
+                    {sortedUsers.map((u) => (
+                      <motion.tr 
+                        key={u.id}
+                        layout
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className={cn("group hover:bg-muted/30 border-border transition-colors", selectedIds.has(u.id) && "bg-primary/5 hover:bg-primary/10")}
+                      >
+                        <TableCell className="pl-6">
+                          <Checkbox 
+                            checked={selectedIds.has(u.id)}
+                            onCheckedChange={() => toggleSelectRow(u.id)}
+                          />
+                        </TableCell>
+                        <TableCell className="pl-4 py-4">
                           <div className="flex items-center gap-3">
                             <Avatar className="h-10 w-10 border-2 border-background shadow-sm">
                               <AvatarFallback className="bg-primary/5 text-primary font-bold uppercase">{u.firstName?.[0]}{u.lastName?.[0]}</AvatarFallback>
@@ -477,9 +601,16 @@ export default function UserManagementPage() {
                             <span className="text-[10px] font-bold text-foreground uppercase tracking-widest">
                               {departments?.find(d => d.id === u.departmentId)?.name || 'General'}
                             </span>
-                            <Badge variant="outline" className="font-bold uppercase text-[8px] w-fit px-1.5 border-primary/20 text-primary">
-                              {u.role}
-                            </Badge>
+                            <div className="flex gap-1 items-center">
+                              <Badge variant="outline" className="font-bold uppercase text-[8px] w-fit px-1.5 border-primary/20 text-primary">
+                                {u.role}
+                              </Badge>
+                              {u.status !== 'active' && (
+                                <Badge variant="secondary" className="font-bold uppercase text-[8px] w-fit px-1.5 bg-amber-100 text-amber-700 border-none">
+                                  {u.status}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-right pr-6">
@@ -487,17 +618,35 @@ export default function UserManagementPage() {
                             <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary/5 text-primary" onClick={() => handleEditClick(u)}>
                               <Edit3 className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-red-50 text-red-500" onClick={() => handleDeleteUser(u.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="rounded-xl hover:bg-red-50 text-red-500">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent className="rounded-[2.5rem] border-none shadow-2xl bg-card">
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle className="text-2xl font-headline">Decommission Identity?</AlertDialogTitle>
+                                  <AlertDialogDescription className="text-base">
+                                    Remove <strong>{u.firstName} {u.lastName}</strong> from the institutional directory. This action will detach all associated records.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter className="pt-4">
+                                  <AlertDialogCancel className="rounded-2xl border-none bg-muted h-12 px-6 font-bold uppercase text-[10px]">Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteUser(u.id)} className="bg-destructive hover:bg-destructive/90 rounded-2xl h-12 px-6 font-bold uppercase text-[10px]">
+                                    Confirm Termination
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           </div>
                         </TableCell>
-                      </TableRow>
+                      </motion.tr>
                     ))}
                   </AnimatePresence>
                   {sortedUsers.length === 0 && (
                     <TableRow>
-                      <TableCell colSpan={4} className="p-20 text-center text-muted-foreground italic">No matching identity records found.</TableCell>
+                      <TableCell colSpan={5} className="p-20 text-center text-muted-foreground italic">No matching identity records found.</TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -507,6 +656,65 @@ export default function UserManagementPage() {
         </Card>
       </Tabs>
 
+      {/* Bulk Update Dialog */}
+      <Dialog open={isBulkUpdateOpen} onOpenChange={setIsBulkUpdateOpen}>
+        <DialogContent className="rounded-[2.5rem] max-w-lg border-none shadow-2xl bg-card">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-headline flex items-center gap-3">
+              <CheckSquare className="h-6 w-6 text-primary" /> Batch Modify Node
+            </DialogTitle>
+            <DialogDescription className="text-base">
+              Synchronize changes across <strong>{selectedIds.size}</strong> selected users. Leave fields blank to keep existing values.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleBulkUpdate} className="space-y-6 pt-4">
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">New System Role</Label>
+              <Select onValueChange={(val) => setBulkUpdateData({...bulkUpdateData, role: val})}>
+                <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Keep Existing Role" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="student">Student</SelectItem>
+                  <SelectItem value="faculty">Faculty</SelectItem>
+                  <SelectItem value="hod">Head of Dept (HOD)</SelectItem>
+                  {!isHOD && <SelectItem value="admin">Institutional Admin</SelectItem>}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {!isHOD && (
+              <div className="space-y-2">
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Academic Division Transfer</Label>
+                <Select onValueChange={(val) => setBulkUpdateData({...bulkUpdateData, departmentId: val})}>
+                  <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Keep Existing Division" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="unassigned">Remove Mapping</SelectItem>
+                    {departments?.map(d => <SelectItem key={`bulk-dept-${d.id}`} value={d.id}>{d.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Account Enrollment Status</Label>
+              <Select onValueChange={(val) => setBulkUpdateData({...bulkUpdateData, status: val})}>
+                <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Keep Existing Status" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="alumni">Graduate / Alumni</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <DialogFooter className="pt-4 flex flex-col sm:flex-row gap-3">
+               <Button type="button" variant="ghost" onClick={() => setIsBulkUpdateOpen(false)} className="rounded-xl h-12 flex-1 font-bold">Cancel</Button>
+               <Button type="submit" className="h-12 rounded-xl flex-[2] font-bold shadow-lg shadow-primary/20">Apply Institutional Changes</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Single User Dialog */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="rounded-[2.5rem] max-w-2xl border-none">
           <DialogHeader><DialogTitle>Modify Identity Record</DialogTitle></DialogHeader>
