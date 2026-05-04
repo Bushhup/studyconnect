@@ -145,10 +145,40 @@ export default function CourseManagementPage() {
     c.code.toLowerCase().includes(searchQuery.toLowerCase())
   ) || [];
 
-  const groupedCourses = depts?.map(dept => ({
-    ...dept,
-    courses: filteredCourses.filter(c => c.departmentId === dept.id)
-  })).filter(group => group.courses.length > 0) || [];
+  // Build Grouped List
+  const groupedCoursesList: any[] = [];
+  const processedCourseIds = new Set<string>();
+
+  // 1. Group by Departments
+  if (depts) {
+    depts.forEach(dept => {
+      const deptCourses = filteredCourses.filter(c => c.departmentId === dept.id);
+      if (deptCourses.length > 0) {
+        groupedCoursesList.push({
+          ...dept,
+          courses: deptCourses
+        });
+        deptCourses.forEach(c => processedCourseIds.add(c.id));
+      }
+    });
+  }
+
+  // 2. Handle Orphans (Courses with no matching department or invalid ID)
+  const orphanCourses = filteredCourses.filter(c => !processedCourseIds.has(c.id));
+  if (orphanCourses.length > 0) {
+    groupedCoursesList.push({
+      id: 'general-uncategorized',
+      name: 'General / Uncategorized',
+      headOfDept: 'System Administrator',
+      courses: orphanCourses,
+      isGeneral: true
+    });
+  }
+
+  // Summary Metrics - Now based on FILTERED results for consistency
+  const totalSubjects = filteredCourses.length;
+  const totalCredits = filteredCourses.reduce((acc, c) => acc + (c.credits || 0), 0) || 0;
+  const totalHandlers = Array.from(new Set(classes?.flatMap(cls => Object.values(cls.subjectHandlers || {})) || [])).length;
 
   // Bulk Import Handler
   const handleImport = (data: any[]) => {
@@ -236,11 +266,6 @@ export default function CourseManagementPage() {
       </div>
     );
   }
-
-  // Summary Metrics
-  const totalSubjects = courses?.length || 0;
-  const totalCredits = courses?.reduce((acc, c) => acc + (c.credits || 0), 0) || 0;
-  const totalHandlers = Array.from(new Set(classes?.flatMap(cls => Object.values(cls.subjectHandlers || {})) || [])).length;
 
   return (
     <div className="space-y-10 pb-20 max-w-7xl mx-auto">
@@ -349,7 +374,7 @@ export default function CourseManagementPage() {
 
       {/* Curriculum Grid */}
       <div className="space-y-16 px-4">
-        {groupedCourses.map((group, idx) => (
+        {groupedCoursesList.map((group, idx) => (
           <motion.div 
             key={group.id} 
             initial={{ opacity: 0, y: 20 }}
@@ -359,8 +384,11 @@ export default function CourseManagementPage() {
             className="space-y-6"
           >
             <div className="flex items-center gap-4 group">
-              <div className="p-3 bg-white rounded-2xl shadow-sm border group-hover:bg-primary group-hover:text-white transition-all">
-                <Building2 className="h-6 w-6" />
+              <div className={cn(
+                "p-3 rounded-2xl shadow-sm border transition-all",
+                group.isGeneral ? "bg-amber-50 text-amber-600 border-amber-200" : "bg-white group-hover:bg-primary group-hover:text-white"
+              )}>
+                {group.isGeneral ? <AlertCircle className="h-6 w-6" /> : <Building2 className="h-6 w-6" />}
               </div>
               <div className="flex-1">
                 <h2 className="text-2xl font-headline font-bold text-foreground">{group.name}</h2>
@@ -368,7 +396,9 @@ export default function CourseManagementPage() {
                   <Badge variant="secondary" className="bg-primary/5 text-primary border-none font-bold uppercase text-[9px] px-3">
                     {group.courses.length} Active Nodes
                   </Badge>
-                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Master Dean: {group.headOfDept}</p>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+                    Lead: {group.headOfDept}
+                  </p>
                 </div>
               </div>
               <div className="h-px flex-1 bg-gradient-to-r from-border to-transparent" />
@@ -388,7 +418,7 @@ export default function CourseManagementPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {group.courses.map((course) => {
+                    {group.courses.map((course: any) => {
                       const relevantClasses = classes?.filter(cls => cls.subjectHandlers?.[course.id]) || [];
                       const handlerEmails = Array.from(new Set(relevantClasses.map(cls => cls.subjectHandlers?.[course.id]).filter(Boolean)));
                       const handlers = facultyMembers?.filter(f => handlerEmails.includes(f.email)) || [];
@@ -495,7 +525,7 @@ export default function CourseManagementPage() {
           </motion.div>
         ))}
 
-        {groupedCourses.length === 0 && !isLoading && (
+        {groupedCoursesList.length === 0 && !isLoading && (
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }} 
             animate={{ opacity: 1, scale: 1 }}
