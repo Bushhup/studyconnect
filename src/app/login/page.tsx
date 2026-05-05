@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -45,7 +46,6 @@ const collegeId = 'study-connect-college';
 const MASTER_ADMINS = [
   'admin@college.edu',
   'shabu@gmail.com',
-  'shahabuddinosaid@gmail.com',
   'shabuddinaw@gmail.com',
   'usaid@gmail.com'
 ];

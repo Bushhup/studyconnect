@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -51,7 +52,7 @@ const navStyles: { id: NavStyle; name: string; desc: string; icon: any }[] = [
 
 type SettingsSection = 'security' | 'visual' | 'notifications' | 'data';
 
-const MASTER_ADMINS = ['shabu@gmail.com', 'shahabuddinosaid@gmail.com', 'usaid@gmail.com', 'admin@college.edu'];
+const MASTER_ADMINS = ['shabu@gmail.com', 'shabuddinaw@gmail.com', 'usaid@gmail.com', 'admin@college.edu'];
 
 export default function SettingsPage() {
   const { toast } = useToast();

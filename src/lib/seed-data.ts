@@ -1,3 +1,4 @@
+
 import { doc, writeBatch, Firestore } from 'firebase/firestore';
 
 /**
@@ -37,7 +38,6 @@ export async function seedDatabase(db: Firestore) {
   // 2. Global Admins Registry
   const globalAdmins = [
     { email: 'shabu@gmail.com', fName: 'Shabu', lName: 'Osaid', pass: 'shabu123' },
-    { email: 'shahabuddinosaid@gmail.com', fName: 'Shahabuddin', lName: 'Osaid', pass: 'shabu123' },
     { email: 'shabuddinaw@gmail.com', fName: 'Shabuddin', lName: 'A', pass: 'shabu05413' },
     { email: 'admin@college.edu', fName: 'Master', lName: 'Admin', pass: 'minister123' },
     { email: 'usaid@gmail.com', fName: 'Usaid', lName: 'Admin', pass: 'password123' }
@@ -62,7 +62,8 @@ export async function seedDatabase(db: Firestore) {
   // 3. Specific Test Accounts (Student/Faculty)
   const testUsers = [
     { email: 'fareedu46@gmail.com', fName: 'Fareed', lName: 'U', role: 'student', dept: 'dept-cse' },
-    { email: 'sarah.smith@college.edu', fName: 'Sarah', lName: 'Smith', role: 'faculty', dept: 'dept-cse' }
+    { email: 'sarah.smith@college.edu', fName: 'Sarah', lName: 'Smith', role: 'faculty', dept: 'dept-cse' },
+    { email: 'shahabuddinosaid@gmail.com', fName: 'Shahabuddin', lName: 'Osaid', role: 'faculty', dept: 'dept-cse' }
   ];
 
   for (const u of testUsers) {
