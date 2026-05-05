@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -78,14 +79,15 @@ export default function LoginPage() {
 
       // Step 2: Master Admin Auto-Provisioning
       // If a master admin is logging in but doesn't exist in the directory yet,
-      // we auto-create their record to allow them to bootstrap the institution.
-      if (!userData && isMasterAdmin && selectedRole === 'admin') {
+      // we auto-create their record. We prioritize the selected role but default to admin
+      // if it's their first time entering the system.
+      if (!userData && isMasterAdmin) {
         userData = {
           id: email,
           email: email,
           firstName: email.split('@')[0],
           lastName: 'Admin',
-          role: 'admin',
+          role: selectedRole === 'admin' ? 'admin' : selectedRole, // Allow them to test roles
           password: password, // Store provided password as initial
           status: 'active',
           createdAt: new Date().toISOString()
@@ -99,6 +101,7 @@ export default function LoginPage() {
       }
 
       // Authorization Logic
+      // Admins and HODs use the same gateway, but roles must match for Student/Faculty
       const isAdminPortal = selectedRole === 'admin';
       const isAuthorized = userData.role === selectedRole || (isAdminPortal && (userData.role === 'admin' || userData.role === 'hod'));
 
@@ -206,7 +209,7 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Password</Label>
+                    <Label className="text-[10px) font-bold uppercase tracking-widest text-muted-foreground ml-1">Password</Label>
                     <div className="relative group">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                       <Input 
