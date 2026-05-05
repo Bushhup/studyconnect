@@ -64,7 +64,39 @@ export default function FacultyBioPage() {
 
   useEffect(() => {
     if (profile) {
-      setFormData({ ...profile });
+      // Safely merge profile data ensuring no undefined values overwrite defaults
+      setFormData((prev: any) => ({
+        ...prev,
+        ...profile,
+        // Ensure critical fields are never undefined/null
+        fullName: profile.fullName || '',
+        dob: profile.dob || '',
+        gender: profile.gender || '',
+        mobileNumber: profile.mobileNumber || '',
+        email: profile.email || '',
+        address: profile.address || '',
+        pincode: profile.pincode || '',
+        aadharNumber: profile.aadharNumber || '',
+        bloodGroup: profile.bloodGroup || '',
+        fatherName: profile.fatherName || '',
+        motherName: profile.motherName || '',
+        emergencyContact: profile.emergencyContact || '',
+        ugDegree: profile.ugDegree || '',
+        pgDegree: profile.pgDegree || '',
+        phd: profile.phd || 'No',
+        phdSpecialization: profile.phdSpecialization || '',
+        specialization: profile.specialization || '',
+        certifications: profile.certifications || '',
+        yearOfPassing: profile.yearOfPassing || '',
+        university: profile.university || '',
+        designation: profile.designation || 'Assistant Professor',
+        employmentType: profile.employmentType || 'Permanent',
+        yearsOfExperience: profile.yearsOfExperience || 0,
+        linkedin: profile.linkedin || '',
+        googleScholar: profile.googleScholar || '',
+        areasOfInterest: profile.areasOfInterest || '',
+        awards: profile.awards || ''
+      }));
     } else if (user) {
       setFormData((prev: any) => ({ ...prev, email: user.email }));
     }
@@ -147,13 +179,13 @@ export default function FacultyBioPage() {
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">Social Links</p>
               <Input 
                 placeholder="LinkedIn Profile URL" 
-                value={formData.linkedin} 
+                value={formData.linkedin || ''} 
                 onChange={(e) => setFormData({...formData, linkedin: e.target.value})} 
                 className="bg-card border-none h-11 rounded-xl shadow-sm text-xs"
               />
               <Input 
                 placeholder="Google Scholar URL" 
-                value={formData.googleScholar} 
+                value={formData.googleScholar || ''} 
                 onChange={(e) => setFormData({...formData, googleScholar: e.target.value})} 
                 className="bg-card border-none h-11 rounded-xl shadow-sm text-xs"
               />
@@ -183,16 +215,16 @@ export default function FacultyBioPage() {
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-0">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Full Name</Label>
-                    <Input value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} className="bg-muted border-none h-12" required />
+                    <Input value={formData.fullName || ''} onChange={(e) => setFormData({...formData, fullName: e.target.value})} className="bg-muted border-none h-12" required />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-[10px] font-bold uppercase">DOB</Label>
-                      <Input type="date" value={formData.dob} onChange={(e) => setFormData({...formData, dob: e.target.value})} className="bg-muted border-none h-12" required />
+                      <Input type="date" value={formData.dob || ''} onChange={(e) => setFormData({...formData, dob: e.target.value})} className="bg-muted border-none h-12" required />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-bold uppercase">Gender</Label>
-                      <Select onValueChange={(v) => setFormData({...formData, gender: v})} value={formData.gender}>
+                      <Select onValueChange={(v) => setFormData({...formData, gender: v})} value={formData.gender || ''}>
                         <SelectTrigger className="bg-muted border-none h-12"><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent>
                       </Select>
@@ -200,15 +232,15 @@ export default function FacultyBioPage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Mobile Number (xxxxx xxxxx)</Label>
-                    <Input value={formData.mobileNumber} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12" required />
+                    <Input value={formData.mobileNumber || ''} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12" required />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Aadhar Number (xxxx xxxx xxxx)</Label>
-                    <Input value={formData.aadharNumber} onChange={(e) => setFormData({...formData, aadharNumber: e.target.value})} className="bg-muted border-none h-12 font-mono" required />
+                    <Input value={formData.aadharNumber || ''} onChange={(e) => setFormData({...formData, aadharNumber: e.target.value})} className="bg-muted border-none h-12 font-mono" required />
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label className="text-[10px] font-bold uppercase">Permanent Address</Label>
-                    <Textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="bg-muted border-none min-h-[80px]" required />
+                    <Textarea value={formData.address || ''} onChange={(e) => setFormData({...formData, address: e.target.value})} className="bg-muted border-none min-h-[80px]" required />
                   </div>
                 </CardContent>
               </Card>
@@ -218,15 +250,15 @@ export default function FacultyBioPage() {
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-0">
                    <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Father's Name</Label>
-                    <Input value={formData.fatherName} onChange={(e) => setFormData({...formData, fatherName: e.target.value})} className="bg-muted border-none h-12" />
+                    <Input value={formData.fatherName || ''} onChange={(e) => setFormData({...formData, fatherName: e.target.value})} className="bg-muted border-none h-12" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Mother's Name</Label>
-                    <Input value={formData.motherName} onChange={(e) => setFormData({...formData, motherName: e.target.value})} className="bg-muted border-none h-12" />
+                    <Input value={formData.motherName || ''} onChange={(e) => setFormData({...formData, motherName: e.target.value})} className="bg-muted border-none h-12" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase text-primary">Emergency Contact</Label>
-                    <Input value={formData.emergencyContact} onChange={(e) => setFormData({...formData, emergencyContact: e.target.value})} className="bg-muted border-none h-12 font-bold" />
+                    <Input value={formData.emergencyContact || ''} onChange={(e) => setFormData({...formData, emergencyContact: e.target.value})} className="bg-muted border-none h-12 font-bold" />
                   </div>
                 </CardContent>
               </Card>
@@ -238,32 +270,32 @@ export default function FacultyBioPage() {
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-0">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">UG Degree</Label>
-                    <Input value={formData.ugDegree} onChange={(e) => setFormData({...formData, ugDegree: e.target.value})} placeholder="e.g. B.Tech Computer Science" className="bg-muted border-none h-12" required />
+                    <Input value={formData.ugDegree || ''} onChange={(e) => setFormData({...formData, ugDegree: e.target.value})} placeholder="e.g. B.Tech Computer Science" className="bg-muted border-none h-12" required />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">PG Degree</Label>
-                    <Input value={formData.pgDegree} onChange={(e) => setFormData({...formData, pgDegree: e.target.value})} placeholder="e.g. M.Tech Artificial Intelligence" className="bg-muted border-none h-12" required />
+                    <Input value={formData.pgDegree || ''} onChange={(e) => setFormData({...formData, pgDegree: e.target.value})} placeholder="e.g. M.Tech Artificial Intelligence" className="bg-muted border-none h-12" required />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label className="text-[10px] font-bold uppercase">PhD Holder?</Label>
-                      <Select onValueChange={(v) => setFormData({...formData, phd: v})} value={formData.phd}>
+                      <Select onValueChange={(v) => setFormData({...formData, phd: v})} value={formData.phd || 'No'}>
                         <SelectTrigger className="bg-muted border-none h-12"><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent><SelectItem value="Yes">Yes</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
                       </Select>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-bold uppercase">PhD Spec.</Label>
-                      <Input value={formData.phdSpecialization} onChange={(e) => setFormData({...formData, phdSpecialization: e.target.value})} disabled={formData.phd === 'No'} className="bg-muted border-none h-12" />
+                      <Input value={formData.phdSpecialization || ''} onChange={(e) => setFormData({...formData, phdSpecialization: e.target.value})} disabled={formData.phd === 'No'} className="bg-muted border-none h-12" />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Institutional Year of Passing</Label>
-                    <Input value={formData.yearOfPassing} onChange={(e) => setFormData({...formData, yearOfPassing: e.target.value})} className="bg-muted border-none h-12" />
+                    <Input value={formData.yearOfPassing || ''} onChange={(e) => setFormData({...formData, yearOfPassing: e.target.value})} className="bg-muted border-none h-12" />
                   </div>
                   <div className="md:col-span-2 space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Other Certifications (NET, SET, GATE)</Label>
-                    <Input value={formData.certifications} onChange={(e) => setFormData({...formData, certifications: e.target.value})} className="bg-muted border-none h-12" />
+                    <Input value={formData.certifications || ''} onChange={(e) => setFormData({...formData, certifications: e.target.value})} className="bg-muted border-none h-12" />
                   </div>
                 </CardContent>
               </Card>
@@ -275,7 +307,7 @@ export default function FacultyBioPage() {
                 <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-0">
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Designation</Label>
-                    <Select onValueChange={(v) => setFormData({...formData, designation: v})} value={formData.designation}>
+                    <Select onValueChange={(v) => setFormData({...formData, designation: v})} value={formData.designation || ''}>
                       <SelectTrigger className="bg-muted border-none h-12"><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Assistant Professor">Assistant Professor</SelectItem>
@@ -286,7 +318,7 @@ export default function FacultyBioPage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Employment Type</Label>
-                    <Select onValueChange={(v) => setFormData({...formData, employmentType: v})} value={formData.employmentType}>
+                    <Select onValueChange={(v) => setFormData({...formData, employmentType: v})} value={formData.employmentType || ''}>
                       <SelectTrigger className="bg-muted border-none h-12"><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Permanent">Permanent</SelectItem>
@@ -297,11 +329,11 @@ export default function FacultyBioPage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Overall Teaching Experience (Years)</Label>
-                    <Input type="number" value={formData.yearsOfExperience} onChange={(e) => setFormData({...formData, yearsOfExperience: parseInt(e.target.value)})} className="bg-muted border-none h-12" />
+                    <Input type="number" value={formData.yearsOfExperience || 0} onChange={(e) => setFormData({...formData, yearsOfExperience: parseInt(e.target.value)})} className="bg-muted border-none h-12" />
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Primary Domain Specialization</Label>
-                    <Input value={formData.specialization} onChange={(e) => setFormData({...formData, specialization: e.target.value})} className="bg-muted border-none h-12" placeholder="e.g. Distributed Systems" />
+                    <Input value={formData.specialization || ''} onChange={(e) => setFormData({...formData, specialization: e.target.value})} className="bg-muted border-none h-12" placeholder="e.g. Distributed Systems" />
                   </div>
                 </CardContent>
               </Card>
@@ -324,7 +356,7 @@ export default function FacultyBioPage() {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Areas of Academic Interest</Label>
                     <Textarea 
-                      value={formData.areasOfInterest} 
+                      value={formData.areasOfInterest || ''} 
                       onChange={(e) => setFormData({...formData, areasOfInterest: e.target.value})} 
                       placeholder="e.g. Machine Learning, NLP, Quantum Cryptography" 
                       className="bg-muted border-none min-h-[100px]" 
@@ -333,7 +365,7 @@ export default function FacultyBioPage() {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Awards & Institutional Achievements</Label>
                     <Textarea 
-                      value={formData.awards} 
+                      value={formData.awards || ''} 
                       onChange={(e) => setFormData({...formData, awards: e.target.value})} 
                       className="bg-muted border-none min-h-[100px]" 
                     />

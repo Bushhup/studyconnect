@@ -14,13 +14,13 @@ import { Loader2, User, ShieldCheck, Save, AlertCircle, Calendar } from 'lucide-
 const collegeId = 'study-connect-college';
 
 const formatAadhar = (val: string) => {
-  const digits = val.replace(/\D/g, '').slice(0, 12);
+  const digits = (val || '').replace(/\D/g, '').slice(0, 12);
   const groups = digits.match(/.{1,4}/g) || [];
   return groups.join(' ');
 };
 
 const formatPhone = (val: string) => {
-  const digits = val.replace(/\D/g, '').slice(0, 10);
+  const digits = (val || '').replace(/\D/g, '').slice(0, 10);
   const groups = [digits.slice(0, 5), digits.slice(5)].filter(Boolean);
   return groups.join(' ');
 };
@@ -92,8 +92,10 @@ export default function StudentBioDataPage() {
         quota: profile.quota || 'Management',
         dateOfAdmission: profile.dateOfAdmission || '',
       });
+    } else if (user) {
+      setFormData(prev => ({ ...prev, studentEmail: user.email || '' }));
     }
-  }, [profile]);
+  }, [profile, user]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,7 +178,7 @@ export default function StudentBioDataPage() {
             <div className="md:col-span-2 space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Full Legal Name (as per Birth Certificate)</Label>
               <Input 
-                value={formData.fullName} 
+                value={formData.fullName || ''} 
                 onChange={(e) => setFormData({...formData, fullName: e.target.value})} 
                 disabled={isReadOnly}
                 className="bg-muted border-none h-12 rounded-xl"
@@ -188,7 +190,7 @@ export default function StudentBioDataPage() {
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Date of Birth</Label>
               <Input 
                 type="date"
-                value={formData.dob} 
+                value={formData.dob || ''} 
                 onChange={(e) => setFormData({...formData, dob: e.target.value})} 
                 disabled={isReadOnly}
                 className="bg-muted border-none h-12 rounded-xl"
@@ -197,7 +199,7 @@ export default function StudentBioDataPage() {
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Gender</Label>
-              <Select onValueChange={(v) => setFormData({...formData, gender: v})} value={formData.gender} disabled={isReadOnly}>
+              <Select onValueChange={(v) => setFormData({...formData, gender: v})} value={formData.gender || ''} disabled={isReadOnly}>
                 <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Gender" /></SelectTrigger>
                 <SelectContent><SelectItem value="Male">Male</SelectItem><SelectItem value="Female">Female</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent>
               </Select>
@@ -205,7 +207,7 @@ export default function StudentBioDataPage() {
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mobile Number</Label>
               <Input 
-                value={formData.studentMobileNo} 
+                value={formData.studentMobileNo || ''} 
                 onChange={(e) => setFormData({...formData, studentMobileNo: formatPhone(e.target.value)})} 
                 disabled={isReadOnly}
                 className="bg-muted border-none h-12 rounded-xl"
@@ -217,7 +219,7 @@ export default function StudentBioDataPage() {
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Email ID</Label>
               <Input 
                 type="email"
-                value={formData.studentEmail} 
+                value={formData.studentEmail || ''} 
                 onChange={(e) => setFormData({...formData, studentEmail: e.target.value})} 
                 disabled={isReadOnly}
                 className="bg-muted border-none h-12 rounded-xl"
@@ -236,7 +238,7 @@ export default function StudentBioDataPage() {
             <div className="md:col-span-2 space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Aadhar Number</Label>
               <Input 
-                value={formData.aadharNumber} 
+                value={formData.aadharNumber || ''} 
                 onChange={(e) => setFormData({...formData, aadharNumber: formatAadhar(e.target.value)})} 
                 disabled={isReadOnly}
                 className="bg-muted border-none h-12 rounded-xl font-mono"
@@ -246,11 +248,11 @@ export default function StudentBioDataPage() {
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Blood Group</Label>
-              <Input value={formData.bloodGroup} onChange={(e) => setFormData({...formData, bloodGroup: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" placeholder="e.g. O+" />
+              <Input value={formData.bloodGroup || ''} onChange={(e) => setFormData({...formData, bloodGroup: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" placeholder="e.g. O+" />
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Mother Tongue</Label>
-              <Input value={formData.motherTongue} onChange={(e) => setFormData({...formData, motherTongue: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" placeholder="Language" />
+              <Input value={formData.motherTongue || ''} onChange={(e) => setFormData({...formData, motherTongue: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" placeholder="Language" />
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Nationality</Label>
@@ -258,11 +260,11 @@ export default function StudentBioDataPage() {
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Religion</Label>
-              <Input value={formData.religion} onChange={(e) => setFormData({...formData, religion: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" />
+              <Input value={formData.religion || ''} onChange={(e) => setFormData({...formData, religion: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" />
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Community</Label>
-              <Select onValueChange={(v) => setFormData({...formData, community: v})} value={formData.community} disabled={isReadOnly}>
+              <Select onValueChange={(v) => setFormData({...formData, community: v})} value={formData.community || ''} disabled={isReadOnly}>
                 <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   {['BC (muslim)', 'OC', 'BC', 'MBC', 'SC', 'SCC', 'ST'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -271,7 +273,7 @@ export default function StudentBioDataPage() {
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Name of the Caste</Label>
-              <Input value={formData.casteName} onChange={(e) => setFormData({...formData, casteName: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" />
+              <Input value={formData.casteName || ''} onChange={(e) => setFormData({...formData, casteName: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" />
             </div>
           </CardContent>
         </Card>
@@ -283,11 +285,11 @@ export default function StudentBioDataPage() {
           <CardContent className="pt-6 grid grid-cols-1 md:grid-cols-4 gap-6">
             <div className="md:col-span-3 space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Full Address</Label>
-              <Input value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" required />
+              <Input value={formData.address || ''} onChange={(e) => setFormData({...formData, address: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" required />
             </div>
             <div className="space-y-2">
               <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Pincode</Label>
-              <Input value={formData.pincode} onChange={(e) => setFormData({...formData, pincode: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" required />
+              <Input value={formData.pincode || ''} onChange={(e) => setFormData({...formData, pincode: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" required />
             </div>
           </CardContent>
         </Card>
@@ -300,51 +302,51 @@ export default function StudentBioDataPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase text-primary">Father's Name</Label>
-                <Input value={formData.fatherName} onChange={(e) => setFormData({...formData, fatherName: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" required />
+                <Input value={formData.fatherName || ''} onChange={(e) => setFormData({...formData, fatherName: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" required />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase text-primary">Occupation</Label>
-                <Select onValueChange={(v) => setFormData({...formData, fatherOccupation: v})} value={formData.fatherOccupation} disabled={isReadOnly}>
+                <Select onValueChange={(v) => setFormData({...formData, fatherOccupation: v})} value={formData.fatherOccupation || ''} disabled={isReadOnly}>
                   <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent><SelectItem value="Govt Services">Govt Services</SelectItem><SelectItem value="Private Services">Private Services</SelectItem><SelectItem value="Business">Business</SelectItem><SelectItem value="Self Employed">Self Employed</SelectItem></SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase text-primary">Annual Income</Label>
-                <Input value={formData.fatherAnnualIncome} onChange={(e) => setFormData({...formData, fatherAnnualIncome: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.fatherAnnualIncome || ''} onChange={(e) => setFormData({...formData, fatherAnnualIncome: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase text-primary">Mobile Number</Label>
-                <Input value={formData.fatherMobileNo} onChange={(e) => setFormData({...formData, fatherMobileNo: formatPhone(e.target.value)})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.fatherMobileNo || ''} onChange={(e) => setFormData({...formData, fatherMobileNo: formatPhone(e.target.value)})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase text-primary">Mother's Name</Label>
-                <Input value={formData.motherName} onChange={(e) => setFormData({...formData, motherName: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" required />
+                <Input value={formData.motherName || ''} onChange={(e) => setFormData({...formData, motherName: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" required />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase text-primary">Occupation</Label>
-                <Select onValueChange={(v) => setFormData({...formData, motherOccupation: v})} value={formData.motherOccupation} disabled={isReadOnly}>
+                <Select onValueChange={(v) => setFormData({...formData, motherOccupation: v})} value={formData.motherOccupation || ''} disabled={isReadOnly}>
                   <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue placeholder="Select" /></SelectTrigger>
                   <SelectContent><SelectItem value="Govt Services">Govt Services</SelectItem><SelectItem value="Private Services">Private Services</SelectItem><SelectItem value="Homemaker">Homemaker</SelectItem></SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase text-primary">Annual Income</Label>
-                <Input value={formData.motherAnnualIncome} onChange={(e) => setFormData({...formData, motherAnnualIncome: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.motherAnnualIncome || ''} onChange={(e) => setFormData({...formData, motherAnnualIncome: e.target.value})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" />
               </div>
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase text-primary">Mobile Number</Label>
-                <Input value={formData.motherMobileNo} onChange={(e) => setFormData({...formData, motherMobileNo: formatPhone(e.target.value)})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" />
+                <Input value={formData.motherMobileNo || ''} onChange={(e) => setFormData({...formData, motherMobileNo: formatPhone(e.target.value)})} disabled={isReadOnly} className="bg-muted border-none h-12 rounded-xl" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-dashed">
               <div className="space-y-2">
                 <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Admission Quota</Label>
-                <Select onValueChange={(v) => setFormData({...formData, quota: v})} value={formData.quota} disabled={isReadOnly}>
+                <Select onValueChange={(v) => setFormData({...formData, quota: v})} value={formData.quota || 'Management'} disabled={isReadOnly}>
                   <SelectTrigger className="bg-muted border-none h-12 rounded-xl"><SelectValue /></SelectTrigger>
                   <SelectContent><SelectItem value="Government">Government Quota</SelectItem><SelectItem value="Management">Management Quota</SelectItem></SelectContent>
                 </Select>
