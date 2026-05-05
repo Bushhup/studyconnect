@@ -32,12 +32,21 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword
 } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
 
 type UserRole = 'student' | 'faculty' | 'admin' | 'hod';
 const collegeId = 'study-connect-college';
+
+// Master administrators who can bypass initial directory checks to set up the system
+const MASTER_ADMINS = [
+  'admin@college.edu',
+  'shabu@gmail.com',
+  'shahabuddinosaid@gmail.com',
+  'shabuddinaw@gmail.com',
+  'usaid@gmail.com'
+];
 
 export default function LoginPage() {
   const router = useRouter();
@@ -60,11 +69,30 @@ export default function LoginPage() {
         ? username.toLowerCase().trim() 
         : `${username.toLowerCase().trim()}@college.edu`;
       
+      const isMasterAdmin = MASTER_ADMINS.includes(email);
+      
       // Step 1: Institutional Directory Check (Firestore)
-      // This is the source of truth for identity and permissions.
       const userRef = doc(firestore, 'colleges', collegeId, 'users', email);
       const userSnap = await getDoc(userRef);
-      const userData = userSnap.data();
+      let userData = userSnap.data();
+
+      // Step 2: Master Admin Auto-Provisioning
+      // If a master admin is logging in but doesn't exist in the directory yet,
+      // we auto-create their record to allow them to bootstrap the institution.
+      if (!userData && isMasterAdmin && selectedRole === 'admin') {
+        userData = {
+          id: email,
+          email: email,
+          firstName: email.split('@')[0],
+          lastName: 'Admin',
+          role: 'admin',
+          password: password, // Store provided password as initial
+          status: 'active',
+          createdAt: new Date().toISOString()
+        };
+        await setDoc(userRef, userData);
+        toast({ title: 'System Initialized', description: 'Master administrator identity provisioned.' });
+      }
 
       if (!userData) {
         throw new Error(`Identity not found in directory for ${email}. Please contact your administrator.`);
@@ -78,11 +106,11 @@ export default function LoginPage() {
         throw new Error(`Access Denied: Your account role (${userData.role}) is not authorized for the ${selectedRole} gateway.`);
       }
 
-      // Step 2: Authentication Attempt with Identity Sync
+      // Step 3: Authentication Attempt with Identity Sync
       try {
         await signInWithEmailAndPassword(auth, email, password);
       } catch (authError: any) {
-        // If user exists in Firestore but not Auth (e.g. after CSV import), provision them.
+        // If user exists in Firestore but not Auth (e.g. after CSV import or Auto-Provisioning), provision them.
         if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
           if (userData.password === password) {
             await createUserWithEmailAndPassword(auth, email, password);
