@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -40,14 +39,16 @@ import { cn } from '@/lib/utils';
 type UserRole = 'student' | 'faculty' | 'admin' | 'hod';
 const collegeId = 'study-connect-college';
 
-// Master administrators who can bypass initial directory checks to set up the system
+/**
+ * MASTER_ADMINS are the only accounts that can bypass the initial 
+ * directory check to perform a system bootstrap if the database is empty.
+ */
 const MASTER_ADMINS = [
   'admin@college.edu',
   'shabu@gmail.com',
   'shahabuddinosaid@gmail.com',
   'shabuddinaw@gmail.com',
-  'usaid@gmail.com',
-  'fareedu46@gmail.com'
+  'usaid@gmail.com'
 ];
 
 export default function LoginPage() {
@@ -74,21 +75,20 @@ export default function LoginPage() {
       const isMasterAdmin = MASTER_ADMINS.includes(email);
       
       // Step 1: Institutional Directory Check (Firestore)
+      // We look up the user in the database to get their assigned role.
       const userRef = doc(firestore, 'colleges', collegeId, 'users', email);
       const userSnap = await getDoc(userRef);
       let userData = userSnap.data();
 
-      // Step 2: Master Admin Auto-Provisioning
-      // If a master admin is logging in but doesn't exist in the directory yet,
-      // we auto-create their record. We prioritize the selected role.
+      // Step 2: Master Admin Auto-Provisioning (System Initialization)
       if (!userData && isMasterAdmin) {
         userData = {
           id: email,
           email: email,
           firstName: email.split('@')[0],
           lastName: 'Admin',
-          role: selectedRole, // Allow them to test specific roles (they still get admin rules power)
-          password: password, // Store provided password as initial
+          role: 'admin', 
+          password: password,
           status: 'active',
           createdAt: new Date().toISOString()
         };
@@ -96,38 +96,40 @@ export default function LoginPage() {
         toast({ title: 'System Initialized', description: 'Master administrator identity provisioned.' });
       }
 
+      // If user doesn't exist in directory, deny entry.
       if (!userData) {
-        throw new Error(`Identity not found in directory for ${email}. Please contact your administrator.`);
+        throw new Error(`Identity not found for ${email}. Please contact the institution administrator to be added to the directory.`);
       }
 
-      // Authorization Logic
-      // Admins and HODs use the same gateway, but roles must match for Student/Faculty
+      // Step 3: Role-Based Gateway Authorization
+      // A user can only log in through the gateway that matches their database role.
       const isAdminPortal = selectedRole === 'admin';
       const isAuthorized = userData.role === selectedRole || (isAdminPortal && (userData.role === 'admin' || userData.role === 'hod'));
 
       if (!isAuthorized) {
-        throw new Error(`Access Denied: Your account role (${userData.role}) is not authorized for the ${selectedRole} gateway.`);
+        throw new Error(`Authorization Denied: Your assigned role is "${userData.role}". Please use the correct portal gateway.`);
       }
 
-      // Step 3: Authentication Attempt with Identity Sync
+      // Step 4: Authentication & Identity Sync
       try {
         await signInWithEmailAndPassword(auth, email, password);
       } catch (authError: any) {
-        // If user exists in Firestore but not Auth (e.g. after CSV import or Auto-Provisioning), provision them.
-        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential' || authError.code === 'auth/invalid-email') {
-          // Double check if password matches the directory record
+        // Handle "Lazy Provisioning": If user is in Firestore but not in Firebase Auth,
+        // we create their Auth account now using the credentials from the directory.
+        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
           if (userData.password === password) {
             await createUserWithEmailAndPassword(auth, email, password);
           } else {
-            throw new Error("Invalid institutional credentials. Please verify your password.");
+            throw new Error("Invalid institutional password. Please check your credentials.");
           }
         } else {
           throw authError;
         }
       }
 
-      toast({ title: 'Access Granted', description: `Welcome back, ${userData.firstName}.` });
+      toast({ title: 'Access Granted', description: `Redirecting to the ${userData.role} portal...` });
       
+      // Route based on verified role
       const routes = {
         admin: '/admin/dashboard',
         hod: '/admin/dashboard',
@@ -135,15 +137,14 @@ export default function LoginPage() {
         student: '/student/dashboard'
       };
       
-      const targetRoute = routes[userData.role as keyof typeof routes] || '/profile';
-      router.push(targetRoute);
+      router.push(routes[userData.role as keyof typeof routes] || '/profile');
 
     } catch (error: any) {
       console.error('Login error:', error);
       toast({
         variant: 'destructive',
         title: 'Security Alert',
-        description: error.message || 'Authentication failed.'
+        description: error.message || 'Institutional authentication failed.'
       });
       setIsLoading(false);
     }
@@ -172,13 +173,13 @@ export default function LoginPage() {
                 </div>
               </motion.div>
               <h1 className="text-4xl md:text-6xl font-headline font-bold text-foreground tracking-tight">Institutional Portal</h1>
-              <p className="text-muted-foreground text-lg max-w-xl mx-auto font-body">Select your gateway to enter the academic ecosystem.</p>
+              <p className="text-muted-foreground text-lg max-w-xl mx-auto font-body">Select your authorized gateway to enter the ecosystem.</p>
             </div>
 
             <div className="grid gap-6 md:grid-cols-3">
-              <RoleCard role="student" title="Student" description="Monitor academic journey, attendance, and internal marks." icon={GraduationCap} color="blue" onClick={() => setSelectedRole('student')} />
-              <RoleCard role="faculty" title="Faculty" description="Manage sections, grade entries, and study materials." icon={BookOpen} color="emerald" onClick={() => setSelectedRole('faculty')} />
-              <RoleCard role="admin" title="Admin / HOD" description="Departmental and Institutional command center for management." icon={ShieldCheck} color="violet" onClick={() => setSelectedRole('admin')} />
+              <RoleCard role="student" title="Student" description="Access academic journey, attendance, and internal marks." icon={GraduationCap} color="blue" onClick={() => setSelectedRole('student')} />
+              <RoleCard role="faculty" title="Faculty" description="Manage sections, student grades, and study materials." icon={BookOpen} color="emerald" onClick={() => setSelectedRole('faculty')} />
+              <RoleCard role="admin" title="Admin / HOD" description="Institutional or Departmental command center for management." icon={ShieldCheck} color="violet" onClick={() => setSelectedRole('admin')} />
             </div>
           </motion.div>
         ) : (
@@ -193,11 +194,11 @@ export default function LoginPage() {
               <div className="h-2 w-full bg-primary" />
               <CardHeader className="space-y-4 pt-8">
                 <Button variant="ghost" size="sm" className="w-fit p-0 h-auto hover:bg-transparent text-muted-foreground hover:text-primary transition-colors font-bold uppercase text-[10px] tracking-widest" onClick={() => { setSelectedRole(null); setIsLoading(false); }}>
-                  <ArrowLeft className="mr-2 h-3.5 w-3.5" /> Change Portal
+                  <ArrowLeft className="mr-2 h-3.5 w-3.5" /> Back to Gateways
                 </Button>
                 <div className="space-y-1">
-                  <CardTitle className="text-3xl font-headline font-bold capitalize">{selectedRole === 'admin' ? 'Admin / HOD' : selectedRole} Login</CardTitle>
-                  <CardDescription className="font-body text-base">Enter your institutional credentials.</CardDescription>
+                  <CardTitle className="text-3xl font-headline font-bold capitalize">{selectedRole === 'admin' ? 'Admin / HOD' : selectedRole} Entry</CardTitle>
+                  <CardDescription className="font-body text-base">Enter your verified institutional ID and key.</CardDescription>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -206,11 +207,11 @@ export default function LoginPage() {
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Institutional Email</Label>
                     <div className="relative group">
                       <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-                      <Input type="email" required value={username} onChange={(e) => setUsername(e.target.value)} className="h-14 pl-12 bg-muted border-none rounded-2xl text-sm" placeholder="name@college.edu" />
+                      <Input type="email" required value={username} onChange={(e) => setUsername(e.target.value)} className="h-14 pl-12 bg-muted border-none rounded-2xl text-sm" placeholder="user@college.edu" />
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Password</Label>
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Access Key</Label>
                     <div className="relative group">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                       <Input 
@@ -231,7 +232,7 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <Button className="w-full h-14 text-lg font-bold shadow-lg shadow-primary/20 rounded-2xl mt-4" type="submit" disabled={isLoading}>
-                    {isLoading ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : 'Enter Portal'}
+                    {isLoading ? <Loader2 className="animate-spin mr-2 h-5 w-5" /> : 'Enter Authorized Portal'}
                   </Button>
                 </form>
               </CardContent>
@@ -268,7 +269,7 @@ function RoleCard({ title, description, icon: Icon, color, onClick }: any) {
           <CardTitle className="font-headline text-2xl mb-3 text-foreground group-hover:text-primary transition-colors">{title}</CardTitle>
           <CardDescription className="text-muted-foreground font-body leading-relaxed mb-8 flex-grow">{description}</CardDescription>
           <div className="flex items-center gap-2 text-xs font-bold text-primary opacity-0 group-hover:opacity-100 translate-y-4 group-hover:translate-y-0 transition-all duration-500 uppercase tracking-widest">
-            Enter Portal <ChevronRight className="h-4 w-4" />
+            Select Gateway <ChevronRight className="h-4 w-4" />
           </div>
         </div>
       </Card>
