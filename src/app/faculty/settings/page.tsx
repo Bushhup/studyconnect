@@ -57,9 +57,9 @@ export default function FacultySettings() {
   const { theme, setBg, setPrimary, setText, setNavStyle } = useAppTheme();
 
   const userDocRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'colleges', collegeId, 'users', user.uid);
-  }, [firestore, user?.uid]);
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
+  }, [firestore, user?.email]);
 
   const { data: profile, isLoading } = useDoc(userDocRef);
 

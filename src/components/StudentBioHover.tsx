@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useDoc, useMemoFirebase, useFirestore } from '@/firebase';
@@ -17,9 +16,10 @@ const collegeId = 'study-connect-college';
 export function StudentBioHover({ student, children }: { student: any, children: React.ReactNode }) {
   const firestore = useFirestore();
   
+  // Use email as the document ID for pre-provisioned profile consistency
   const bioRef = useMemoFirebase(() => 
-    firestore && student?.id ? doc(firestore, 'colleges', collegeId, 'studentProfiles', student.id) : null
-  , [firestore, student?.id]);
+    firestore && student?.email ? doc(firestore, 'colleges', collegeId, 'studentProfiles', student.email.toLowerCase()) : null
+  , [firestore, student?.email]);
   
   const { data: bio, isLoading } = useDoc(bioRef);
 

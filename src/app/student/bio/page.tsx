@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -59,9 +58,9 @@ export default function StudentBioDataPage() {
   });
 
   const profileRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'colleges', collegeId, 'studentProfiles', user.uid);
-  }, [firestore, user?.uid]);
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'studentProfiles', user.email.toLowerCase());
+  }, [firestore, user?.email]);
 
   const { data: profile, isLoading } = useDoc(profileRef);
 
@@ -98,15 +97,14 @@ export default function StudentBioDataPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profileRef || !user?.uid) return;
+    if (!profileRef || !user?.email) return;
 
     const dataToSave = {
       ...formData,
-      userId: user.uid,
+      userId: user.email.toLowerCase(),
       updatedAt: new Date().toISOString(),
     };
 
-    // Auto-generate date of admission if it's the first time
     if (!profile?.dateOfAdmission) {
       dataToSave.dateOfAdmission = new Date().toISOString();
     }
@@ -170,7 +168,6 @@ export default function StudentBioDataPage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-8 pb-12">
-        {/* Personal Details */}
         <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
           <CardHeader className="bg-muted/30 border-b">
             <CardTitle className="text-lg font-headline">Student Identity</CardTitle>
@@ -231,7 +228,6 @@ export default function StudentBioDataPage() {
           </CardContent>
         </Card>
 
-        {/* Identification & Social */}
         <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
           <CardHeader className="bg-muted/30 border-b">
             <CardTitle className="text-lg font-headline">Identification & Community</CardTitle>
@@ -280,7 +276,6 @@ export default function StudentBioDataPage() {
           </CardContent>
         </Card>
 
-        {/* Address */}
         <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
           <CardHeader className="bg-muted/30 border-b">
             <CardTitle className="text-lg font-headline">Residential Details</CardTitle>
@@ -297,7 +292,6 @@ export default function StudentBioDataPage() {
           </CardContent>
         </Card>
 
-        {/* Guardian Background */}
         <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
           <CardHeader className="bg-muted/30 border-b">
             <CardTitle className="text-lg font-headline">Guardian Background</CardTitle>

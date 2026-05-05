@@ -58,7 +58,8 @@ service cloud.firestore {
       allow write, update: if isSystemUninitialized() || isAdmin();
 
       match /users/{userId} {
-        allow get: if isSignedIn(); 
+        // Allow public get for login directory check
+        allow get: if true; 
         allow list: if isAdmin() || (isSignedIn() && getUserData() != null && getUserData().role in ['faculty', 'hod']);
         
         // HODs can update users if the user IS in their department OR is BEING MOVED to their department

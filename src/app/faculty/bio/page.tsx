@@ -56,9 +56,9 @@ export default function FacultyBioPage() {
   });
 
   const profileRef = useMemoFirebase(() => {
-    if (!firestore || !user?.uid) return null;
-    return doc(firestore, 'colleges', collegeId, 'facultyProfiles', user.uid);
-  }, [firestore, user?.uid]);
+    if (!firestore || !user?.email) return null;
+    return doc(firestore, 'colleges', collegeId, 'facultyProfiles', user.email.toLowerCase());
+  }, [firestore, user?.email]);
 
   const { data: profile, isLoading } = useDoc(profileRef);
 
@@ -72,17 +72,17 @@ export default function FacultyBioPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!profileRef || !user?.uid) return;
+    if (!profileRef || !user?.email) return;
 
     const dataToSave = {
       ...formData,
-      userId: user.uid,
+      userId: user.email.toLowerCase(),
       updatedAt: new Date().toISOString()
     };
 
     if (!profile?.dateOfJoining) {
       dataToSave.dateOfJoining = new Date().toISOString();
-      dataToSave.employeeId = `FAC-${user.uid.slice(0, 4).toUpperCase()}`;
+      dataToSave.employeeId = `FAC-${user.email.split('@')[0].toUpperCase()}`;
     }
 
     setDocumentNonBlocking(profileRef, dataToSave, { merge: true });
@@ -248,7 +248,7 @@ export default function FacultyBioPage() {
                     <div className="space-y-2">
                       <Label className="text-[10px] font-bold uppercase">PhD Holder?</Label>
                       <Select onValueChange={(v) => setFormData({...formData, phd: v})} value={formData.phd}>
-                        <SelectTrigger className="bg-muted border-none h-12"><SelectValue /></SelectTrigger>
+                        <SelectTrigger className="bg-muted border-none h-12"><SelectValue placeholder="Select" /></SelectTrigger>
                         <SelectContent><SelectItem value="Yes">Yes</SelectItem><SelectItem value="No">No</SelectItem></SelectContent>
                       </Select>
                     </div>
@@ -276,7 +276,7 @@ export default function FacultyBioPage() {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Designation</Label>
                     <Select onValueChange={(v) => setFormData({...formData, designation: v})} value={formData.designation}>
-                      <SelectTrigger className="bg-muted border-none h-12"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="bg-muted border-none h-12"><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Assistant Professor">Assistant Professor</SelectItem>
                         <SelectItem value="Associate Professor">Associate Professor</SelectItem>
@@ -287,7 +287,7 @@ export default function FacultyBioPage() {
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase">Employment Type</Label>
                     <Select onValueChange={(v) => setFormData({...formData, employmentType: v})} value={formData.employmentType}>
-                      <SelectTrigger className="bg-muted border-none h-12"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="bg-muted border-none h-12"><SelectValue placeholder="Select" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Permanent">Permanent</SelectItem>
                         <SelectItem value="Contract">Contract</SelectItem>
