@@ -42,12 +42,14 @@ const collegeId = 'study-connect-college';
 
 /**
  * MASTER_ADMINS can bypass initial directory checks to bootstrap the system.
+ * They can log in to any role gateway to test and auto-provision their record.
  */
 const MASTER_ADMINS = [
   'admin@college.edu',
   'shabu@gmail.com',
   'shabuddinaw@gmail.com',
-  'usaid@gmail.com'
+  'usaid@gmail.com',
+  'shahabuddinosaid@gmail.com'
 ];
 
 export default function LoginPage() {
@@ -79,14 +81,14 @@ export default function LoginPage() {
       let userData = userSnap.data();
 
       // Step 2: Master Admin Auto-Provisioning
-      // If a master admin logs in through any gateway, create their record if missing.
+      // Allows developers to test any gateway without manual DB entry.
       if (!userData && isMasterAdmin) {
         userData = {
           id: email,
           email: email,
           firstName: email.split('@')[0],
           lastName: 'Master',
-          role: selectedRole, // Provision with the role they selected for testing
+          role: selectedRole,
           password: password,
           status: 'active',
           createdAt: new Date().toISOString()
@@ -101,8 +103,9 @@ export default function LoginPage() {
       }
 
       // Step 3: Role-Based Gateway Authorization
-      const isAdminPortal = selectedRole === 'admin';
-      const isAuthorized = userData.role === selectedRole || (isAdminPortal && (userData.role === 'admin' || userData.role === 'hod'));
+      // Admins and HODs share the management gateway.
+      const isAdminGateway = selectedRole === 'admin';
+      const isAuthorized = userData.role === selectedRole || (isAdminGateway && (userData.role === 'admin' || userData.role === 'hod'));
 
       if (!isAuthorized) {
         throw new Error(`Authorization Denied: Your assigned role is "${userData.role}". Please use the correct gateway.`);
@@ -112,8 +115,9 @@ export default function LoginPage() {
       try {
         await signInWithEmailAndPassword(auth, email, password);
       } catch (authError: any) {
-        // Handle "Lazy Provisioning"
+        // Handle "Lazy Provisioning" - if DB record exists but Auth user doesn't
         if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
+          // Verify against registered DB password before creating auth account
           if (userData.password === password) {
             await createUserWithEmailAndPassword(auth, email, password);
           } else {
