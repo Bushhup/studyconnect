@@ -1,3 +1,4 @@
+
 import { doc, writeBatch, Firestore } from 'firebase/firestore';
 
 /**
@@ -40,7 +41,8 @@ export async function seedDatabase(db: Firestore) {
     { email: 'shabu@gmail.com', fName: 'Shabu', lName: 'Osaid', pass: 'shabu123' },
     { email: 'shahabuddinosaid@gmail.com', fName: 'Shahabuddin', lName: 'Osaid', pass: 'shabu123' },
     { email: 'shabuddinaw@gmail.com', fName: 'Shabuddin', lName: 'A', pass: 'shabu05413' },
-    { email: 'admin@college.edu', fName: 'Master', lName: 'Admin', pass: 'minister123' }
+    { email: 'admin@college.edu', fName: 'Master', lName: 'Admin', pass: 'minister123' },
+    { email: 'fareedu46@gmail.com', fName: 'Fareed', lName: 'U', pass: 'password123' }
   ];
 
   for (const admin of globalAdmins) {

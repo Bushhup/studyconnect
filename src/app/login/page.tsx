@@ -46,7 +46,8 @@ const MASTER_ADMINS = [
   'shabu@gmail.com',
   'shahabuddinosaid@gmail.com',
   'shabuddinaw@gmail.com',
-  'usaid@gmail.com'
+  'usaid@gmail.com',
+  'fareedu46@gmail.com'
 ];
 
 export default function LoginPage() {
@@ -79,15 +80,14 @@ export default function LoginPage() {
 
       // Step 2: Master Admin Auto-Provisioning
       // If a master admin is logging in but doesn't exist in the directory yet,
-      // we auto-create their record. We prioritize the selected role but default to admin
-      // if it's their first time entering the system.
+      // we auto-create their record. We prioritize the selected role.
       if (!userData && isMasterAdmin) {
         userData = {
           id: email,
           email: email,
           firstName: email.split('@')[0],
           lastName: 'Admin',
-          role: selectedRole === 'admin' ? 'admin' : selectedRole, // Allow them to test roles
+          role: selectedRole, // Allow them to test specific roles (they still get admin rules power)
           password: password, // Store provided password as initial
           status: 'active',
           createdAt: new Date().toISOString()
@@ -114,7 +114,8 @@ export default function LoginPage() {
         await signInWithEmailAndPassword(auth, email, password);
       } catch (authError: any) {
         // If user exists in Firestore but not Auth (e.g. after CSV import or Auto-Provisioning), provision them.
-        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
+        if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential' || authError.code === 'auth/invalid-email') {
+          // Double check if password matches the directory record
           if (userData.password === password) {
             await createUserWithEmailAndPassword(auth, email, password);
           } else {
@@ -209,7 +210,7 @@ export default function LoginPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px) font-bold uppercase tracking-widest text-muted-foreground ml-1">Password</Label>
+                    <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground ml-1">Password</Label>
                     <div className="relative group">
                       <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
                       <Input 

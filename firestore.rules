@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -30,7 +31,8 @@ service cloud.firestore {
         'shabu@gmail.com',
         'shahabuddinosaid@gmail.com',
         'shabuddinaw@gmail.com',
-        'usaid@gmail.com'
+        'usaid@gmail.com',
+        'fareedu46@gmail.com'
       ];
       let user = getUserData();
       return isSignedIn() && (isHardcodedAdmin || (user != null && user.role == 'admin'));
