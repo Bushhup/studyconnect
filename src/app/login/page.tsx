@@ -40,8 +40,7 @@ type UserRole = 'student' | 'faculty' | 'admin' | 'hod';
 const collegeId = 'study-connect-college';
 
 /**
- * MASTER_ADMINS are the only accounts that can bypass the initial 
- * directory check to perform a system bootstrap if the database is empty.
+ * MASTER_ADMINS can bypass initial directory checks to bootstrap the system.
  */
 const MASTER_ADMINS = [
   'admin@college.edu',
@@ -75,25 +74,25 @@ export default function LoginPage() {
       const isMasterAdmin = MASTER_ADMINS.includes(email);
       
       // Step 1: Institutional Directory Check (Firestore)
-      // We look up the user in the database to get their assigned role.
       const userRef = doc(firestore, 'colleges', collegeId, 'users', email);
       const userSnap = await getDoc(userRef);
       let userData = userSnap.data();
 
-      // Step 2: Master Admin Auto-Provisioning (System Initialization)
+      // Step 2: Master Admin Auto-Provisioning
+      // If a master admin logs in through any gateway, create their record if missing.
       if (!userData && isMasterAdmin) {
         userData = {
           id: email,
           email: email,
           firstName: email.split('@')[0],
-          lastName: 'Admin',
-          role: 'admin', 
+          lastName: 'Master',
+          role: selectedRole, // Provision with the role they selected for testing
           password: password,
           status: 'active',
           createdAt: new Date().toISOString()
         };
         await setDoc(userRef, userData);
-        toast({ title: 'System Initialized', description: 'Master administrator identity provisioned.' });
+        toast({ title: 'Identity Synced', description: `Master identity provisioned as ${selectedRole}.` });
       }
 
       // If user doesn't exist in directory, deny entry.
@@ -102,34 +101,31 @@ export default function LoginPage() {
       }
 
       // Step 3: Role-Based Gateway Authorization
-      // A user can only log in through the gateway that matches their database role.
       const isAdminPortal = selectedRole === 'admin';
       const isAuthorized = userData.role === selectedRole || (isAdminPortal && (userData.role === 'admin' || userData.role === 'hod'));
 
       if (!isAuthorized) {
-        throw new Error(`Authorization Denied: Your assigned role is "${userData.role}". Please use the correct portal gateway.`);
+        throw new Error(`Authorization Denied: Your assigned role is "${userData.role}". Please use the correct gateway.`);
       }
 
-      // Step 4: Authentication & Identity Sync
+      // Step 4: Authentication
       try {
         await signInWithEmailAndPassword(auth, email, password);
       } catch (authError: any) {
-        // Handle "Lazy Provisioning": If user is in Firestore but not in Firebase Auth,
-        // we create their Auth account now using the credentials from the directory.
+        // Handle "Lazy Provisioning"
         if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
           if (userData.password === password) {
             await createUserWithEmailAndPassword(auth, email, password);
           } else {
-            throw new Error("Invalid institutional password. Please check your credentials.");
+            throw new Error("Invalid institutional password.");
           }
         } else {
           throw authError;
         }
       }
 
-      toast({ title: 'Access Granted', description: `Redirecting to the ${userData.role} portal...` });
+      toast({ title: 'Access Granted', description: `Entering ${userData.role} portal...` });
       
-      // Route based on verified role
       const routes = {
         admin: '/admin/dashboard',
         hod: '/admin/dashboard',
@@ -140,11 +136,10 @@ export default function LoginPage() {
       router.push(routes[userData.role as keyof typeof routes] || '/profile');
 
     } catch (error: any) {
-      console.error('Login error:', error);
       toast({
         variant: 'destructive',
-        title: 'Security Alert',
-        description: error.message || 'Institutional authentication failed.'
+        title: 'Authentication Error',
+        description: error.message
       });
       setIsLoading(false);
     }
@@ -167,11 +162,11 @@ export default function LoginPage() {
             className="w-full max-w-5xl"
           >
             <div className="text-center mb-12 space-y-4">
-              <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} className="flex justify-center">
+              <div className="flex justify-center">
                 <div className="p-3 bg-white rounded-2xl shadow-xl border border-border/50">
                   <Logo className="h-12 w-12" />
                 </div>
-              </motion.div>
+              </div>
               <h1 className="text-4xl md:text-6xl font-headline font-bold text-foreground tracking-tight">Institutional Portal</h1>
               <p className="text-muted-foreground text-lg max-w-xl mx-auto font-body">Select your authorized gateway to enter the ecosystem.</p>
             </div>
