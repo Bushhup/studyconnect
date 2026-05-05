@@ -25,22 +25,16 @@ import {
   Lock, 
   ChevronRight,
   Eye,
-  EyeOff,
-  Database,
-  AlertCircle,
-  Sparkles
+  EyeOff
 } from 'lucide-react';
 import { useFirebase } from '@/firebase';
 import { 
   signInWithEmailAndPassword,
-  signOut,
-  createUserWithEmailAndPassword,
-  signInAnonymously
+  createUserWithEmailAndPassword
 } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { Logo } from '@/components/logo';
 import { cn } from '@/lib/utils';
-import { seedDatabase } from '@/lib/seed-data';
 
 type UserRole = 'student' | 'faculty' | 'admin' | 'hod';
 const collegeId = 'study-connect-college';
@@ -55,51 +49,6 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [isBootstrapping, setIsBootstraping] = useState(false);
-
-  const handleBootstrap = async () => {
-    if (!firestore || !auth) return;
-    setIsBootstraping(true);
-    try {
-      await seedDatabase(firestore);
-      
-      // Provision master admin in Firebase Auth
-      try {
-        await createUserWithEmailAndPassword(auth, 'admin@college.edu', 'minister123');
-      } catch (authError: any) {
-        if (authError.code !== 'auth/email-already-in-use') {
-          console.error("Auth Provisioning Error:", authError);
-        }
-      }
-
-      toast({
-        title: 'Institutional Sync Complete',
-        description: 'Directory records and HOD roles have been successfully provisioned.',
-      });
-    } catch (e: any) {
-      console.error('Bootstrap error:', e);
-      toast({
-        variant: 'destructive',
-        title: 'Bootstrap Interrupted',
-        description: e.message || 'The database could not be initialized.',
-      });
-    } finally {
-      setIsBootstraping(false);
-    }
-  };
-
-  const handleDemoLogin = async () => {
-    setIsLoading(true);
-    try {
-      await signInAnonymously(auth);
-      localStorage.setItem('guest_role', 'admin');
-      router.push('/admin/dashboard');
-      toast({ title: 'Guest Session Active', description: 'Exploring platform as a guest administrator.' });
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Demo Failed', description: error.message });
-      setIsLoading(false);
-    }
-  };
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,12 +61,13 @@ export default function LoginPage() {
         : `${username.toLowerCase().trim()}@college.edu`;
       
       // Step 1: Institutional Directory Check (Firestore)
+      // This is the source of truth for identity and permissions.
       const userRef = doc(firestore, 'colleges', collegeId, 'users', email);
       const userSnap = await getDoc(userRef);
       const userData = userSnap.data();
 
       if (!userData) {
-        throw new Error(`Identity not found in directory for ${email}. Please run System Bootstrap.`);
+        throw new Error(`Identity not found in directory for ${email}. Please contact your administrator.`);
       }
 
       // Authorization Logic
@@ -128,11 +78,11 @@ export default function LoginPage() {
         throw new Error(`Access Denied: Your account role (${userData.role}) is not authorized for the ${selectedRole} gateway.`);
       }
 
-      // Step 2: Authentication Attempt with Lazy Provisioning
+      // Step 2: Authentication Attempt with Identity Sync
       try {
         await signInWithEmailAndPassword(auth, email, password);
       } catch (authError: any) {
-        // If user exists in Firestore but not Auth, provision them (Lazy Auth)
+        // If user exists in Firestore but not Auth (e.g. after CSV import), provision them.
         if (authError.code === 'auth/user-not-found' || authError.code === 'auth/invalid-credential') {
           if (userData.password === password) {
             await createUserWithEmailAndPassword(auth, email, password);
@@ -197,32 +147,6 @@ export default function LoginPage() {
               <RoleCard role="student" title="Student" description="Monitor academic journey, attendance, and internal marks." icon={GraduationCap} color="blue" onClick={() => setSelectedRole('student')} />
               <RoleCard role="faculty" title="Faculty" description="Manage sections, grade entries, and study materials." icon={BookOpen} color="emerald" onClick={() => setSelectedRole('faculty')} />
               <RoleCard role="admin" title="Admin / HOD" description="Departmental and Institutional command center for management." icon={ShieldCheck} color="violet" onClick={() => setSelectedRole('admin')} />
-            </div>
-            
-            <div className="mt-12 text-center flex flex-col items-center gap-6">
-              <div className="flex gap-4">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleBootstrap} 
-                  disabled={isBootstrapping || isLoading}
-                  className="text-[10px] uppercase font-bold tracking-widest text-muted-foreground hover:text-primary gap-2 bg-card rounded-full px-8 h-12 shadow-sm border-dashed"
-                >
-                  {isBootstrapping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
-                  System Bootstrap
-                </Button>
-
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleDemoLogin}
-                  disabled={isBootstrapping || isLoading}
-                  className="text-[10px] uppercase font-bold tracking-widest text-primary gap-2 rounded-full px-8 h-12 hover:bg-primary/5"
-                >
-                  <Sparkles className="h-4 w-4" />
-                  Launch Demo Session
-                </Button>
-              </div>
             </div>
           </motion.div>
         ) : (
@@ -292,7 +216,7 @@ export default function LoginPage() {
   );
 }
 
-function RoleCard({ role, title, description, icon: Icon, color, onClick }: any) {
+function RoleCard({ title, description, icon: Icon, color, onClick }: any) {
   const themes = {
     blue: "bg-blue-500/10 text-blue-600 hover:bg-blue-500/20",
     emerald: "bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20",

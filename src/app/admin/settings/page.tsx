@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Shield, Bell, Database, Palette, Check, 
   Layout, Type, Sparkles, Monitor, CircleDot, GripVertical,
-  Lock, Globe, UserCheck, Smartphone, History, RefreshCcw,
+  Lock, Globe, Smartphone, History, RefreshCcw,
   AlertCircle, ShieldCheck, Mail, Calendar, Activity,
   ArrowRight
 } from 'lucide-react';
@@ -18,6 +18,7 @@ import { useAppTheme, type BackgroundTheme, type PrimaryTheme, type TextTheme, t
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 
 const bgThemes: { id: BackgroundTheme; name: string; color: string }[] = [
   { id: 'default', name: 'Cloud Gray', color: 'bg-[#F1F5F9]' },
@@ -394,9 +395,6 @@ export default function SettingsPage() {
                     <div className="pt-6 border-t border-dashed">
                       <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4 px-1">Danger Zone</p>
                       <div className="flex flex-col sm:flex-row gap-3">
-                        <Button variant="destructive" className="flex-1 rounded-xl h-12 font-bold uppercase text-[10px] tracking-widest gap-2 shadow-lg shadow-red-500/10">
-                          <RefreshCcw className="h-4 w-4" /> Decommission Inactive Nodes
-                        </Button>
                         <Button variant="outline" className="flex-1 border-destructive/20 text-destructive hover:bg-red-50 rounded-xl h-12 font-bold uppercase text-[10px] tracking-widest gap-2">
                            <ShieldCheck className="h-4 w-4" /> Reset Identity Keys
                         </Button>
@@ -412,5 +410,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-
-import Link from 'next/link';

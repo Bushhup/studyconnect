@@ -1,14 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
 import { collection, doc, query, where } from 'firebase/firestore';
-import { seedDatabase } from '@/lib/seed-data';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { 
   Users, GraduationCap, Building2, BookOpen, 
-  TrendingUp, CheckCircle2, Database, Loader2, AlertCircle, 
+  TrendingUp, Loader2, AlertCircle, 
   ArrowRight, PieChart as PieChartIcon, Activity
 } from 'lucide-react';
 import { 
@@ -45,7 +43,6 @@ export default function AdminDashboard() {
   const db = useFirestore();
   const { user, isUserLoading: authLoading } = useUser();
   const { toast } = useToast();
-  const [isSeeding, setIsSeeding] = useState(false);
 
   // User Profile
   const userProfileRef = useMemoFirebase(() => {
@@ -64,7 +61,7 @@ export default function AdminDashboard() {
   const usersQuery = useMemoFirebase(() => {
     if (!db || !hasAccess) return null;
     if (isHOD) {
-      if (!myDeptId) return null; // Prevent global leak while profile is loading
+      if (!myDeptId) return null; 
       return query(collection(db, 'colleges', collegeId, 'users'), where('departmentId', '==', myDeptId));
     }
     return collection(db, 'colleges', collegeId, 'users');
@@ -105,19 +102,6 @@ export default function AdminDashboard() {
     value: users?.filter(u => u.departmentId === d.id && u.role === 'student').length || 0,
     fill: enrollmentColors[i % enrollmentColors.length]
   })).filter(d => d.value > 0) || [];
-
-  const handleSeedData = async () => {
-    if (!db || !isAdmin) return;
-    setIsSeeding(true);
-    try {
-      await seedDatabase(db);
-      toast({ title: 'Infrastructure Synchronized', description: 'Institutional hierarchy and linked directory records have been provisioned.' });
-    } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Initialization Error', description: error.message });
-    } finally {
-      setIsSeeding(false);
-    }
-  };
 
   if (authLoading || profileLoading) {
     return (
@@ -163,12 +147,6 @@ export default function AdminDashboard() {
               <Link href={`/admin/department-portal?id=${myDeptId}`}>
                 Division Portal <ArrowRight className="h-4 w-4" />
               </Link>
-            </Button>
-          )}
-          {isAdmin && (
-            <Button variant="outline" className="gap-2 bg-card rounded-full" onClick={handleSeedData} disabled={isSeeding}>
-              {isSeeding ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
-              System Bootstrap
             </Button>
           )}
           <Button onClick={() => toast({ title: 'Generating Report', description: 'Institutional analytics are being compiled...' })} className="font-bold rounded-full shadow-lg shadow-primary/20">
