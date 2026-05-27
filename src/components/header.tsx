@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from 'next/link';
@@ -38,10 +39,10 @@ export function Header() {
 
   return (
     <header className={cn(
-      "fixed top-0 z-50 w-full transition-all duration-500",
+      "z-50 w-full transition-all duration-500",
       isHomePage 
-        ? "bg-black/20 backdrop-blur-md border-white/10" 
-        : "border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60"
+        ? "fixed top-0 bg-black/20 backdrop-blur-md border-white/10" 
+        : "sticky top-0 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm"
     )}>
       <div className="container h-16 flex items-center px-4 md:px-4 lg:px-6">
         <Link href="/" className="flex items-center gap-4 mr-auto hover:opacity-90 transition-opacity">
