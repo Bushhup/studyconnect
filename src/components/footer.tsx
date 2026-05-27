@@ -1,4 +1,3 @@
-
 "use client";
 
 import { usePathname } from 'next/navigation';
@@ -13,10 +12,7 @@ import {
   Youtube, 
   ArrowRight,
   ShieldCheck,
-  Globe,
-  MapPin,
-  Phone,
-  Mail
+  MapPin
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,7 +20,7 @@ import { Input } from '@/components/ui/input';
 export function Footer() {
   const pathname = usePathname();
 
-  // Hide global footer on portal pages to avoid duplication with internal layouts
+  // Hide global footer on portal pages
   if (pathname?.startsWith('/admin') || pathname?.startsWith('/faculty') || pathname?.startsWith('/student')) {
     return null;
   }
@@ -82,8 +78,8 @@ export function Footer() {
                 { label: 'Milestones & Research', href: '/achievements' },
                 { label: 'Campus Life Gallery', href: '/gallery' },
                 { label: 'Academic Calendar', href: '/events' },
-                { label: 'Admission Policy', href: '#' },
-                { label: 'Institutional Bio Data', href: '#' },
+                { label: 'Bio Data Portal', href: '/login' },
+                { label: 'Academic Results', href: '/login' },
               ].map((link) => (
                 <li key={link.label}>
                   <Link 
@@ -109,8 +105,8 @@ export function Footer() {
                 { label: 'Administrator Login', href: '/login' },
                 { label: 'Faculty Management', href: '/login' },
                 { label: 'Student Journey Portal', href: '/login' },
-                { label: 'Identity Verification', href: '#' },
-                { label: 'Alumni Network', href: '#' },
+                { label: 'My Curriculum', href: '/login' },
+                { label: 'Portal Help Center', href: '#' },
               ].map((link) => (
                 <li key={link.label}>
                   <Link 
@@ -176,10 +172,6 @@ export function Footer() {
             <Link href="#" className="hover:text-primary transition-colors">Privacy Policy</Link>
             <Link href="#" className="hover:text-primary transition-colors">Terms of Service</Link>
             <Link href="#" className="hover:text-primary transition-colors">Sitemap</Link>
-            <div className="flex items-center gap-1.5 text-primary">
-              <Globe className="h-3 w-3" />
-              <span>EN-US</span>
-            </div>
           </div>
         </div>
       </div>
