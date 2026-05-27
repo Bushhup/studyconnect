@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
@@ -189,7 +188,7 @@ export default function AdminDashboard() {
         <Card className="lg:col-span-2 border-none shadow-sm bg-card rounded-[2.5rem] overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-headline font-bold">Academic Growth Patterns</CardTitle>
+              <CardTitle className="text-lg font-headline font-bold text-foreground">Academic Growth Patterns</CardTitle>
               <CardDescription>Comparative data: Historical performance vs Attendance.</CardDescription>
             </div>
             <div className="flex gap-2">

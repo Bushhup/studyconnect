@@ -171,7 +171,7 @@ export default function MarksManagementPage() {
             )}
             <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Academic Results</h1>
           </div>
-          <p className="text-muted-foreground font-body">
+          <p className="text-muted-foreground font-body text-foreground">
             {viewState === 'depts' && "Institutional performance leaderboard by department."}
             {viewState === 'classes' && `Class-wise results for ${selectedDept?.name}.`}
             {viewState === 'students' && `Student marks ledger for ${selectedClass?.name}.`}
@@ -398,7 +398,7 @@ export default function MarksManagementPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className="font-bold border-none px-3 bg-emerald-500/10 text-emerald-600">Grade O</Badge>
+                        <Badge className="font-bold border-none px-3 py-0.5 bg-emerald-500/10 text-emerald-600">Grade O</Badge>
                       </TableCell>
                       <TableCell className="text-right pr-6">
                         <Button variant="ghost" size="sm" className="gap-2 font-bold text-primary rounded-lg hover:bg-primary/5" onClick={() => {setSelectedStudent(student); setIsMarkDialogOpen(true);}}>

@@ -82,9 +82,9 @@ export default function AttendancePage() {
 
   const coursesQuery = useMemoFirebase(() => collection(firestore, 'colleges', collegeId, 'courses'), [firestore]);
 
-  const { data: allRecords, isLoading } = useCollection(recordsQuery);
-  const { data: users } = useCollection(usersQuery);
-  const { data: courses } = useCollection(coursesQuery);
+  const { data: allRecords, isLoading: recordsLoading } = useCollection(recordsQuery);
+  const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
+  const { data: courses, isLoading: coursesLoading } = useCollection(coursesQuery);
 
   // Filter records by department users if HOD
   const records = allRecords?.filter(r => {
@@ -118,14 +118,16 @@ export default function AttendancePage() {
     return fullName.includes(search.toLowerCase());
   }) || [];
 
+  const isLoading = recordsLoading || usersLoading || coursesLoading;
+
   return (
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight text-foreground">
             {isHOD ? 'Departmental Attendance' : 'Attendance Hub'}
           </h1>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 font-body text-foreground">
             {isHOD ? `Monitoring presence for ${myDeptId?.replace('dept-', '').toUpperCase()}.` : 'Cross-departmental presence monitoring and threshold alerts.'}
           </p>
         </motion.div>
