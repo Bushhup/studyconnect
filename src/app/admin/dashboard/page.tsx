@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useFirestore, useCollection, useMemoFirebase, useUser, useDoc } from '@/firebase';
@@ -44,7 +45,7 @@ export default function AdminDashboard() {
   const { user, isUserLoading: authLoading } = useUser();
   const { toast } = useToast();
 
-  // User Profile
+  // User Profile for Context
   const userProfileRef = useMemoFirebase(() => {
     if (!db || !user?.email) return null;
     return doc(db, 'colleges', collegeId, 'users', user.email.toLowerCase());
@@ -57,32 +58,35 @@ export default function AdminDashboard() {
   const hasAccess = isAdmin || isHOD;
   const myDeptId = profile?.departmentId;
 
-  // Real data queries - Strictly scoped for HODs
+  // Scoped Data Queries
   const usersQuery = useMemoFirebase(() => {
     if (!db || !hasAccess) return null;
+    const base = collection(db, 'colleges', collegeId, 'users');
     if (isHOD) {
       if (!myDeptId) return null; 
-      return query(collection(db, 'colleges', collegeId, 'users'), where('departmentId', '==', myDeptId));
+      return query(base, where('departmentId', '==', myDeptId));
     }
-    return collection(db, 'colleges', collegeId, 'users');
+    return base;
   }, [db, hasAccess, isHOD, myDeptId]);
 
   const deptsQuery = useMemoFirebase(() => {
     if (!db || !hasAccess) return null;
+    const base = collection(db, 'colleges', collegeId, 'departments');
     if (isHOD) {
        if (!myDeptId) return null;
-       return query(collection(db, 'colleges', collegeId, 'departments'), where('id', '==', myDeptId));
+       return query(base, where('id', '==', myDeptId));
     }
-    return collection(db, 'colleges', collegeId, 'departments');
+    return base;
   }, [db, hasAccess, isHOD, myDeptId]);
 
   const classesQuery = useMemoFirebase(() => {
     if (!db || !hasAccess) return null;
+    const base = collection(db, 'colleges', collegeId, 'classes');
     if (isHOD) {
        if (!myDeptId) return null;
-       return query(collection(db, 'colleges', collegeId, 'classes'), where('departmentId', '==', myDeptId));
+       return query(base, where('departmentId', '==', myDeptId));
     }
-    return collection(db, 'colleges', collegeId, 'classes');
+    return base;
   }, [db, hasAccess, isHOD, myDeptId]);
   
   const { data: users, isLoading: usersLoading } = useCollection(usersQuery);
@@ -272,7 +276,7 @@ export default function AdminDashboard() {
             </Button>
           </CardHeader>
           <CardContent className="space-y-4">
-            {depts?.slice(0, 4).map((d, i) => (
+            {(isHOD ? depts : depts?.slice(0, 4))?.map((d, i) => (
               <div key={d.id} className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 group hover:bg-primary/5 transition-all">
                 <div className="flex items-center gap-3">
                   <div className="h-8 w-8 rounded-xl bg-card border flex items-center justify-center font-bold text-xs">#{i+1}</div>

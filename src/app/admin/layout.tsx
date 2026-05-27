@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
@@ -35,7 +36,7 @@ const adminLinks = [
   { href: '/admin/courses', label: 'Curriculum', icon: BookOpen, keywords: 'subjects, modules' },
   { href: '/admin/content', label: 'Site Content', icon: FileText, keywords: 'events, achievements, public, post' },
   { href: '/admin/attendance', label: 'Attendance', icon: ClipboardCheck, keywords: 'presence, monitoring' },
-  { href: '/admin/reports', label: 'Analytics', icon: BarChart3, keywords: 'performance, data' },
+  { href: '/admin/marks', label: 'Results', icon: BarChart3, keywords: 'performance, data' },
   { href: '/admin/notifications', label: 'Broadcasts', icon: Bell, keywords: 'announcements, alerts' },
   { href: '/admin/logs', label: 'System Logs', icon: Activity, keywords: 'audit, security, history' },
   { href: '/admin/settings', label: 'Config', icon: Settings, keywords: 'configuration, theme, layout' },
@@ -64,7 +65,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [startDragPos, setStartDragPos] = useState({ x: 0, y: 0 });
   const [startLoopProgress, setStartLoopProgress] = useState(0);
 
-  // User Profile
+  // User Profile for Metadata
   const profileRef = useMemoFirebase(() => {
     if (!firestore || !user?.email) return null;
     return doc(firestore, 'colleges', collegeId, 'users', user.email.toLowerCase());
