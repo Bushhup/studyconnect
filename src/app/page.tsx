@@ -12,7 +12,15 @@ import {
   MapPin, 
   Clock, 
   Star,
-  Quote
+  Quote,
+  Sparkles,
+  Zap,
+  Globe,
+  ShieldCheck,
+  TrendingUp,
+  Microscope,
+  Cpu,
+  HeartPulse
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { placeholderImages } from '@/lib/placeholder-images';
@@ -39,10 +47,10 @@ export default function Home() {
   const testimonials = placeholderImages.filter(p => p.category === 'Testimonial');
 
   const stats = [
-    { label: 'Academic Programs', value: '120+', icon: BookOpen, color: 'text-blue-500' },
-    { label: 'Total Enrollment', value: '5,500+', icon: Users, color: 'text-emerald-500' },
-    { label: 'Placement Rate', value: '94.2%', icon: Award, color: 'text-purple-500' },
-    { label: 'Qualified Faculty', value: '350+', icon: GraduationCap, color: 'text-amber-500' },
+    { label: 'Academic Programs', value: '140+', icon: BookOpen, color: 'text-blue-500' },
+    { label: 'Global Alumni', value: '12,000+', icon: Globe, color: 'text-emerald-500' },
+    { label: 'Placement Rate', value: '96.4%', icon: Award, color: 'text-purple-500' },
+    { label: 'Qualified Faculty', value: '450+', icon: GraduationCap, color: 'text-amber-500' },
   ];
 
   return (
@@ -77,6 +85,11 @@ export default function Home() {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="max-w-4xl mx-auto pt-20 pb-48 md:pb-40"
           >
+            <div className="flex justify-center mb-8">
+               <Badge className="bg-primary/20 backdrop-blur-md text-white border-white/20 py-2 px-6 rounded-full text-xs font-bold uppercase tracking-[0.3em] flex items-center gap-2">
+                 <Sparkles className="h-3.5 w-3.5 text-primary" /> AI-Driven Academic Excellence
+               </Badge>
+            </div>
             <h1 className="text-5xl md:text-7xl lg:text-8xl font-headline font-bold tracking-tight mb-6 drop-shadow-2xl">
               {profile?.name || 'StudyConnect Enterprise Institute'}
             </h1>
@@ -132,8 +145,34 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 3: ABOUT US */}
-      <section className="py-24 bg-background overflow-hidden">
+      {/* SECTION 3: FEATURES GRID */}
+      <section className="py-24 bg-muted/20">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto mb-20 space-y-4">
+             <h2 className="text-4xl md:text-5xl font-headline font-bold">The Smart Institutional <span className="text-primary">Ecosystem</span></h2>
+             <p className="text-lg text-muted-foreground font-body">Experience a unified command center designed for the modern academic journey.</p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+             {[
+               { title: 'AI-Powered Advisor', desc: 'Institutional AI to assist with curriculum, schedules, and guidance.', icon: Zap },
+               { title: 'Biometric Integration', desc: 'Secure identity management with advanced bio-data verification.', icon: ShieldCheck },
+               { title: 'Real-time Analytics', desc: 'Data-rich visualizations for attendance and performance tracking.', icon: TrendingUp }
+             ].map((feature, idx) => (
+               <Card key={idx} className="border-none shadow-sm bg-card rounded-[2.5rem] p-10 hover:shadow-2xl transition-all duration-500 group">
+                  <div className="h-16 w-16 rounded-[1.5rem] bg-primary/5 flex items-center justify-center mb-8 group-hover:bg-primary group-hover:text-white transition-all">
+                    <feature.icon className="h-8 w-8" />
+                  </div>
+                  <h3 className="text-2xl font-headline font-bold mb-4">{feature.title}</h3>
+                  <p className="text-muted-foreground leading-relaxed font-body">{feature.desc}</p>
+               </Card>
+             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 4: RESEARCH & INNOVATION (NEW) */}
+      <section className="py-32 bg-slate-900 text-white overflow-hidden">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <motion.div
@@ -141,6 +180,74 @@ export default function Home() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
               className="space-y-8"
+            >
+              <div className="space-y-4">
+                <Badge className="bg-primary/20 text-primary border-none py-1 px-4 text-[10px] font-bold uppercase tracking-widest">Innovation Hub</Badge>
+                <h2 className="text-4xl md:text-5xl font-headline font-bold leading-tight">Pushing the Boundaries of <span className="text-primary">Knowledge</span></h2>
+                <p className="text-lg text-white/60 leading-relaxed">Our research centers are equipped with world-class facilities to foster breakthrough innovations in AI, Biotechnology, and Sustainable Design.</p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                {[
+                  { label: 'Quantum Computing', icon: Cpu, desc: 'Advanced research in next-gen processing.' },
+                  { label: 'Bio-Informatics', icon: HeartPulse, desc: 'Deciphering the code of life.' },
+                  { label: 'Robotics Lab', icon: Zap, desc: 'Autonomous systems and machine learning.' },
+                  { label: 'Social Impact', icon: Microscope, desc: 'Tech-driven solutions for global challenges.' }
+                ].map((item, idx) => (
+                  <div key={idx} className="p-6 rounded-3xl bg-white/5 border border-white/10 hover:bg-white/10 transition-colors">
+                    <item.icon className="h-6 w-6 text-primary mb-3" />
+                    <h4 className="font-bold text-sm mb-1">{item.label}</h4>
+                    <p className="text-xs text-white/40 leading-tight">{item.desc}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative aspect-square rounded-[3rem] overflow-hidden"
+            >
+              <Image src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1080" alt="Research" fill className="object-cover" />
+              <div className="absolute inset-0 bg-primary/20 mix-blend-overlay" />
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      {/* SECTION 5: ABOUT US & LEGACY */}
+      <section className="py-32 bg-background overflow-hidden">
+        <div className="container mx-auto px-4">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+             <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="relative aspect-square lg:aspect-video rounded-[3rem] overflow-hidden shadow-2xl shadow-primary/10 order-2 lg:order-1"
+            >
+              {aboutImage && (
+                <Image
+                  src={aboutImage.imageUrl}
+                  alt={aboutImage.description}
+                  fill
+                  className="object-cover"
+                  data-ai-hint={aboutImage.imageHint}
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <div className="absolute bottom-8 left-8 right-8 text-white">
+                <div className="flex items-center gap-2 mb-2">
+                  {[1,2,3,4,5].map(i => <Star key={i} className="h-4 w-4 text-amber-400 fill-amber-500" />)}
+                </div>
+                <p className="text-xl font-headline font-bold leading-tight">"The most vibrant learning community I have ever been part of."</p>
+                <p className="text-xs uppercase tracking-widest font-bold mt-2 opacity-60">— Institutional Review 2024</p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, x: 40 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-8 order-1 lg:order-2"
             >
               <div className="space-y-4">
                 <Badge variant="outline" className="rounded-full px-6 py-1 font-bold text-primary border-primary/20 bg-primary/5 uppercase tracking-widest text-[10px]">
@@ -172,40 +279,11 @@ export default function Home() {
                 ))}
               </div>
             </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              className="relative aspect-square lg:aspect-video rounded-[3rem] overflow-hidden shadow-2xl shadow-primary/10"
-            >
-              {aboutImage && (
-                <Image
-                  src={aboutImage.imageUrl}
-                  alt={aboutImage.description}
-                  fill
-                  className="object-cover"
-                  data-ai-hint={aboutImage.imageHint}
-                />
-              )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-              <div className="absolute bottom-8 left-8 right-8 text-white">
-                <div className="flex items-center gap-2 mb-2">
-                  <Star className="h-4 w-4 text-amber-400 fill-amber-500" />
-                  <Star className="h-4 w-4 text-amber-400 fill-amber-500" />
-                  <Star className="h-4 w-4 text-amber-400 fill-amber-500" />
-                  <Star className="h-4 w-4 text-amber-400 fill-amber-500" />
-                  <Star className="h-4 w-4 text-amber-400 fill-amber-500" />
-                </div>
-                <p className="text-xl font-headline font-bold leading-tight">"The most vibrant learning community I have ever been part of."</p>
-                <p className="text-xs uppercase tracking-widest font-bold mt-2 opacity-60">— Institutional Review 2024</p>
-              </div>
-            </motion.div>
           </div>
         </div>
       </section>
 
-      {/* SECTION 4: DEPARTMENTS GRID */}
+      {/* SECTION 6: DEPARTMENTS GRID */}
       <section className="py-24 bg-muted/30">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
@@ -250,8 +328,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 5: TESTIMONIALS */}
-      <section className="py-24 bg-background">
+      {/* SECTION 7: TESTIMONIALS */}
+      <section className="py-32 bg-background">
         <div className="container mx-auto px-4">
           <div className="grid lg:grid-cols-3 gap-8">
             {testimonials.map((t, idx) => (
@@ -288,7 +366,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SECTION 6: CALL TO ACTION */}
+      {/* SECTION 8: CALL TO ACTION */}
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
           <motion.div

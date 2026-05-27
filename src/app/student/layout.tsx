@@ -23,6 +23,7 @@ import { useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAppTheme } from '@/components/theme-provider';
+import { AiAssistant } from '@/components/AiAssistant';
 
 const studentLinks = [
   { href: '/student/dashboard', label: 'Dashboard', icon: LayoutDashboard, keywords: 'main, stats' },
@@ -156,7 +157,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
 
   const onMove = useCallback((e: MouseEvent | TouchEvent) => {
     const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
-    const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
+    const clientY = 'touches' in e ? (e as TouchEvent).shadowRoot ? 0 : (e as MouseEvent).clientY : (e as MouseEvent).clientY;
 
     if (isDragging) {
       const padding = 40;
@@ -312,8 +313,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="p-0 rounded-full border-2 border-transparent hover:border-border">
-                  <Avatar className="h-9 w-9 md:h-10 md:w-10">
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full border-2 border-transparent hover:border-border">
+                  <Avatar className="h-10 w-10">
                     <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">ST</AvatarFallback>
                   </Avatar>
                 </Button>
@@ -330,6 +331,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
         <main className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar bg-background">
           {children}
         </main>
+
+        <AiAssistant />
 
         {mounted && (
           <div 
