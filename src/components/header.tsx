@@ -92,10 +92,12 @@ export function Header() {
               <div className="h-2 w-full bg-primary" />
               <div className="p-8 flex flex-col h-full">
                 <SheetHeader className="mb-10 text-left">
-                  <Link href="/" className="flex items-center gap-4">
-                    <Logo className="h-10 w-10 text-primary" />
-                    <span className="font-bold font-headline text-2xl tracking-tighter">StudyConnect</span>
-                  </Link>
+                  <SheetTitle asChild>
+                    <Link href="/" className="flex items-center gap-4">
+                      <Logo className="h-10 w-10 text-primary" />
+                      <span className="font-bold font-headline text-2xl tracking-tighter">StudyConnect</span>
+                    </Link>
+                  </SheetTitle>
                   <SheetDescription className="text-xs font-medium uppercase tracking-widest pt-2">Institutional Navigator</SheetDescription>
                 </SheetHeader>
                 <nav className="flex flex-col gap-6">
