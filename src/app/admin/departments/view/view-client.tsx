@@ -17,7 +17,7 @@ import {
   Building2, Users, GraduationCap, BookOpen, 
   Calendar, ArrowLeft, Loader2, Plus, 
   ChevronRight, TrendingUp, Search,
-  RefreshCcw, UserPlus, BookPlus, LayoutGrid, Info, Download, AlertCircle
+  RefreshCcw, UserPlus, BookPlus, LayoutGrid, Info, Download, AlertCircle, BarChart3
 } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -201,8 +201,10 @@ export default function DepartmentViewClient() {
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
-          <Button className="rounded-full shadow-lg shadow-primary/20 h-11 px-8 font-bold">
-            Performance Analytics
+          <Button asChild className="rounded-full shadow-lg shadow-primary/20 h-11 px-8 font-bold gap-2">
+            <Link href={`/admin/marks?deptId=${id}`}>
+              <BarChart3 className="h-4 w-4" /> Performance Analytics
+            </Link>
           </Button>
         </div>
       </div>
@@ -382,7 +384,7 @@ export default function DepartmentViewClient() {
                     </StudentBioHover>
                   ))}
                   {students.length === 0 && (
-                    <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[2rem] bg-muted/20">
+                    <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[3rem] bg-muted/20">
                       <p className="text-sm font-bold text-muted-foreground">No students enrolled in this division.</p>
                     </div>
                   )}
@@ -407,7 +409,7 @@ export default function DepartmentViewClient() {
                   </Card>
                 ))}
                 {courses?.length === 0 && (
-                  <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[2rem] bg-muted/20">
+                  <div className="col-span-full py-20 text-center border-2 border-dashed rounded-[3rem] bg-muted/20">
                     <p className="text-sm font-bold text-muted-foreground">Curriculum nodes not defined for this program.</p>
                   </div>
                 )}
