@@ -89,7 +89,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
       if (theme.navStyle === 'wheel') {
         setRotation(prev => (prev + 0.08) % 360);
       } else {
-        setLoopProgress(prev => (prev + 0.04) % facultyLinks.length);
+        setLoopProgress(prev => (prev + 0.02) % facultyLinks.length);
       }
     }, 30);
     return () => clearInterval(interval);

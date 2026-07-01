@@ -88,7 +88,7 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       if (theme.navStyle === 'wheel') {
         setRotation(prev => (prev + 0.1) % 360);
       } else {
-        setLoopProgress(prev => (prev + 0.04) % studentLinks.length);
+        setLoopProgress(prev => (prev + 0.02) % studentLinks.length);
       }
     }, 30);
     return () => clearInterval(interval);

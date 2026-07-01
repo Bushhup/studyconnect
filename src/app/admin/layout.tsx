@@ -115,7 +115,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       if (theme.navStyle === 'wheel') {
         setRotation(prev => (prev + 0.15) % 360);
       } else {
-        setLoopProgress(prev => (prev + 0.04) % filteredLinks.length);
+        setLoopProgress(prev => (prev + 0.02) % filteredLinks.length);
       }
     }, 30);
     return () => clearInterval(interval);
