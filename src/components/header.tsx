@@ -1,8 +1,8 @@
 "use client";
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { Menu } from 'lucide-react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Menu, ArrowLeft } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -27,6 +27,7 @@ const navLinks = [
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
 
   // Hide header on portal pages where sidebars/hubs take priority
   if (pathname?.startsWith('/admin') || pathname?.startsWith('/faculty') || pathname?.startsWith('/student')) {
@@ -43,6 +44,17 @@ export function Header() {
         : "sticky top-0 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shadow-sm border-border/40"
     )}>
       <div className="container mx-auto h-full flex items-center px-4">
+        {!isHomePage && (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => router.back()}
+            className="mr-4 h-8 w-8 rounded-full hover:bg-primary/5 text-muted-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        )}
+        
         <Link href="/" className="flex items-center gap-3 mr-auto group">
           <div className="p-1.5 bg-white rounded-xl shadow-lg transition-transform group-hover:scale-105">
             <Logo className="h-7 w-7 text-primary" />
@@ -95,7 +107,7 @@ export function Header() {
                   <SheetTitle asChild>
                     <Link href="/" className="flex items-center gap-4">
                       <Logo className="h-10 w-10 text-primary" />
-                      <span className="font-bold font-headline text-2xl tracking-tighter">StudyConnect</span>
+                      <span className="font-bold font-headline text-2xl tracking-tighter text-foreground">StudyConnect</span>
                     </Link>
                   </SheetTitle>
                   <SheetDescription className="text-xs font-medium uppercase tracking-widest pt-2">Institutional Navigator</SheetDescription>
