@@ -24,6 +24,7 @@ import { useFirebase } from '@/firebase';
 import { signOut } from 'firebase/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAppTheme } from '@/components/theme-provider';
+import { AiAssistant } from '@/components/AiAssistant';
 
 const facultyLinks = [
   { href: '/faculty/dashboard', label: 'Dashboard', icon: LayoutDashboard, keywords: 'main, overview' },
@@ -157,7 +158,7 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
 
   const onMove = useCallback((e: MouseEvent | TouchEvent) => {
     const clientX = 'touches' in e ? (e as TouchEvent).touches[0].clientX : (e as MouseEvent).clientX;
-    const clientY = 'touches' in e ? (e as TouchEvent).touches[0].clientY : (e as MouseEvent).clientY;
+    const clientY = 'touches' in e ? (e as TouchEvent).shadowRoot ? 0 : (e as MouseEvent).clientY : (e as MouseEvent).clientY;
 
     if (isDragging) {
       const padding = 40;
@@ -331,6 +332,8 @@ export default function FacultyLayout({ children }: { children: React.ReactNode 
         <main className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar bg-background">
           {children}
         </main>
+
+        <AiAssistant />
 
         {mounted && (
           <div 

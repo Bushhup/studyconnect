@@ -24,6 +24,7 @@ import { doc } from 'firebase/firestore';
 import { signOut } from 'firebase/auth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAppTheme } from '@/components/theme-provider';
+import { AiAssistant } from '@/components/AiAssistant';
 
 const collegeId = 'study-connect-college';
 
@@ -364,6 +365,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <main className="flex-1 p-4 md:p-8 overflow-y-auto custom-scrollbar bg-background">
           {children}
         </main>
+
+        <AiAssistant />
 
         {mounted && (
           <div 
