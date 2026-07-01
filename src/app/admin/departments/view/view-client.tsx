@@ -17,7 +17,8 @@ import {
   Building2, Users, GraduationCap, BookOpen, 
   Calendar, ArrowLeft, Loader2, Plus, 
   ChevronRight, TrendingUp, Search,
-  RefreshCcw, UserPlus, BookPlus, LayoutGrid, Info, Download, AlertCircle, BarChart3
+  RefreshCcw, UserPlus, BookPlus, LayoutGrid, Info, Download, AlertCircle, BarChart3,
+  LineChart, AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Cell
 } from 'lucide-react';
 import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -35,15 +36,41 @@ import {
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { TooltipProvider, Tooltip as UiTooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { StudentBioHover } from '@/components/StudentBioHover';
 import { FacultyBioHover } from '@/components/FacultyBioHover';
 import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  AreaChart as ReAreaChart, 
+  Area as ReArea, 
+  BarChart as ReBarChart, 
+  Bar as ReBar, 
+  XAxis as ReXAxis, 
+  YAxis as ReYAxis, 
+  CartesianGrid as ReCartesianGrid, 
+  Tooltip as ReTooltip, 
+  ResponsiveContainer as ReResponsiveContainer,
+  Cell as ReCell
+} from 'recharts';
 
 const collegeId = 'study-connect-college';
 const STUDENT_COLUMNS = ['firstName', 'lastName', 'email', 'mobileNumber', 'batchYear', 'semester'];
+
+const performanceData = [
+  { term: 'Sem 1', gpa: 3.2, avg: 3.0 },
+  { term: 'Sem 2', gpa: 3.5, avg: 3.1 },
+  { term: 'Sem 3', gpa: 3.4, avg: 3.2 },
+  { term: 'Sem 4', gpa: 3.8, avg: 3.4 },
+];
+
+const sectionComparison = [
+  { name: 'Sec A', score: 92 },
+  { name: 'Sec B', score: 85 },
+  { name: 'Sec C', score: 78 },
+  { name: 'Sec D', score: 88 },
+];
 
 export default function DepartmentViewClient() {
   const searchParams = useSearchParams();
@@ -189,7 +216,7 @@ export default function DepartmentViewClient() {
         </div>
         <div className="flex gap-2">
           <TooltipProvider>
-            <Tooltip>
+            <UiTooltip>
               <TooltipTrigger asChild>
                 <Button onClick={downloadTemplate} variant="outline" className="rounded-full gap-2 bg-card border-primary/20 text-primary font-bold">
                   <Download className="h-4 w-4" /> Export Format
@@ -199,12 +226,16 @@ export default function DepartmentViewClient() {
                 <p className="text-[10px] font-bold uppercase mb-1">Required Headers</p>
                 <code className="text-[9px] break-all">{STUDENT_COLUMNS.join(', ')}</code>
               </TooltipContent>
-            </Tooltip>
+            </UiTooltip>
           </TooltipProvider>
-          <Button asChild className="rounded-full shadow-lg shadow-primary/20 h-11 px-8 font-bold gap-2">
-            <Link href={`/admin/marks?deptId=${id}`}>
-              <BarChart3 className="h-4 w-4" /> Performance Analytics
-            </Link>
+          <Button 
+            onClick={() => setActiveTab('analytics')}
+            className={cn(
+              "rounded-full shadow-lg h-11 px-8 font-bold gap-2 transition-all",
+              activeTab === 'analytics' ? "bg-primary text-white" : "bg-card text-primary border border-primary/20 shadow-primary/10"
+            )}
+          >
+            <BarChart3 className="h-4 w-4" /> Performance Analytics
           </Button>
         </div>
       </div>
@@ -216,13 +247,14 @@ export default function DepartmentViewClient() {
         <StatCard label="Allotted Sections" value={classes?.length || 0} icon={LayoutGrid} color="text-amber-600" bg="bg-amber-50" />
       </div>
 
-      <Tabs defaultValue="classes" onValueChange={setActiveTab} className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4 border-b pb-4">
           <TabsList className="bg-card border h-14 p-1.5 rounded-2xl flex justify-start overflow-x-auto w-full sm:w-auto">
             <TabsTrigger value="classes" className="gap-2 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold uppercase text-[10px]">Sections</TabsTrigger>
             <TabsTrigger value="faculty" className="gap-2 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold uppercase text-[10px]">Faculty</TabsTrigger>
             <TabsTrigger value="students" className="gap-2 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold uppercase text-[10px]">Students</TabsTrigger>
             <TabsTrigger value="subjects" className="gap-2 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold uppercase text-[10px]">Curriculum</TabsTrigger>
+            <TabsTrigger value="analytics" className="gap-2 px-6 rounded-xl data-[state=active]:bg-primary data-[state=active]:text-white font-bold uppercase text-[10px]">Analytics</TabsTrigger>
           </TabsList>
 
           <div className="flex gap-2">
@@ -413,6 +445,108 @@ export default function DepartmentViewClient() {
                     <p className="text-sm font-bold text-muted-foreground">Curriculum nodes not defined for this program.</p>
                   </div>
                 )}
+              </div>
+            )}
+
+            {activeTab === 'analytics' && (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                  <Card className="lg:col-span-2 border-none shadow-sm bg-card rounded-[2.5rem] overflow-hidden">
+                    <CardHeader className="border-b pb-8">
+                      <div className="flex items-center justify-between">
+                         <div>
+                            <CardTitle className="text-xl font-headline font-bold">Academic Growth Curve</CardTitle>
+                            <CardDescription>Comparative GPA trends across semesters.</CardDescription>
+                         </div>
+                         <Badge variant="outline" className="bg-primary/5 text-primary border-none px-4 py-1.5 font-bold uppercase text-[9px]">Term Sync: Live</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="h-[350px] pt-8">
+                      <ReResponsiveContainer width="100%" height="100%">
+                        <ReAreaChart data={performanceData}>
+                          <defs>
+                            <linearGradient id="colorGpa" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.15}/>
+                              <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <ReCartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                          <ReXAxis dataKey="term" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 'bold', fill: 'hsl(var(--muted-foreground))' }} />
+                          <ReYAxis domain={[0, 4]} axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} />
+                          <ReTooltip 
+                            contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '1rem', border: '1px solid hsl(var(--border))' }}
+                          />
+                          <ReArea type="monotone" dataKey="gpa" stroke="hsl(var(--primary))" strokeWidth={3} fill="url(#colorGpa)" />
+                          <ReArea type="monotone" dataKey="avg" stroke="hsl(var(--muted-foreground))" strokeWidth={2} strokeDasharray="5 5" fill="transparent" />
+                        </ReAreaChart>
+                      </ReResponsiveContainer>
+                    </CardContent>
+                  </Card>
+
+                  <div className="space-y-6">
+                    <Card className="border-none shadow-sm bg-primary text-white rounded-[2.5rem] p-8 space-y-6 overflow-hidden relative">
+                      <TrendingUp className="absolute right-[-20px] bottom-[-20px] h-40 w-40 text-white/5 -rotate-12" />
+                      <div className="relative z-10 space-y-4">
+                        <Badge className="bg-white/20 text-white border-none uppercase text-[9px] font-bold px-3 h-6 flex items-center w-fit rounded-full">Top Performer</Badge>
+                        <h3 className="text-2xl font-headline font-bold leading-tight">Elite Efficiency</h3>
+                        <p className="text-sm text-white/70 leading-relaxed font-body">
+                          This department maintains a <strong>94.2%</strong> average success rate in final examinations.
+                        </p>
+                      </div>
+                      <Button asChild className="w-full bg-white text-primary hover:bg-slate-100 font-bold rounded-2xl h-14 relative z-10 shadow-xl text-xs uppercase tracking-widest">
+                        <Link href={`/admin/marks?deptId=${id}`}>Full Performance Hub</Link>
+                      </Button>
+                    </Card>
+
+                    <Card className="border-none shadow-sm bg-card rounded-[2rem] p-8 space-y-4">
+                       <div className="flex items-center justify-between mb-4">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Internal Benchmarks</p>
+                          <Info className="h-3.5 w-3.5 text-muted-foreground opacity-50" />
+                       </div>
+                       <div className="space-y-6">
+                          <div className="space-y-2">
+                             <div className="flex justify-between items-center text-xs font-bold">
+                                <span>Placement Rate</span>
+                                <span className="text-emerald-600">96.8%</span>
+                             </div>
+                             <Progress value={96.8} className="h-1 bg-muted" />
+                          </div>
+                          <div className="space-y-2">
+                             <div className="flex justify-between items-center text-xs font-bold">
+                                <span>Innovation Index</span>
+                                <span className="text-primary">8.4 / 10</span>
+                             </div>
+                             <Progress value={84} className="h-1 bg-muted" />
+                          </div>
+                       </div>
+                    </Card>
+                  </div>
+                </div>
+
+                <Card className="border-none shadow-sm bg-card rounded-[2.5rem] overflow-hidden">
+                  <CardHeader>
+                    <CardTitle className="text-xl font-headline font-bold">Sectional Comparison</CardTitle>
+                    <CardDescription>Performance metrics across all active class nodes.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="h-[250px]">
+                    <ReResponsiveContainer width="100%" height="100%">
+                      <ReBarChart data={sectionComparison}>
+                        <ReCartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                        <ReXAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 11, fontWeight: '600', fill: 'hsl(var(--foreground))' }} />
+                        <ReYAxis hide />
+                        <ReTooltip 
+                          cursor={{ fill: 'hsl(var(--primary) / 0.05)' }}
+                          contentStyle={{ backgroundColor: 'hsl(var(--card))', borderRadius: '1rem', border: '1px solid hsl(var(--border))' }}
+                        />
+                        <ReBar dataKey="score" radius={[8, 8, 0, 0]} barSize={40}>
+                           {sectionComparison.map((entry, index) => (
+                             <ReCell key={`cell-${index}`} fill={index === 0 ? 'hsl(var(--primary))' : 'hsl(var(--muted-foreground) / 0.2)'} />
+                           ))}
+                        </ReBar>
+                      </ReBarChart>
+                    </ReResponsiveContainer>
+                  </CardContent>
+                </Card>
               </div>
             )}
           </TabsContent>
