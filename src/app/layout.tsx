@@ -14,7 +14,8 @@ export const metadata: Metadata = {
   description: 'Enterprise Academic Ecosystem. Connecting Minds, Building Futures.',
   manifest: '/manifest.json',
   icons: {
-    icon: '/logo.png',
+    icon: '/logo.ico',
+    shortcut: '/logo.ico',
     apple: '/logo.png',
   },
   appleWebApp: {
