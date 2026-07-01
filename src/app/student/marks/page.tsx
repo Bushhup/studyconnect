@@ -71,7 +71,7 @@ export default function StudentMarks() {
         </div>
         <div className="flex items-center gap-3">
           <Select value={semester} onValueChange={setSemester}>
-            <SelectTrigger className="w-[160px] bg-card border-slate-200 rounded-full h-10 text-xs font-bold shadow-sm">
+            <SelectTrigger className="w-[160px] bg-card border-border rounded-full h-10 text-xs font-bold shadow-sm">
               <SelectValue placeholder="Semester" />
             </SelectTrigger>
             <SelectContent>
@@ -80,7 +80,7 @@ export default function StudentMarks() {
               ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" className="rounded-full gap-2 border-slate-200 bg-card shadow-sm h-10">
+          <Button variant="outline" className="rounded-full gap-2 border-border bg-card shadow-sm h-10 font-bold">
             <Download className="h-4 w-4" /> Download PDF
           </Button>
         </div>
@@ -99,11 +99,11 @@ export default function StudentMarks() {
             <Table>
               <TableHeader className="bg-muted/10">
                 <TableRow className="border-none hover:bg-transparent">
-                  <TableHead className="font-bold pl-6 py-4">Subject Name</TableHead>
-                  <TableHead className="font-bold text-center">CAT-1</TableHead>
-                  <TableHead className="font-bold text-center">CAT-2</TableHead>
-                  <TableHead className="font-bold text-center">Final Weight</TableHead>
-                  <TableHead className="font-bold">Result</TableHead>
+                  <TableHead className="font-bold pl-6 py-4 text-foreground uppercase text-[10px] tracking-widest">Subject Name</TableHead>
+                  <TableHead className="font-bold text-center text-foreground uppercase text-[10px] tracking-widest">CAT-1</TableHead>
+                  <TableHead className="font-bold text-center text-foreground uppercase text-[10px] tracking-widest">CAT-2</TableHead>
+                  <TableHead className="font-bold text-center text-foreground uppercase text-[10px] tracking-widest">Final Weight</TableHead>
+                  <TableHead className="font-bold text-foreground uppercase text-[10px] tracking-widest">Result</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -127,8 +127,8 @@ export default function StudentMarks() {
                       </TableCell>
                       <TableCell>
                         <Badge className={cn(
-                          "font-bold border-none px-3 py-0.5",
-                          total > 85 ? "bg-emerald-100 text-emerald-700" : "bg-blue-100 text-blue-700"
+                          "font-bold border-none px-3 py-0.5 uppercase text-[9px]",
+                          total > 85 ? "bg-emerald-500/10 text-emerald-600" : "bg-primary/10 text-primary"
                         )}>
                           {total > 85 ? 'Grade O' : total > 70 ? 'Grade A+' : 'Pass'}
                         </Badge>
@@ -138,7 +138,7 @@ export default function StudentMarks() {
                 })}
                 {records?.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={5} className="p-24 text-center text-muted-foreground italic">No assessment records found for this term.</TableCell>
+                    <TableCell colSpan={5} className="p-24 text-center text-muted-foreground italic bg-muted/5">No assessment records found for this term.</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -165,7 +165,7 @@ export default function StudentMarks() {
 
           <Card className="border-none shadow-sm bg-card rounded-[2.5rem] p-6 space-y-4">
             <CardHeader className="p-0">
-              <CardTitle className="text-sm font-bold uppercase tracking-widest text-muted-foreground">Summary</CardTitle>
+              <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Current Summary</CardTitle>
             </CardHeader>
             <div className="space-y-4">
               <div className="space-y-1.5">
@@ -176,8 +176,8 @@ export default function StudentMarks() {
                 <Progress value={100} className="h-1.5 bg-muted" />
               </div>
             </div>
-            <Button variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-tight text-primary mt-2">
-              View Transcript Details <ChevronRight className="h-3 w-3 ml-1" />
+            <Button variant="ghost" className="w-full text-[10px] font-bold uppercase tracking-tight text-primary mt-2 hover:bg-primary/5 rounded-xl h-10 group">
+              View Transcript Details <ChevronRight className="h-3 w-3 ml-1 group-hover:translate-x-1 transition-transform" />
             </Button>
           </Card>
         </div>

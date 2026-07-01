@@ -54,50 +54,50 @@ export default function StudentAttendance() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Presence Overview</h1>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Presence Overview</h1>
           <p className="text-muted-foreground mt-1">Track your session-wise attendance and institutional compliance.</p>
         </div>
-        <Button onClick={handleDownload} variant="outline" className="rounded-full gap-2 border-slate-200 shadow-sm bg-white">
+        <Button onClick={handleDownload} variant="outline" className="rounded-full gap-2 border-border shadow-sm bg-card font-bold">
           <Layers className="h-4 w-4" /> Download History
         </Button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="border-none shadow-sm bg-blue-50/50 rounded-[2rem] p-6 flex flex-col justify-between">
+        <Card className="border-none shadow-sm bg-primary/5 rounded-[2rem] p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <CardDescription className="text-blue-700 font-bold uppercase text-[10px] tracking-widest">Average Rate</CardDescription>
-            <div className="p-2 bg-blue-100 rounded-xl">
-              <TrendingUp className="h-4 w-4 text-blue-600" />
+            <CardDescription className="text-primary font-bold uppercase text-[10px] tracking-widest">Average Rate</CardDescription>
+            <div className="p-2 bg-primary/10 rounded-xl">
+              <TrendingUp className="h-4 w-4 text-primary" />
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-4xl font-bold text-blue-900">{overallAvg}%</p>
-            <p className="text-[10px] font-bold text-blue-600/60 uppercase tracking-tight mt-1">+2.4% vs Last Month</p>
+            <p className="text-4xl font-bold text-foreground">{overallAvg}%</p>
+            <p className="text-[10px] font-bold text-primary/60 uppercase tracking-tight mt-1">+2.4% vs Last Month</p>
           </div>
         </Card>
 
-        <Card className="border-none shadow-sm bg-emerald-50/50 rounded-[2rem] p-6 flex flex-col justify-between">
+        <Card className="border-none shadow-sm bg-emerald-500/5 rounded-[2rem] p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <CardDescription className="text-emerald-700 font-bold uppercase text-[10px] tracking-widest">Classes Attended</CardDescription>
-            <div className="p-2 bg-emerald-100 rounded-xl">
+            <CardDescription className="text-emerald-600 font-bold uppercase text-[10px] tracking-widest">Classes Attended</CardDescription>
+            <div className="p-2 bg-emerald-500/10 rounded-xl">
               <CheckCircle2 className="h-4 w-4 text-emerald-600" />
             </div>
           </div>
           <div className="mt-4">
-            <p className="text-4xl font-bold text-emerald-900">145 / 162</p>
+            <p className="text-4xl font-bold text-foreground">145 / 162</p>
             <p className="text-[10px] font-bold text-emerald-600/60 uppercase tracking-tight mt-1">Sessions Completed</p>
           </div>
         </Card>
 
-        <Card className="border-none shadow-sm bg-white rounded-[2rem] p-6 flex flex-col justify-between overflow-hidden relative">
-          <Clock className="absolute right-[-10px] bottom-[-10px] h-20 w-20 text-slate-50 -rotate-12" />
+        <Card className="border-none shadow-sm bg-card rounded-[2rem] p-6 flex flex-col justify-between overflow-hidden relative">
+          <Clock className="absolute right-[-10px] bottom-[-10px] h-20 w-20 text-muted/10 -rotate-12" />
           <div className="flex items-center justify-between relative z-10">
-            <CardDescription className="text-slate-500 font-bold uppercase text-[10px] tracking-widest">Weekly Trend</CardDescription>
+            <CardDescription className="text-muted-foreground font-bold uppercase text-[10px] tracking-widest">Weekly Trend</CardDescription>
           </div>
           <div className="h-16 mt-4 relative z-10">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={weeklyTrend}>
-                <Area type="monotone" dataKey="value" stroke="#3B82F6" fill="#3B82F6" fillOpacity={0.1} strokeWidth={2} />
+                <Area type="monotone" dataKey="value" stroke="hsl(var(--primary))" fill="hsl(var(--primary))" fillOpacity={0.1} strokeWidth={2} />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -106,36 +106,36 @@ export default function StudentAttendance() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-6">
-          <Card className="border-none shadow-sm bg-white rounded-[2rem] overflow-hidden">
-            <CardHeader className="bg-slate-50/50 border-b">
+          <Card className="border-none shadow-sm bg-card rounded-[2rem] overflow-hidden">
+            <CardHeader className="bg-muted/30 border-b">
               <CardTitle className="text-lg font-headline">Subject-wise Analytics</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="divide-y divide-slate-100">
+              <div className="divide-y divide-border">
                 {ATTENDANCE_DATA.map((item) => (
-                  <div key={item.subject} className="p-6 flex items-center justify-between group hover:bg-slate-50/50 transition-colors">
+                  <div key={item.subject} className="p-6 flex items-center justify-between group hover:bg-muted/20 transition-colors">
                     <div className="space-y-1 flex-1">
                       <div className="flex items-center gap-3">
-                        <p className="font-bold text-slate-800">{item.subject}</p>
+                        <p className="font-bold text-foreground">{item.subject}</p>
                         {item.percent < 75 && (
-                          <Badge className="bg-red-50 text-red-600 border-none text-[8px] px-1.5 uppercase font-bold">Low Attendance</Badge>
+                          <Badge className="bg-destructive/10 text-destructive border-none text-[8px] px-1.5 uppercase font-bold">Low Attendance</Badge>
                         )}
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="w-full max-w-[200px]">
                           <Progress value={item.percent} className={cn(
                             "h-1.5",
-                            item.percent < 75 ? "bg-red-100" : "bg-slate-100"
+                            item.percent < 75 ? "bg-destructive/20" : "bg-muted"
                           )} />
                         </div>
                         <span className={cn(
                           "text-xs font-bold",
-                          item.percent < 75 ? "text-red-600" : "text-slate-600"
+                          item.percent < 75 ? "text-destructive" : "text-muted-foreground"
                         )}>{item.percent}%</span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-bold text-slate-800">{item.attended} / {item.total}</p>
+                      <p className="text-sm font-bold text-foreground">{item.attended} / {item.total}</p>
                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Sessions</p>
                     </div>
                   </div>
@@ -146,17 +146,17 @@ export default function StudentAttendance() {
         </div>
 
         <div className="space-y-6">
-          <Card className="border-none shadow-sm bg-amber-50 text-amber-900 rounded-[2rem] p-6 space-y-4">
+          <Card className="border-none shadow-sm bg-amber-500/5 text-foreground rounded-[2rem] p-6 space-y-4 border border-amber-500/10">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-amber-100 rounded-xl">
-                <AlertCircle className="h-5 w-5 text-amber-600" />
+              <div className="p-2 bg-amber-500/10 rounded-xl">
+                <AlertCircle className="h-5 w-5 text-amber-500" />
               </div>
-              <p className="font-headline font-bold">Institutional Warning</p>
+              <p className="font-headline font-bold text-amber-600">Institutional Warning</p>
             </div>
-            <p className="text-xs leading-relaxed text-amber-800/80">
+            <p className="text-xs leading-relaxed text-muted-foreground">
               Your attendance in <strong>Design Thinking</strong> is currently <strong>66%</strong>, which is below the mandatory 75% threshold. Please ensure presence in upcoming sessions to avoid condonation issues.
             </p>
-            <Button onClick={() => toast({ title: 'Policy Hub', description: 'Institutional handbook loaded. Section 4.2 covers attendance mandates.' })} variant="link" className="text-amber-700 font-bold p-0 h-auto text-xs uppercase tracking-tight">View Policy Details →</Button>
+            <Button onClick={() => toast({ title: 'Policy Hub', description: 'Institutional handbook loaded. Section 4.2 covers attendance mandates.' })} variant="link" className="text-amber-600 font-bold p-0 h-auto text-xs uppercase tracking-tight">View Policy Details →</Button>
           </Card>
 
           <Card className="border-none shadow-sm bg-slate-900 text-white rounded-[2rem] p-6">

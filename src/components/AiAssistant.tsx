@@ -132,22 +132,22 @@ export function AiAssistant() {
             exit={{ opacity: 0, scale: 0.9, y: 20 }}
             className="fixed bottom-6 right-6 z-[110] w-[90vw] sm:w-[420px] h-[650px] max-h-[85vh]"
           >
-            <Card className="h-full flex flex-col border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.2)] bg-card rounded-[2.5rem] overflow-hidden">
-              <CardHeader className="bg-primary p-6 text-white flex flex-row items-center justify-between">
+            <Card className="h-full flex flex-col border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.4)] bg-card rounded-[2.5rem] overflow-hidden">
+              <CardHeader className="bg-primary p-6 text-primary-foreground flex flex-row items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-white/20 rounded-xl backdrop-blur-md">
                     <Bot className="h-6 w-6" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-headline">Academic Assistant</CardTitle>
+                    <CardTitle className="text-lg font-headline font-bold">Academic Assistant</CardTitle>
                     <p className="text-[9px] uppercase font-bold tracking-widest opacity-60">StudyConnect Intelligence</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" onClick={clearChat} className="text-white/60 hover:text-white hover:bg-white/10 rounded-full h-8 w-8">
+                  <Button variant="ghost" size="icon" onClick={clearChat} className="text-primary-foreground/60 hover:text-primary-foreground hover:bg-white/10 rounded-full h-8 w-8">
                     <RotateCcw className="h-4 w-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-white hover:bg-white/10 rounded-full h-8 w-8">
+                  <Button variant="ghost" size="icon" onClick={() => setIsOpen(false)} className="text-primary-foreground/60 hover:text-primary-foreground hover:bg-white/10 rounded-full h-8 w-8">
                     <X className="h-4 w-4" />
                   </Button>
                 </div>
@@ -159,10 +159,10 @@ export function AiAssistant() {
                     {messages.map((m, idx) => (
                       <div key={idx} className={cn("flex flex-col", m.role === 'user' ? "items-end" : "items-start")}>
                         <div className={cn(
-                          "max-w-[90%] p-4 rounded-[1.5rem] text-sm leading-relaxed shadow-sm",
+                          "max-w-[90%] p-4 rounded-[1.5rem] text-sm leading-relaxed shadow-sm font-body",
                           m.role === 'user' 
-                            ? "bg-primary text-white rounded-br-none" 
-                            : "bg-white text-foreground rounded-bl-none border border-border/50"
+                            ? "bg-primary text-primary-foreground rounded-br-none" 
+                            : "bg-card text-foreground rounded-bl-none border border-border/50"
                         )}>
                           {m.text}
                         </div>
@@ -177,7 +177,7 @@ export function AiAssistant() {
                                   variant="outline" 
                                   size="sm" 
                                   onClick={() => handleAction(action)}
-                                  className="h-8 rounded-full text-[10px] font-bold uppercase border-primary/10 bg-white text-primary hover:bg-primary hover:text-white transition-all shadow-sm gap-1.5"
+                                  className="h-8 rounded-full text-[10px] font-bold uppercase border-primary/20 bg-card text-primary hover:bg-primary hover:text-primary-foreground transition-all shadow-sm gap-1.5"
                                 >
                                   {isNav && <ExternalLink className="h-3 w-3" />}
                                   {label}
@@ -190,7 +190,7 @@ export function AiAssistant() {
                     ))}
                     {isLoading && (
                       <div className="flex items-start gap-2">
-                        <div className="p-4 bg-white rounded-2xl rounded-bl-none shadow-sm border border-border/50">
+                        <div className="p-4 bg-card rounded-2xl rounded-bl-none shadow-sm border border-border/50">
                           <Loader2 className="h-4 w-4 animate-spin text-primary" />
                         </div>
                       </div>
@@ -199,11 +199,11 @@ export function AiAssistant() {
                 </ScrollArea>
               </CardContent>
 
-              <CardFooter className="p-6 bg-white border-t border-dashed">
+              <CardFooter className="p-6 bg-card border-t border-dashed border-border">
                 <form onSubmit={(e) => { e.preventDefault(); handleSend(query); }} className="flex gap-3 w-full">
                   <Input 
                     placeholder="Ask about subjects, grades, schedule..." 
-                    className="h-12 bg-muted/50 border-none rounded-2xl text-sm px-6"
+                    className="h-12 bg-muted/50 border-none rounded-2xl text-sm px-6 shadow-none focus-visible:ring-primary/20"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     disabled={isLoading}

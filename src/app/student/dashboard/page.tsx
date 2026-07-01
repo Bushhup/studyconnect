@@ -35,11 +35,11 @@ const performanceData = [
 ];
 
 const subjectGrades = [
-  { name: 'ML', score: 92, color: '#3B82F6' },
-  { name: 'Algo', score: 85, color: '#8B5CF6' },
-  { name: 'Physics', score: 88, color: '#10B981' },
-  { name: 'Math', score: 78, color: '#F59E0B' },
-  { name: 'Design', score: 72, color: '#EF4444' },
+  { name: 'ML', score: 92, color: 'hsl(var(--primary))' },
+  { name: 'Algo', score: 85, color: 'hsl(var(--chart-2))' },
+  { name: 'Physics', score: 88, color: 'hsl(var(--chart-3))' },
+  { name: 'Math', score: 78, color: 'hsl(var(--chart-4))' },
+  { name: 'Design', score: 72, color: 'hsl(var(--chart-5))' },
 ];
 
 const schedule = [
@@ -81,19 +81,19 @@ export default function StudentDashboard() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
-          <Avatar className="h-16 w-16 border-4 border-white shadow-lg ring-1 ring-slate-100">
+          <Avatar className="h-16 w-16 border-4 border-background shadow-lg ring-1 ring-border/50">
             <AvatarImage src={profile?.photoURL} />
             <AvatarFallback className="bg-primary/5 text-primary font-bold text-xl">{studentInitials}</AvatarFallback>
           </Avatar>
           <div>
-            <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Welcome, {profile?.firstName || 'Alex'}</h1>
+            <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Welcome, {profile?.firstName || 'Alex'}</h1>
             <p className="text-muted-foreground mt-1">
               {profile?.departmentId ? `${profile.departmentId.toUpperCase().replace('DEPT-', '')}` : 'General Studies'} • Semester {profile?.semester || '5'} • UG Program
             </p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="rounded-full gap-2 border-slate-200 shadow-sm bg-white" asChild>
+          <Button variant="outline" className="rounded-full gap-2 border-border shadow-sm bg-card" asChild>
             <Link href="/student/notifications">
               <Bell className="h-4 w-4" /> Notifications
             </Link>
@@ -108,12 +108,12 @@ export default function StudentDashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Attendance Rate', value: '94.2%', icon: ClipboardCheck, color: 'bg-blue-50 text-blue-600', progress: 94 },
-          { label: 'Current CGPA', value: '3.73', icon: Award, color: 'bg-purple-50 text-purple-600', progress: 85 },
-          { label: 'Enrolled Courses', value: '6', icon: BookOpen, color: 'bg-emerald-50 text-emerald-600', progress: 100 },
-          { label: 'Pending Tasks', value: '3', icon: Briefcase, color: 'bg-amber-50 text-amber-600', progress: 40 },
+          { label: 'Attendance Rate', value: '94.2%', icon: ClipboardCheck, color: 'bg-primary/10 text-primary', progress: 94 },
+          { label: 'Current CGPA', value: '3.73', icon: Award, color: 'bg-primary/10 text-primary', progress: 85 },
+          { label: 'Enrolled Courses', value: '6', icon: BookOpen, color: 'bg-primary/10 text-primary', progress: 100 },
+          { label: 'Pending Tasks', value: '3', icon: Briefcase, color: 'bg-primary/10 text-primary', progress: 40 },
         ].map((stat) => (
-          <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group bg-white">
+          <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all rounded-2xl overflow-hidden group bg-card">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{stat.label}</CardTitle>
               <div className={cn("p-2 rounded-xl transition-transform group-hover:rotate-6", stat.color)}>
@@ -121,21 +121,21 @@ export default function StudentDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold tracking-tighter">{stat.value}</div>
-              <Progress value={stat.progress} className="h-1 mt-4 bg-slate-100" />
+              <div className="text-3xl font-bold tracking-tighter text-foreground">{stat.value}</div>
+              <Progress value={stat.progress} className="h-1 mt-4 bg-muted" />
             </CardContent>
           </Card>
         ))}
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-none shadow-sm bg-white rounded-2xl overflow-hidden">
+        <Card className="lg:col-span-2 border-none shadow-sm bg-card rounded-2xl overflow-hidden">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
-              <CardTitle className="text-lg font-headline font-bold">Academic Progression</CardTitle>
+              <CardTitle className="text-lg font-headline font-bold text-foreground">Academic Progression</CardTitle>
               <CardDescription>Semester-wise GPA Performance</CardDescription>
             </div>
-            <Badge variant="outline" className="bg-primary/5 text-primary border-none">CGPA: 3.73</Badge>
+            <Badge variant="outline" className="bg-primary/10 text-primary border-none font-bold">CGPA: 3.73</Badge>
           </CardHeader>
           <CardContent className="h-[350px] pt-4">
             <ChartContainer config={chartConfig}>
@@ -146,8 +146,8 @@ export default function StudentDashboard() {
                     <stop offset="95%" stopColor="var(--color-gpa)" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748B' }} />
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }} />
                 <YAxis hide domain={[0, 4]} />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Area 
@@ -163,7 +163,7 @@ export default function StudentDashboard() {
         </Card>
 
         <div className="space-y-6">
-          <Card className="border-none shadow-sm bg-white rounded-2xl">
+          <Card className="border-none shadow-sm bg-card rounded-2xl">
             <CardHeader>
               <CardTitle className="text-lg font-headline font-bold text-foreground">Today's Schedule</CardTitle>
               <CardDescription>Upcoming classes and labs</CardDescription>
@@ -174,7 +174,7 @@ export default function StudentDashboard() {
                   <div className="flex justify-between items-start">
                     <div className="space-y-1">
                       <p className="text-[10px] font-bold text-muted-foreground tracking-widest">{item.time}</p>
-                      <p className="text-sm font-bold text-slate-800">{item.subject}</p>
+                      <p className="text-sm font-bold text-foreground">{item.subject}</p>
                       <div className="flex items-center gap-2 text-[10px] text-muted-foreground uppercase font-bold">
                         <Clock className="h-3 w-3" /> {item.room} • {item.faculty}
                       </div>
@@ -185,23 +185,23 @@ export default function StudentDashboard() {
                   </div>
                 </div>
               ))}
-              <Button asChild variant="outline" className="w-full mt-4 font-bold text-xs rounded-xl h-11 border-dashed">
+              <Button asChild variant="outline" className="w-full mt-4 font-bold text-xs rounded-xl h-11 border-dashed bg-transparent border-border">
                 <Link href="/student/calendar">View Full Calendar</Link>
               </Button>
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm bg-white rounded-2xl overflow-hidden">
+          <Card className="border-none shadow-sm bg-card rounded-2xl overflow-hidden">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-headline font-bold flex items-center gap-2">
+              <CardTitle className="text-sm font-headline font-bold flex items-center gap-2 text-foreground">
                 <BarChart3 className="h-4 w-4 text-primary" /> Subject Success
               </CardTitle>
             </CardHeader>
             <CardContent className="h-[150px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={subjectGrades}>
-                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
-                  <Tooltip cursor={{fill: 'transparent'}} />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: 'hsl(var(--muted-foreground))' }} />
+                  <Tooltip cursor={{fill: 'hsl(var(--muted) / 0.2)'}} />
                   <Bar dataKey="score" radius={[4, 4, 0, 0]} barSize={25}>
                     {subjectGrades.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={entry.color} />
@@ -215,49 +215,49 @@ export default function StudentDashboard() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 border-none shadow-sm bg-white rounded-2xl">
+        <Card className="lg:col-span-2 border-none shadow-sm bg-card rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-lg font-headline font-bold">Quick Navigation</CardTitle>
+            <CardTitle className="text-lg font-headline font-bold text-foreground">Quick Navigation</CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Button asChild variant="secondary" className="h-24 flex-col gap-2 rounded-2xl bg-blue-50 text-blue-700 hover:bg-blue-100 border-none shadow-none">
+            <Button asChild variant="secondary" className="h-24 flex-col gap-2 rounded-2xl bg-muted/40 text-primary hover:bg-muted/60 border-none shadow-none">
               <Link href="/student/attendance">
                 <ClipboardCheck className="h-6 w-6" />
-                <span className="text-xs font-bold">Check Presence</span>
+                <span className="text-xs font-bold uppercase tracking-tight">Check Presence</span>
               </Link>
             </Button>
-            <Button asChild variant="secondary" className="h-24 flex-col gap-2 rounded-2xl bg-purple-50 text-purple-700 hover:bg-purple-100 border-none shadow-none">
+            <Button asChild variant="secondary" className="h-24 flex-col gap-2 rounded-2xl bg-muted/40 text-primary hover:bg-muted/60 border-none shadow-none">
               <Link href="/student/resources">
                 <FileText className="h-6 w-6" />
-                <span className="text-xs font-bold">Download Notes</span>
+                <span className="text-xs font-bold uppercase tracking-tight">Download Notes</span>
               </Link>
             </Button>
-            <Button asChild variant="secondary" className="h-24 flex-col gap-2 rounded-2xl bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border-none shadow-none">
+            <Button asChild variant="secondary" className="h-24 flex-col gap-2 rounded-2xl bg-muted/40 text-primary hover:bg-muted/60 border-none shadow-none">
               <Link href="/student/marks">
                 <FileSpreadsheet className="h-6 w-6" />
-                <span className="text-xs font-bold">View Grades</span>
+                <span className="text-xs font-bold uppercase tracking-tight">View Grades</span>
               </Link>
             </Button>
           </CardContent>
         </Card>
 
-        <Card className="border-none shadow-sm bg-white rounded-2xl">
+        <Card className="border-none shadow-sm bg-card rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-lg font-headline font-bold">Submission Status</CardTitle>
+            <CardTitle className="text-lg font-headline font-bold text-foreground">Submission Status</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-50 border border-amber-100">
-              <AlertCircle className="h-4 w-4 text-amber-600 mt-0.5" />
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-primary/5 border border-primary/10">
+              <AlertCircle className="h-4 w-4 text-primary mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-amber-900">Assignment Pending</p>
-                <p className="text-[10px] text-amber-700">Neural Networks Implementation • Due in 2 days</p>
+                <p className="text-xs font-bold text-foreground">Assignment Pending</p>
+                <p className="text-[10px] text-muted-foreground">Neural Networks Implementation • Due in 2 days</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-50 border border-emerald-100">
-              <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5" />
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
+              <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-emerald-900">Model Exam Result</p>
-                <p className="text-[10px] text-emerald-700">Applied Physics grades have been published.</p>
+                <p className="text-xs font-bold text-foreground">Model Exam Result</p>
+                <p className="text-[10px] text-muted-foreground">Applied Physics grades have been published.</p>
               </div>
             </div>
           </CardContent>

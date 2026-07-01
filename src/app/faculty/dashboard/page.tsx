@@ -35,10 +35,10 @@ const performanceData = [
 ];
 
 const classComparison = [
-  { name: 'ML Sec A', score: 84, color: '#3B82F6' },
-  { name: 'ML Sec B', score: 78, color: '#8B5CF6' },
-  { name: 'DS Lab 1', score: 92, color: '#10B981' },
-  { name: 'Algo Tut', score: 75, color: '#F59E0B' },
+  { name: 'ML Sec A', score: 84, color: 'hsl(var(--primary))' },
+  { name: 'ML Sec B', score: 78, color: 'hsl(var(--chart-2))' },
+  { name: 'DS Lab 1', score: 92, color: 'hsl(var(--chart-3))' },
+  { name: 'Algo Tut', score: 75, color: 'hsl(var(--chart-4))' },
 ];
 
 const schedule = [
@@ -98,10 +98,10 @@ export default function FacultyDashboard() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {[
-          { label: 'Assigned Classes', value: '4', icon: Calendar, color: 'bg-blue-500/10 text-blue-500' },
-          { label: 'Total Students', value: '184', icon: Users, color: 'bg-purple-500/10 text-purple-500' },
-          { label: 'Subjects Handled', value: '3', icon: BookOpen, color: 'bg-emerald-500/10 text-emerald-500' },
-          { label: 'Attendance Avg', value: '94.2%', icon: ClipboardCheck, color: 'bg-amber-500/10 text-amber-500' },
+          { label: 'Assigned Classes', value: '4', icon: Calendar, color: 'bg-primary/10 text-primary' },
+          { label: 'Total Students', value: '184', icon: Users, color: 'bg-primary/10 text-primary' },
+          { label: 'Subjects Handled', value: '3', icon: BookOpen, color: 'bg-primary/10 text-primary' },
+          { label: 'Attendance Avg', value: '94.2%', icon: ClipboardCheck, color: 'bg-primary/10 text-primary' },
         ].map((stat) => (
           <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-all rounded-2xl bg-card">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -112,7 +112,7 @@ export default function FacultyDashboard() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold tracking-tighter text-foreground">{stat.value}</div>
-              <div className="flex items-center mt-2 text-[10px] font-bold text-emerald-500">
+              <div className="flex items-center mt-2 text-[10px] font-bold text-primary">
                 <ArrowUpRight className="h-3 w-3 mr-1" />
                 <span>+2.1% from last month</span>
               </div>
@@ -130,7 +130,7 @@ export default function FacultyDashboard() {
             </div>
             <div className="flex gap-2">
                <Badge variant="outline" className="bg-primary/10 text-primary border-none">Avg Marks</Badge>
-               <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-none">Attendance</Badge>
+               <Badge variant="outline" className="bg-muted text-muted-foreground border-none">Attendance</Badge>
             </div>
           </CardHeader>
           <CardContent className="h-[350px] pt-4">
@@ -216,7 +216,7 @@ export default function FacultyDashboard() {
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 border-none shadow-sm bg-card rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-lg font-headline font-bold flex items-center gap-2">
+            <CardTitle className="text-lg font-headline font-bold flex items-center gap-2 text-foreground">
               <BarChart3 className="h-5 w-5 text-primary" /> Class Success Comparison
             </CardTitle>
             <CardDescription>Average scores across active sections.</CardDescription>
@@ -225,9 +225,9 @@ export default function FacultyDashboard() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={classComparison}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold' }} />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 10, fontWeight: 'bold', fill: 'hsl(var(--muted-foreground))' }} />
                 <YAxis hide />
-                <Tooltip cursor={{fill: 'transparent'}} />
+                <Tooltip cursor={{fill: 'hsl(var(--muted) / 0.2)'}} />
                 <Bar dataKey="score" radius={[4, 4, 0, 0]} barSize={40}>
                   {classComparison.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -243,18 +243,18 @@ export default function FacultyDashboard() {
             <CardTitle className="text-lg font-headline font-bold text-foreground">System Alerts</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20">
-              <AlertCircle className="h-4 w-4 text-amber-500 mt-0.5" />
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-primary/5 border border-primary/10">
+              <AlertCircle className="h-4 w-4 text-primary mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-amber-500">Attendance Pending</p>
-                <p className="text-[10px] text-amber-500/70">Section A - Advanced Algorithms (Oct 24)</p>
+                <p className="text-xs font-bold text-foreground">Attendance Pending</p>
+                <p className="text-[10px] text-muted-foreground">Section A - Advanced Algorithms (Oct 24)</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
+            <div className="flex items-start gap-3 p-3 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
               <CheckCircle2 className="h-4 w-4 text-emerald-500 mt-0.5" />
               <div>
-                <p className="text-xs font-bold text-emerald-500">Grades Synced</p>
-                <p className="text-[10px] text-emerald-500/70">CAT-1 marks for ML have been published.</p>
+                <p className="text-xs font-bold text-foreground">Grades Synced</p>
+                <p className="text-[10px] text-muted-foreground">CAT-1 marks for ML have been published.</p>
               </div>
             </div>
           </CardContent>

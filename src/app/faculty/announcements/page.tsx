@@ -45,24 +45,24 @@ export default function FacultyAnnouncements() {
     <div className="space-y-8 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-headline font-bold text-slate-900 tracking-tight">Institutional Broadcasts</h1>
+          <h1 className="text-3xl font-headline font-bold text-foreground tracking-tight">Institutional Broadcasts</h1>
           <p className="text-muted-foreground mt-1">Communicate critical information directly to your students' portals.</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="lg:col-span-2 border-none shadow-sm bg-white rounded-2xl">
+        <Card className="lg:col-span-2 border-none shadow-sm bg-card rounded-2xl">
           <CardHeader>
-            <CardTitle className="text-xl font-headline">Compose Announcement</CardTitle>
+            <CardTitle className="text-xl font-headline text-foreground">Compose Announcement</CardTitle>
             <CardDescription>Send immediate alerts or schedule future updates.</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleDispatch} className="space-y-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest">Broadcast Title</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Broadcast Title</Label>
                 <Input 
                   placeholder="e.g. Rescheduled Lab Session" 
-                  className="bg-slate-50 border-none h-11"
+                  className="bg-muted/50 border-none h-11 shadow-none"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   required 
@@ -70,9 +70,9 @@ export default function FacultyAnnouncements() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest">Target Audience</Label>
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Target Audience</Label>
                   <Select defaultValue="all">
-                    <SelectTrigger className="bg-slate-50 border-none h-11">
+                    <SelectTrigger className="bg-muted/50 border-none h-11 shadow-none">
                       <SelectValue placeholder="Select Audience" />
                     </SelectTrigger>
                     <SelectContent>
@@ -83,9 +83,9 @@ export default function FacultyAnnouncements() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest">Subject (Optional)</Label>
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Subject (Optional)</Label>
                   <Select defaultValue="general">
-                    <SelectTrigger className="bg-slate-50 border-none h-11">
+                    <SelectTrigger className="bg-muted/50 border-none h-11 shadow-none">
                       <SelectValue placeholder="Select Subject" />
                     </SelectTrigger>
                     <SelectContent>
@@ -97,16 +97,16 @@ export default function FacultyAnnouncements() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-bold uppercase tracking-widest">Message Content</Label>
+                <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Message Content</Label>
                 <Textarea 
                   placeholder="Detail your announcement here..." 
-                  className="bg-slate-50 border-none min-h-[150px] resize-none"
+                  className="bg-muted/50 border-none min-h-[150px] resize-none shadow-none"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
                   required 
                 />
               </div>
-              <Button type="submit" className="w-full h-12 text-lg font-bold uppercase tracking-tight shadow-lg shadow-primary/20">
+              <Button type="submit" className="w-full h-12 text-lg font-bold uppercase tracking-tight shadow-lg shadow-primary/20 rounded-xl">
                 <Send className="mr-2 h-5 w-5" /> Dispatch Announcement
               </Button>
             </form>
@@ -117,7 +117,7 @@ export default function FacultyAnnouncements() {
           <Card className="border-none shadow-sm bg-slate-900 text-white rounded-2xl p-6 relative overflow-hidden">
             <div className="flex items-center gap-3 relative z-10">
               <div className="p-2 bg-white/10 rounded-xl">
-                <Megaphone className="h-5 w-5" />
+                <Megaphone className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <p className="text-xl font-bold">Live Status</p>
@@ -132,29 +132,29 @@ export default function FacultyAnnouncements() {
           <div className="space-y-4">
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground px-1">Recent Activity</h4>
             {MOCK_ANNOUNCEMENTS.map((item) => (
-              <Card key={item.id} className="border-none shadow-sm bg-white rounded-2xl hover:shadow-md transition-all">
+              <Card key={item.id} className="border-none shadow-sm bg-card rounded-2xl hover:shadow-md transition-all group overflow-hidden">
                 <CardContent className="p-4 space-y-3">
                   <div className="flex justify-between items-start">
-                    <Badge variant="outline" className="text-[9px] font-bold uppercase border-slate-100 px-1.5">
+                    <Badge variant="outline" className="text-[9px] font-bold uppercase border-primary/20 text-primary px-1.5 bg-primary/5">
                       {item.subject}
                     </Badge>
-                    <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1">
+                    <span className="text-[10px] font-bold text-muted-foreground flex items-center gap-1 uppercase">
                       <Clock className="h-3 w-3" /> {item.date}
                     </span>
                   </div>
                   <div>
-                    <p className="text-sm font-bold text-slate-800 truncate">{item.title}</p>
-                    <p className="text-[10px] text-slate-500 mt-1 line-clamp-2">{item.content}</p>
+                    <p className="text-sm font-bold text-foreground truncate">{item.title}</p>
+                    <p className="text-[10px] text-muted-foreground mt-1 line-clamp-2 leading-relaxed">{item.content}</p>
                   </div>
-                  <div className="pt-2 flex items-center justify-between border-t border-slate-50">
-                    <div className="flex items-center gap-1.5 text-[9px] font-bold text-primary">
+                  <div className="pt-2 flex items-center justify-between border-t border-border">
+                    <div className="flex items-center gap-1.5 text-[9px] font-bold text-primary uppercase tracking-tight">
                       <Users className="h-3 w-3" /> {item.target}
                     </div>
                     <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-slate-50">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10 text-primary">
                         <Edit3 className="h-3.5 w-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-red-50 text-red-400">
+                      <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-destructive/10 text-destructive">
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
