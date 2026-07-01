@@ -49,7 +49,8 @@ const MASTER_ADMINS = [
   'shabu@gmail.com',
   'shabuddinaw@gmail.com',
   'usaid@gmail.com',
-  'shahabuddinosaid@gmail.com'
+  'shahabuddinosaid@gmail.com',
+  'fareedu46@gmail.com'
 ];
 
 export default function LoginPage() {
@@ -132,12 +133,16 @@ export default function LoginPage() {
       
       const routes = {
         admin: '/admin/dashboard',
-        hod: '/admin/dashboard',
         faculty: '/faculty/dashboard',
         student: '/student/dashboard'
       };
       
-      router.push(routes[userData.role as keyof typeof routes] || '/profile');
+      // Custom redirection for HOD to their department portal
+      if (userData.role === 'hod' && userData.departmentId) {
+        router.push(`/admin/department-portal?id=${userData.departmentId}`);
+      } else {
+        router.push(routes[userData.role as keyof typeof routes] || '/profile');
+      }
 
     } catch (error: any) {
       toast({

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter, usePathname } from 'next/navigation';
@@ -82,14 +83,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const { data: deptData } = useDoc(deptRef);
 
   const filteredLinks = useMemo(() => {
-    return adminLinks.filter(link => {
+    return adminLinks.map(link => {
+      // For HODs, transform the Dashboard link into a Dept Hub link
+      if (isHOD && link.href === '/admin/dashboard' && myDeptId) {
+        return { ...link, href: `/admin/department-portal?id=${myDeptId}`, label: 'Dept Hub' };
+      }
+      return link;
+    }).filter(link => {
       if (isHOD) {
         // HODs are restricted from sensitive global college-level operations
         return !['/admin/logs', '/admin/settings'].includes(link.href);
       }
       return true;
     });
-  }, [isHOD]);
+  }, [isHOD, myDeptId]);
 
   // Search State
   const [searchQuery, setSearchQuery] = useState('');
