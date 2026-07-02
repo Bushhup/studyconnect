@@ -431,7 +431,7 @@ export default function UserManagementPage() {
                   </div>
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Contact Number</Label>
-                    <Input value={formData.mobileNumber || ''} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="98765 43210" />
+                    <Input type="mobilenumber" value={formData.mobileNumber || ''} onChange={(e) => setFormData({...formData, mobileNumber: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="98765 43210" />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -439,6 +439,7 @@ export default function UserManagementPage() {
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Access Key (Password)</Label>
                     <Input value={formData.password || ''} onChange={(e) => setFormData({...formData, password: e.target.value})} className="bg-muted border-none h-12 rounded-xl" required placeholder="Set initial password" />
                   </div>
+                  
                   <div className="space-y-2">
                     <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">System Role</Label>
                     <Select onValueChange={(val) => setFormData({...formData, role: val})} value={formData.role}>
